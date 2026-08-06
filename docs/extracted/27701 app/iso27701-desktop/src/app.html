@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ISO/IEC 27701:2019 — PIMS Compliance Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0a1628;--navy2:#0f2044;--navy3:#162952;
+  --indigo:#4f46e5;--indigo2:#6366f1;--indigo3:#818cf8;
+  --sky:#0ea5e9;--teal:#14b8a6;--violet:#7c3aed;
+  --compliant:#10b981;--partial:#f59e0b;--noncompliant:#ef4444;--na:#64748b;
+  --compliant-bg:#d1fae5;--partial-bg:#fef3c7;--noncompliant-bg:#fee2e2;--na-bg:#f1f5f9;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --surface:#111827;--surface2:#1e293b;--surface3:#283548;
+  --border:#1e3a5f;--border2:#2d4a6b;
+  --font-display:'DM Serif Display',Georgia,serif;
+  --font-body:'Outfit',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --radius:12px;--radius-lg:20px;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--navy);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+
+/* ── Noise texture overlay ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.6}
+
+/* ── Grid bg ── */
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,70,229,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ─────────────── LAYOUT ─────────────── */
+#app{position:relative;z-index:1;display:grid;grid-template-columns:260px 1fr;grid-template-rows:auto 1fr;min-height:100vh}
+
+/* ─────────────── TOPBAR ─────────────── */
+#topbar{grid-column:1/-1;display:flex;align-items:center;gap:20px;padding:0 28px;height:64px;background:rgba(10,22,40,.9);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.logo-mark{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--indigo),var(--sky));border-radius:10px;display:grid;place-items:center;font-size:16px}
+.logo-text{font-family:var(--font-display);font-size:1.15rem;color:#fff;white-space:nowrap}
+.logo-text span{color:var(--indigo3)}
+.topbar-sep{width:1px;height:32px;background:var(--border);margin:0 8px}
+.topbar-meta{font-family:var(--font-mono);font-size:.7rem;color:var(--text3);line-height:1.6}
+.topbar-progress{flex:1;display:flex;align-items:center;gap:12px;padding:0 20px}
+.progress-bar-wrap{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--indigo),var(--sky));border-radius:3px;transition:width .4s ease}
+.progress-label{font-family:var(--font-mono);font-size:.7rem;color:var(--text2);white-space:nowrap}
+.topbar-actions{display:flex;gap:8px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font-body);font-size:.82rem;font-weight:500;transition:all .2s;text-decoration:none}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-primary{background:linear-gradient(135deg,var(--indigo),var(--indigo2));color:#fff;box-shadow:0 0 20px rgba(99,102,241,.25)}
+.btn-primary:hover{box-shadow:0 0 28px rgba(99,102,241,.4);transform:translateY(-1px)}
+.btn-report{background:linear-gradient(135deg,var(--teal),var(--sky));color:#fff;box-shadow:0 0 20px rgba(20,184,166,.2)}
+.btn-report:hover{box-shadow:0 0 28px rgba(20,184,166,.35);transform:translateY(-1px)}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+
+/* ─────────────── SIDEBAR ─────────────── */
+#sidebar{background:rgba(15,32,68,.6);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0;backdrop-filter:blur(8px)}
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-track{background:transparent}
+#sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.sidebar-section-label{padding:12px 18px 4px;font-family:var(--font-mono);font-size:.65rem;font-weight:500;letter-spacing:.12em;color:var(--text3);text-transform:uppercase}
+
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;position:relative}
+.sidebar-item:hover{background:rgba(99,102,241,.07);color:var(--text)}
+.sidebar-item.active{background:rgba(99,102,241,.12);border-left-color:var(--indigo2)}
+.sidebar-item.active .si-name{color:#fff;font-weight:600}
+.si-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.si-name{font-size:.82rem;color:var(--text2);flex:1;line-height:1.3}
+.si-badge{font-family:var(--font-mono);font-size:.65rem;background:var(--surface3);border-radius:4px;padding:1px 5px;color:var(--text3)}
+.si-score{font-family:var(--font-mono);font-size:.68rem;font-weight:500;margin-left:auto}
+.sidebar-item.done .si-score{color:var(--compliant)}
+.sidebar-item.partial .si-score{color:var(--partial)}
+
+/* ─────────────── MAIN ─────────────── */
+#main{overflow-y:auto;display:flex;flex-direction:column}
+#main::-webkit-scrollbar{width:6px}
+#main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ─────────────── VIEWS ─────────────── */
+.view{display:none;flex:1}
+.view.active{display:block}
+
+/* ─────────────── DASHBOARD ─────────────── */
+#view-dashboard{padding:32px 36px}
+
+.dash-hero{margin-bottom:32px}
+.dash-title{font-family:var(--font-display);font-size:2rem;color:#fff;line-height:1.2;margin-bottom:6px}
+.dash-title em{font-style:italic;color:var(--indigo3)}
+.dash-sub{color:var(--text2);font-size:.88rem;line-height:1.6}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.sc-total::before{background:linear-gradient(90deg,var(--indigo),var(--indigo2))}
+.stat-card.sc-compliant::before{background:linear-gradient(90deg,var(--compliant),#34d399)}
+.stat-card.sc-partial::before{background:linear-gradient(90deg,var(--partial),#fbbf24)}
+.stat-card.sc-nc::before{background:linear-gradient(90deg,var(--noncompliant),#f87171)}
+.stat-label{font-size:.75rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.stat-value{font-family:var(--font-display);font-size:2.2rem;color:#fff;line-height:1}
+.stat-sub{font-size:.72rem;color:var(--text3);margin-top:6px}
+
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.dash-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:24px}
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px}
+.card-title{font-family:var(--font-display);font-size:1.05rem;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .ct-icon{font-size:1rem;opacity:.7}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap-lg{position:relative;height:280px}
+
+/* Radar / section bars */
+.sec-bars{display:flex;flex-direction:column;gap:8px}
+.sec-bar-item{display:flex;align-items:center;gap:10px}
+.sec-bar-label{font-size:.72rem;color:var(--text2);width:96px;flex-shrink:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec-bar-track{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.sec-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.sec-bar-pct{font-family:var(--font-mono);font-size:.68rem;color:var(--text2);width:32px;text-align:right}
+
+/* ─────────────── SECTION VIEW ─────────────── */
+#view-section{padding:32px 36px}
+.sec-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.sec-header-icon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.sec-header-info{flex:1}
+.sec-header-title{font-family:var(--font-display);font-size:1.6rem;color:#fff;margin-bottom:4px}
+.sec-header-clause{font-family:var(--font-mono);font-size:.72rem;color:var(--text3);margin-bottom:6px}
+.sec-header-desc{font-size:.84rem;color:var(--text2);line-height:1.5}
+.sec-header-stats{display:flex;gap:16px;flex-shrink:0}
+.sec-mini-stat{text-align:center}
+.sec-mini-stat-val{font-family:var(--font-display);font-size:1.5rem;color:#fff}
+.sec-mini-stat-lbl{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+
+.questions-list{display:flex;flex-direction:column;gap:16px}
+.q-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
+.q-card.status-compliant{border-left:4px solid var(--compliant)}
+.q-card.status-partial{border-left:4px solid var(--partial)}
+.q-card.status-non-compliant{border-left:4px solid var(--noncompliant)}
+.q-card.status-na{border-left:4px solid var(--na)}
+.q-card-header{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;cursor:pointer}
+.q-ref{font-family:var(--font-mono);font-size:.72rem;background:var(--surface3);border-radius:6px;padding:3px 8px;color:var(--indigo3);white-space:nowrap;flex-shrink:0;margin-top:2px}
+.q-title{flex:1}
+.q-clause{font-size:.7rem;color:var(--text3);font-family:var(--font-mono);margin-bottom:3px}
+.q-text{font-size:.86rem;color:var(--text);line-height:1.5;font-weight:500}
+.q-status-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+/* Status selector */
+.status-selector{display:flex;gap:4px}
+.ss-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border2);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;color:var(--text3);font-family:var(--font-body)}
+.ss-btn:hover{border-color:currentColor}
+.ss-btn.sel-compliant.active{background:var(--compliant-bg);color:#065f46;border-color:var(--compliant)}
+.ss-btn.sel-partial.active{background:var(--partial-bg);color:#92400e;border-color:var(--partial)}
+.ss-btn.sel-nc.active{background:var(--noncompliant-bg);color:#991b1b;border-color:var(--noncompliant)}
+.ss-btn.sel-na.active{background:var(--na-bg);color:#374151;border-color:var(--na)}
+
+.q-expand-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.9rem;padding:4px;border-radius:4px;transition:color .15s}
+.q-expand-btn:hover{color:var(--text)}
+
+.q-body{display:none;padding:0 18px 18px;border-top:1px solid var(--border)}
+.q-body.open{display:block}
+.q-body-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.q-body-section{background:var(--surface3);border-radius:10px;padding:14px 16px}
+.q-body-section-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.q-body-section-title span{font-size:.8rem}
+.q-body-text{font-size:.82rem;color:var(--text2);line-height:1.7;white-space:pre-line}
+.q-notes-wrap{margin-top:14px}
+.q-notes-label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:6px}
+.q-notes{width:100%;background:var(--navy3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:.82rem;padding:10px 12px;resize:vertical;min-height:70px;line-height:1.5;transition:border-color .2s;outline:none}
+.q-notes:focus{border-color:var(--indigo2)}
+.q-notes::placeholder{color:var(--text3)}
+
+/* Risk badge */
+.risk-badge{display:inline-flex;padding:3px 8px;border-radius:5px;font-size:.68rem;font-weight:700;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em}
+.risk-high{background:#450a0a;color:#fca5a5}
+.risk-medium{background:#431407;color:#fed7aa}
+.risk-low{background:#14290a;color:#bbf7d0}
+
+/* Evidence chips */
+.evidence-chips{display:flex;flex-direction:column;gap:4px}
+.ev-chip{font-size:.78rem;color:var(--text2);line-height:1.4;padding-left:12px;position:relative}
+.ev-chip::before{content:'›';position:absolute;left:0;color:var(--indigo3)}
+
+/* ─────────────── FINDINGS VIEW ─────────────── */
+#view-findings{padding:32px 36px}
+.findings-filters{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:.8rem;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+.filter-btn.active{background:var(--surface3);color:#fff;border-color:var(--border)}
+.filter-btn.f-nc.active{background:#450a0a;border-color:var(--noncompliant);color:#fca5a5}
+.filter-btn.f-partial.active{background:#431407;border-color:var(--partial);color:#fed7aa}
+.filter-btn.f-comp.active{background:#052e16;border-color:var(--compliant);color:#6ee7b7}
+.findings-table{width:100%;border-collapse:separate;border-spacing:0 6px}
+.findings-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;padding:0 14px 8px;text-align:left;white-space:nowrap}
+.findings-table td{background:var(--surface2);padding:12px 14px;font-size:.82rem;color:var(--text)}
+.findings-table td:first-child{border-radius:10px 0 0 10px}
+.findings-table td:last-child{border-radius:0 10px 10px 0}
+.findings-table tr:hover td{background:var(--surface3)}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
+.sp-compliant{background:var(--compliant-bg);color:#065f46}
+.sp-partial{background:var(--partial-bg);color:#92400e}
+.sp-nc{background:var(--noncompliant-bg);color:#991b1b}
+.sp-na{background:var(--na-bg);color:#374151}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-icon{font-size:2.5rem;margin-bottom:12px;opacity:.4}
+.empty-text{font-size:.9rem}
+
+/* ─────────────── REPORT VIEW ─────────────── */
+#view-report{background:var(--navy);min-height:100%}
+.report-toolbar{display:flex;align-items:center;gap:12px;padding:16px 36px;background:rgba(15,32,68,.8);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(8px)}
+.report-toolbar h2{font-family:var(--font-display);font-size:1.1rem;color:#fff;flex:1}
+
+/* Report document */
+.report-doc{max-width:900px;margin:0 auto;padding:48px 36px;position:relative}
+
+/* Cover */
+.rpt-cover{text-align:center;padding:80px 40px;background:linear-gradient(160deg,rgba(79,70,229,.15),rgba(14,165,233,.08));border:1px solid var(--border);border-radius:24px;margin-bottom:60px;position:relative;overflow:hidden}
+.rpt-cover::before{content:'ISO/IEC\A27701:2019';white-space:pre;position:absolute;top:-20px;right:-20px;font-family:var(--font-mono);font-size:8rem;font-weight:700;color:rgba(255,255,255,.02);line-height:1.1;pointer-events:none}
+.rpt-cover-eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;color:var(--indigo3);text-transform:uppercase;margin-bottom:16px}
+.rpt-cover-title{font-family:var(--font-display);font-size:2.6rem;color:#fff;line-height:1.15;margin-bottom:12px}
+.rpt-cover-title em{color:var(--indigo3);font-style:italic}
+.rpt-cover-sub{font-size:.9rem;color:var(--text2);margin-bottom:40px;line-height:1.6}
+.rpt-cover-meta{display:inline-flex;gap:0;border:1px solid var(--border2);border-radius:12px;overflow:hidden}
+.rpt-meta-cell{padding:14px 24px;border-right:1px solid var(--border2);text-align:left}
+.rpt-meta-cell:last-child{border-right:none}
+.rpt-meta-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;font-family:var(--font-mono)}
+.rpt-meta-value{font-size:.88rem;color:#fff;font-weight:500}
+
+/* Report sections */
+.rpt-section{margin-bottom:52px}
+.rpt-section-number{font-family:var(--font-mono);font-size:.7rem;color:var(--indigo3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.rpt-section-title{font-family:var(--font-display);font-size:1.7rem;color:#fff;margin-bottom:6px}
+.rpt-divider{height:1px;background:linear-gradient(90deg,var(--indigo),transparent);margin-bottom:24px}
+.rpt-text{font-size:.88rem;color:var(--text2);line-height:1.8;margin-bottom:16px}
+.rpt-text strong{color:var(--text);font-weight:600}
+
+/* Score ring */
+.rpt-score-hero{display:flex;align-items:center;gap:40px;padding:32px;background:var(--surface2);border-radius:var(--radius-lg);border:1px solid var(--border);margin-bottom:24px}
+.score-ring-wrap{position:relative;width:140px;height:140px;flex-shrink:0}
+.score-ring-wrap canvas{position:absolute;top:0;left:0}
+.score-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-ring-pct{font-family:var(--font-display);font-size:2rem;color:#fff;line-height:1}
+.score-ring-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.score-ring-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;flex:1}
+.srs-item{background:var(--surface3);border-radius:10px;padding:14px 16px}
+.srs-count{font-family:var(--font-display);font-size:1.7rem;color:#fff}
+.srs-label{font-size:.72rem;color:var(--text3);margin-top:2px}
+
+/* Report charts grid */
+.rpt-charts-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.rpt-chart-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px}
+.rpt-chart-title{font-family:var(--font-display);font-size:1rem;color:#fff;margin-bottom:16px}
+.rpt-chart-wrap{height:240px;position:relative}
+.rpt-chart-wrap-lg{height:340px;position:relative}
+
+/* Report section table */
+.rpt-sec-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.82rem}
+.rpt-sec-table th{background:var(--navy3);color:var(--text3);padding:10px 14px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;border-bottom:1px solid var(--border)}
+.rpt-sec-table td{padding:10px 14px;border-bottom:1px solid rgba(30,58,95,.5);color:var(--text)}
+.rpt-sec-table tr:hover td{background:rgba(30,58,95,.3)}
+.rag-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.rag-green{background:var(--compliant)}
+.rag-amber{background:var(--partial)}
+.rag-red{background:var(--noncompliant)}
+
+/* Gap register */
+.gap-table{width:100%;border-collapse:separate;border-spacing:0 5px;font-size:.8rem}
+.gap-table th{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:0 12px 8px;text-align:left;font-weight:600}
+.gap-table td{background:var(--surface2);padding:10px 12px;color:var(--text);vertical-align:top}
+.gap-table td:first-child{border-radius:8px 0 0 8px}
+.gap-table td:last-child{border-radius:0 8px 8px 0}
+.priority-chip{padding:2px 8px;border-radius:4px;font-size:.68rem;font-weight:700;font-family:var(--font-mono)}
+.pri-high{background:#450a0a;color:#fca5a5}
+.pri-medium{background:#431407;color:#fed7aa}
+.pri-low{background:#052e16;color:#6ee7b7}
+
+/* Recommendations */
+.rec-item{display:flex;gap:14px;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px}
+.rec-num{width:28px;height:28px;border-radius:50%;background:var(--indigo);color:#fff;font-family:var(--font-mono);font-size:.78rem;display:grid;place-items:center;flex-shrink:0;margin-top:2px}
+.rec-content{}
+.rec-title{font-size:.86rem;font-weight:600;color:#fff;margin-bottom:4px}
+.rec-text{font-size:.8rem;color:var(--text2);line-height:1.6}
+.rec-meta{display:flex;gap:8px;margin-top:8px}
+
+/* Appendix */
+.app-table{width:100%;font-size:.78rem;border-collapse:collapse}
+.app-table th{background:var(--navy3);color:var(--text3);padding:8px 12px;text-align:left;font-size:.68rem;text-transform:uppercase;font-weight:600;letter-spacing:.08em}
+.app-table td{padding:8px 12px;border-bottom:1px solid rgba(30,58,95,.4);color:var(--text2);vertical-align:top}
+.app-table tr:hover td{background:rgba(30,58,95,.2)}
+
+/* ─────────────── TOAST ─────────────── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface3);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:.82rem;color:var(--text);z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ─────────────── PRINT ─────────────── */
+@media print{
+  body{background:#fff;color:#111}
+  #topbar,#sidebar,#view-section,#view-findings,#view-dashboard,#view-section,#view-findings,.report-toolbar{display:none!important}
+  #view-report{display:block!important}
+  .report-doc{padding:0;max-width:100%}
+  .rpt-cover,.rpt-chart-card,.rpt-sec-table,.gap-table,.rpt-score-hero{background:#f8f9fa!important;border-color:#ddd!important;color:#111!important}
+}
+
+/* ─────────────── ANIMATIONS ─────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .4s ease both}
+.fade-up-2{animation:fadeUp .4s .1s ease both}
+.fade-up-3{animation:fadeUp .4s .2s ease both}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 15px rgba(99,102,241,.2)}50%{box-shadow:0 0 25px rgba(99,102,241,.4)}}
+
+/* ─────────────── RESPONSIVE ─────────────── */
+@media(max-width:1100px){
+  #app{grid-template-columns:220px 1fr}
+}
+@media(max-width:900px){
+  #app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}
+  #sidebar{display:none}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr}
+  .rpt-charts-2{grid-template-columns:1fr}
+}
+</style>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// NativeChart — lightweight canvas chart engine (no dependencies)
+// Supports: doughnut, bar, radar — API compatible with Chart.js 4
+// ═══════════════════════════════════════════════════════════════════════════
+const NativeChart = (() => {
+  const instances = new WeakMap();
+
+  function destroy(canvas) {
+    const prev = instances.get(canvas);
+    if (prev) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); instances.delete(canvas); }
+  }
+
+  function hexToRgb(hex, a=1) {
+    if (!hex || hex === 'transparent') return `rgba(0,0,0,0)`;
+    hex = hex.replace('#','');
+    if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+    const r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  function wrapText(ctx, text, maxWidth) {
+    const words = String(text).split('');
+    // For short labels just return as-is
+    if (ctx.measureText(text).width <= maxWidth) return [text];
+    // Split at spaces or dashes
+    const parts = String(text).split(/[\s\-]/);
+    const lines = []; let line = '';
+    parts.forEach(w => {
+      const test = line ? line+' '+w : w;
+      if (ctx.measureText(test).width <= maxWidth) line = test;
+      else { if(line) lines.push(line); line = w; }
+    });
+    if(line) lines.push(line);
+    return lines.length ? lines : [text];
+  }
+
+  // ── DOUGHNUT ──────────────────────────────────────────────────────────────
+  function drawDoughnut(canvas, config) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+
+    const legendPos = config.options?.plugins?.legend?.position || 'right';
+    const hasLegend = config.options?.plugins?.legend !== false;
+    const legendW = hasLegend && legendPos==='right' ? 120 : 0;
+    const legendH = hasLegend && legendPos==='bottom' ? 60 : 0;
+
+    const chartW = W - legendW, chartH = H - legendH;
+    const cx = chartW/2, cy = chartH/2;
+    const cutout = parseFloat(config.options?.cutout || '60%') / 100;
+    const outerR = Math.min(chartW, chartH) * 0.44;
+    const innerR = outerR * cutout;
+
+    const dataset = config.data.datasets[0];
+    const labels = config.data.labels;
+    const data = dataset.data;
+    const colors = dataset.backgroundColor;
+    const total = data.reduce((s,v)=>s+(+v||0), 0);
+
+    let start = -Math.PI / 2;
+    data.forEach((val, i) => {
+      if (!val) return;
+      const sweep = (val / total) * 2 * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(cx + innerR * Math.cos(start), cy + innerR * Math.sin(start));
+      ctx.arc(cx, cy, outerR, start, start + sweep);
+      ctx.arc(cx, cy, innerR, start + sweep, start, true);
+      ctx.closePath();
+      ctx.fillStyle = Array.isArray(colors) ? (colors[i]||'#666') : colors;
+      ctx.fill();
+      start += sweep;
+    });
+
+    // Legend
+    if (hasLegend && legendPos === 'right') {
+      const lx = chartW + 8, ly = 16;
+      const lc = config.options?.plugins?.legend?.labels?.color || '#aaa';
+      const fs = config.options?.plugins?.legend?.labels?.font?.size || 11;
+      ctx.font = `${fs}px Outfit, sans-serif`;
+      labels.forEach((lbl, i) => {
+        const y = ly + i * (fs + 10);
+        ctx.fillStyle = Array.isArray(colors) ? (colors[i]||'#666') : colors;
+        ctx.fillRect(lx, y, 10, 10);
+        ctx.fillStyle = lc;
+        ctx.fillText(lbl, lx + 14, y + 9);
+      });
+    }
+    if (hasLegend && legendPos === 'bottom') {
+      const ly = chartH + 10;
+      const lc = config.options?.plugins?.legend?.labels?.color || '#aaa';
+      const fs = config.options?.plugins?.legend?.labels?.font?.size || 10;
+      const bw = config.options?.plugins?.legend?.labels?.boxWidth || 8;
+      ctx.font = `${fs}px Outfit, sans-serif`;
+      let lx = 4;
+      labels.forEach((lbl, i) => {
+        ctx.fillStyle = Array.isArray(colors) ? (colors[i]||'#666') : colors;
+        ctx.fillRect(lx, ly, bw, bw);
+        ctx.fillStyle = lc;
+        ctx.fillText(lbl, lx + bw + 3, ly + bw - 1);
+        lx += ctx.measureText(lbl).width + bw + 14;
+        if (lx > W - 80) { lx = 4; }
+      });
+    }
+  }
+
+  // ── BAR ───────────────────────────────────────────────────────────────────
+  function drawBar(canvas, config) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+
+    const datasets = config.data.datasets;
+    const labels = config.data.labels;
+    const stacked = config.options?.scales?.y?.stacked;
+
+    const padL=40, padR=12, padT=16, padB=52;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+
+    // Y scale
+    let yMax = 0;
+    if (stacked) {
+      labels.forEach((_, i) => {
+        let sum = 0;
+        datasets.forEach(ds => sum += (+ds.data[i]||0));
+        yMax = Math.max(yMax, sum);
+      });
+    } else {
+      datasets.forEach(ds => ds.data.forEach(v => yMax = Math.max(yMax, +v||0)));
+    }
+    const yMax2 = config.options?.scales?.y?.max ?? (Math.ceil((yMax * 1.15) / 10) * 10 || 10);
+
+    // Grid
+    const gridColor = config.options?.scales?.y?.grid?.color || 'rgba(30,58,95,.4)';
+    const tickColor = config.options?.scales?.x?.ticks?.color || '#666';
+    const yTickColor = config.options?.scales?.y?.ticks?.color || '#666';
+    const tickFs = 9;
+    ctx.font = `${tickFs}px IBM Plex Mono, monospace`;
+
+    const ySteps = 5;
+    for (let s = 0; s <= ySteps; s++) {
+      const v = (yMax2 / ySteps) * s;
+      const y = padT + chartH - (v / yMax2) * chartH;
+      ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+chartW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      const label = config.options?.scales?.y?.ticks?.callback ? config.options.scales.y.ticks.callback(Math.round(v)) : Math.round(v);
+      ctx.fillStyle = yTickColor; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, padL - 4, y);
+    }
+
+    // Bars
+    const n = labels.length;
+    const groupW = chartW / n;
+    const dsCount = stacked ? 1 : datasets.length;
+    const barW = Math.min(groupW * 0.65 / dsCount, 28);
+    const gap = stacked ? 0 : 3;
+
+    labels.forEach((lbl, i) => {
+      const gx = padL + i * groupW + groupW / 2;
+
+      if (stacked) {
+        let stackBot = 0;
+        datasets.forEach((ds, di) => {
+          const val = +ds.data[i] || 0;
+          if (!val) return;
+          const bh = (val / yMax2) * chartH;
+          const by = padT + chartH - (stackBot + val) / yMax2 * chartH;
+          const bx = gx - barW / 2;
+          const r = ds.borderRadius?.topLeft ?? 0;
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(bx, by, barW, bh, di === datasets.length-1 ? [r,r,0,0] : [0]) : ctx.rect(bx, by, barW, bh);
+          const col = ds.backgroundColor;
+          ctx.fillStyle = Array.isArray(col) ? col[i] : col;
+          ctx.fill();
+          stackBot += val;
+        });
+      } else {
+        datasets.forEach((ds, di) => {
+          const val = +ds.data[i] || 0;
+          const bh = (val / yMax2) * chartH;
+          const by = padT + chartH - bh;
+          const bx = gx - (dsCount * barW + (dsCount-1) * gap) / 2 + di * (barW + gap);
+          const col = ds.backgroundColor;
+          const fillColor = Array.isArray(col) ? col[i] : col;
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(bx, by, barW, bh, [4,4,0,0]) : ctx.rect(bx, by, barW, bh);
+          ctx.fillStyle = fillColor; ctx.fill();
+        });
+      }
+
+      // X label
+      const maxRot = config.options?.scales?.x?.ticks?.maxRotation ?? 0;
+      ctx.save();
+      ctx.translate(gx, padT + chartH + 6);
+      ctx.rotate(maxRot ? -(maxRot * Math.PI/180) : 0);
+      ctx.fillStyle = tickColor; ctx.font = `${tickFs}px Outfit, sans-serif`;
+      ctx.textAlign = maxRot ? 'right' : 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(String(lbl).substring(0,12), 0, 0);
+      ctx.restore();
+    });
+
+    // Axes
+    ctx.strokeStyle = 'rgba(30,58,95,.8)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+chartH+1); ctx.lineTo(padL+chartW, padT+chartH+1); ctx.stroke();
+
+    // Legend
+    if (datasets.length > 1 && config.options?.plugins?.legend?.labels) {
+      const lc = config.options.plugins.legend.labels.color || '#aaa';
+      const fs2 = config.options.plugins.legend.labels.font?.size || 10;
+      const bw = config.options.plugins.legend.labels.boxWidth || 8;
+      ctx.font = `${fs2}px Outfit, sans-serif`; ctx.textBaseline='middle';
+      let lx = padL;
+      datasets.forEach(ds => {
+        const col = ds.backgroundColor;
+        ctx.fillStyle = Array.isArray(col) ? col[0] : col;
+        ctx.fillRect(lx, 4, bw, bw);
+        ctx.fillStyle = lc; ctx.textAlign='left';
+        ctx.fillText(ds.label||'', lx+bw+3, 8);
+        lx += ctx.measureText(ds.label||'').width + bw + 18;
+      });
+    }
+  }
+
+  // ── RADAR ─────────────────────────────────────────────────────────────────
+  function drawRadar(canvas, config) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+
+    const cx = W/2, cy = H/2;
+    const maxR = Math.min(W, H) * 0.36;
+    const labels = config.data.labels;
+    const n = labels.length;
+    const datasets = config.data.datasets;
+
+    const gridColor = config.options?.scales?.r?.grid?.color || 'rgba(30,58,95,.5)';
+    const angleColor = config.options?.scales?.r?.angleLines?.color || 'rgba(30,58,95,.5)';
+    const labelColor = config.options?.scales?.r?.pointLabels?.color || '#94a3b8';
+    const labelFs = config.options?.scales?.r?.pointLabels?.font?.size || 9;
+    const yMax = config.options?.scales?.r?.max || 100;
+
+    const angleOffset = -Math.PI/2;
+    const angle = (i) => angleOffset + (i / n) * 2 * Math.PI;
+
+    // Grid rings
+    const steps = 5;
+    for (let s = 1; s <= steps; s++) {
+      const r = (s/steps) * maxR;
+      ctx.beginPath();
+      for (let i=0; i<n; i++) {
+        const a = angle(i);
+        i===0 ? ctx.moveTo(cx + r*Math.cos(a), cy + r*Math.sin(a)) : ctx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
+      }
+      ctx.closePath();
+      ctx.strokeStyle = gridColor; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    // Angle lines
+    for (let i=0; i<n; i++) {
+      const a = angle(i);
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + maxR*Math.cos(a), cy + maxR*Math.sin(a));
+      ctx.strokeStyle = angleColor; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    // Datasets
+    datasets.forEach(ds => {
+      const pts = ds.data.map((v,i) => {
+        const r = (Math.min(+v||0, yMax)/yMax) * maxR;
+        return [cx + r*Math.cos(angle(i)), cy + r*Math.sin(angle(i))];
+      });
+      if(!pts.length) return;
+      // Fill
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      pts.slice(1).forEach(p => ctx.lineTo(p[0],p[1]));
+      ctx.closePath();
+      ctx.fillStyle = ds.backgroundColor || 'rgba(99,102,241,.15)'; ctx.fill();
+      // Stroke
+      if(ds.borderDash) ctx.setLineDash(ds.borderDash); else ctx.setLineDash([]);
+      ctx.strokeStyle = ds.borderColor || '#6366f1';
+      ctx.lineWidth = ds.borderWidth || 2; ctx.stroke();
+      ctx.setLineDash([]);
+      // Points
+      const pr = ds.pointRadius || 3;
+      if(pr > 0) {
+        pts.forEach(p => {
+          ctx.beginPath(); ctx.arc(p[0],p[1],pr,0,Math.PI*2);
+          ctx.fillStyle = ds.pointBackgroundColor || ds.borderColor || '#6366f1'; ctx.fill();
+        });
+      }
+    });
+
+    // Labels
+    ctx.font = `${labelFs}px Outfit, sans-serif`;
+    ctx.fillStyle = labelColor; ctx.textBaseline='middle';
+    labels.forEach((lbl, i) => {
+      const a = angle(i);
+      const r = maxR + 16;
+      const lx = cx + r*Math.cos(a), ly = cy + r*Math.sin(a);
+      const align = Math.abs(Math.cos(a)) < 0.1 ? 'center' : Math.cos(a) < 0 ? 'right' : 'left';
+      ctx.textAlign = align;
+      ctx.fillText(String(lbl).substring(0,14), lx, ly);
+    });
+
+    // Legend
+    if(config.options?.plugins?.legend?.labels) {
+      const lc = config.options.plugins.legend.labels.color || '#aaa';
+      const fs2 = config.options.plugins.legend.labels.font?.size || 10;
+      const bw = config.options.plugins.legend.labels.boxWidth || 8;
+      ctx.font = `${fs2}px Outfit, sans-serif`; ctx.textBaseline='middle'; ctx.textAlign='left';
+      let lx = cx - 60;
+      datasets.forEach((ds,i)=>{
+        ctx.fillStyle = ds.borderColor||'#fff'; ctx.fillRect(lx, H-14, bw, bw);
+        ctx.fillStyle = lc; ctx.fillText(ds.label||'', lx+bw+3, H-10);
+        lx += ctx.measureText(ds.label||'').width + bw + 20;
+      });
+    }
+  }
+
+  // ── PUBLIC API ─────────────────────────────────────────────────────────────
+  class NativeChartInstance {
+    constructor(canvas, config) {
+      this.canvas = canvas;
+      this.config = config;
+      this._draw();
+      // Redraw on resize
+      this._ro = new ResizeObserver(() => this._draw());
+      this._ro.observe(canvas.parentElement || canvas);
+    }
+    _draw() {
+      const type = this.config.type;
+      if(type==='doughnut' || type==='pie') drawDoughnut(this.canvas, this.config);
+      else if(type==='bar') drawBar(this.canvas, this.config);
+      else if(type==='radar') drawRadar(this.canvas, this.config);
+    }
+    destroy() {
+      this._ro?.disconnect();
+      destroy(this.canvas);
+    }
+    update() { this._draw(); }
+  }
+
+  return class Chart extends NativeChartInstance {
+    constructor(ctx, config) {
+      // ctx can be canvas context or canvas element
+      const canvas = ctx.canvas || ctx;
+      super(canvas, config);
+    }
+  };
+})();
+
+// Make it globally available as Chart (drop-in replacement)
+window.Chart = NativeChart;
+
+</script>
+</head>
+<body>
+<div id="app">
+
+<!-- TOPBAR -->
+<header id="topbar">
+  <div class="logo-mark">
+    <div class="logo-icon">🛡️</div>
+    <div class="logo-text">PIMS<span>Assess</span></div>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-meta">ISO/IEC 27701:2019<br>Privacy Information Management</div>
+  <div class="topbar-progress">
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="top-progress" style="width:0%"></div></div>
+    <span class="progress-label" id="top-progress-label">0 / 77 answered</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" onclick="navTo('dashboard')">📊 Dashboard</button>
+    <button class="btn btn-ghost btn-sm" onclick="navTo('findings')">🔍 Findings</button>
+    <button class="btn btn-report btn-sm" onclick="navTo('report')">📄 Report</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportData()">💾 Save</button>
+    <button class="btn btn-ghost btn-sm" onclick="triggerImport()">📂 Load</button>
+    <button class="btn btn-ghost btn-sm" onclick="resetAll()">↺ Reset</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(this)"/>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-section-label">Navigation</div>
+  <div class="sidebar-item active" onclick="navTo('dashboard')" id="nav-dashboard">
+    <div class="si-dot" style="background:#6366f1"></div>
+    <div class="si-name">Dashboard</div>
+  </div>
+  <div class="sidebar-item" onclick="navTo('findings')" id="nav-findings">
+    <div class="si-dot" style="background:#14b8a6"></div>
+    <div class="si-name">Findings Register</div>
+  </div>
+  <div class="sidebar-item" onclick="navTo('report')" id="nav-report">
+    <div class="si-dot" style="background:#0ea5e9"></div>
+    <div class="si-name">Formal Report</div>
+  </div>
+
+  <div class="sidebar-section-label" style="margin-top:12px">PIMS Core Clauses</div>
+  <div id="sidebar-sections-core"></div>
+  <div class="sidebar-section-label" style="margin-top:8px">Annex A — Controller</div>
+  <div id="sidebar-sections-annexa"></div>
+  <div class="sidebar-section-label" style="margin-top:8px">Annex B — Processor</div>
+  <div id="sidebar-sections-annexb"></div>
+  <div class="sidebar-section-label" style="margin-top:8px">IS Controls</div>
+  <div id="sidebar-sections-is"></div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="view active">
+    <div class="dash-hero fade-up">
+      <div class="dash-title">ISO/IEC 27701:2019 <em>Compliance Assessment</em></div>
+      <div class="dash-sub">Privacy Information Management System · 77 controls across 17 sections · Complete Annex A &amp; B coverage</div>
+    </div>
+
+    <div class="stats-row fade-up-2">
+      <div class="stat-card sc-total">
+        <div class="stat-label">Total Controls</div>
+        <div class="stat-value" id="stat-total">77</div>
+        <div class="stat-sub">Across 17 sections</div>
+      </div>
+      <div class="stat-card sc-compliant">
+        <div class="stat-label">Compliant</div>
+        <div class="stat-value" id="stat-compliant">0</div>
+        <div class="stat-sub" id="stat-compliant-pct">0% of answered</div>
+      </div>
+      <div class="stat-card sc-partial">
+        <div class="stat-label">Partial</div>
+        <div class="stat-value" id="stat-partial">0</div>
+        <div class="stat-sub" id="stat-partial-pct">0% of answered</div>
+      </div>
+      <div class="stat-card sc-nc">
+        <div class="stat-label">Non-Compliant</div>
+        <div class="stat-value" id="stat-nc">0</div>
+        <div class="stat-sub" id="stat-nc-pct">0% of answered</div>
+      </div>
+    </div>
+
+    <div class="dash-grid fade-up-3">
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">📊</span> Status Distribution</div>
+        <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">🎯</span> Section Scores</div>
+        <div class="chart-wrap"><canvas id="chart-bar-sections"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card fade-up-3" style="margin-bottom:24px">
+      <div class="card-title"><span class="ct-icon">🕸️</span> PIMS Coverage Radar</div>
+      <div class="chart-wrap-lg"><canvas id="chart-radar"></canvas></div>
+    </div>
+
+    <div class="card fade-up-3">
+      <div class="card-title"><span class="ct-icon">📋</span> Section Progress</div>
+      <div class="sec-bars" id="dash-section-bars"></div>
+    </div>
+  </section>
+
+  <!-- SECTION ASSESSMENT -->
+  <section id="view-section" class="view">
+    <div id="sec-content"></div>
+  </section>
+
+  <!-- FINDINGS -->
+  <section id="view-findings" class="view">
+    <div class="dash-hero fade-up">
+      <div class="dash-title" style="font-size:1.6rem">Findings <em>Register</em></div>
+      <div class="dash-sub">All assessed controls with compliance status and remediation guidance</div>
+    </div>
+    <div class="findings-filters fade-up-2">
+      <button class="filter-btn active" onclick="filterFindings('all',this)">All</button>
+      <button class="filter-btn f-nc" onclick="filterFindings('Non-Compliant',this)">❌ Non-Compliant</button>
+      <button class="filter-btn f-partial" onclick="filterFindings('Partial',this)">⚠️ Partial</button>
+      <button class="filter-btn f-comp" onclick="filterFindings('Compliant',this)">✅ Compliant</button>
+      <button class="filter-btn" onclick="filterFindings('N/A',this)">— N/A</button>
+      <button class="filter-btn" onclick="filterFindings('unanswered',this)">○ Unanswered</button>
+    </div>
+    <div id="findings-content" class="fade-up-3"></div>
+  </section>
+
+  <!-- REPORT -->
+  <section id="view-report" class="view">
+    <div class="report-toolbar">
+      <h2>📄 Formal Assessment Report</h2>
+      <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Print / PDF</button>
+    </div>
+    <div class="report-doc" id="report-content"></div>
+  </section>
+
+</main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════════════════════
+const SECTIONS = [{"id":"S1 – Context (S.5)","title":"S1 – Context (S.5)","questions":[{"ref":"1.1","clause":"ISO 27701 §5.1 (extends ISO 27001 §4.1)","title":"Context of the Organisation – Understanding the organisation and its context","question":"Has the organisation determined external and internal issues relevant to its purpose and that affect its ability to achieve the intended outcomes of its PIMS?","evidence":"• PIMS context analysis document (PESTLE or equivalent)\n• List of external issues: regulatory, market, technology, cultural\n• List of internal issues: governance, data flows, IT landscape, staff capacity\n• Documented link between context and PIMS scope\n• Evidence of periodic review of context","remediation":"Conduct and document a structured context analysis (e.g. PESTLE) covering privacy-specific external factors (POPIA, GDPR if applicable, sector regulators) and internal factors (data inventories, processing purposes, IT systems); review at least annually.","risk":""},{"ref":"1.2","clause":"ISO 27701 §5.2 (extends ISO 27001 §4.2)","title":"Context of the Organisation – Understanding the needs and expectations of interested parties","question":"Has the organisation identified all interested parties relevant to the PIMS and determined their requirements, including applicable legal and contractual obligations relating to PII processing?","evidence":"• Stakeholder register listing interested parties (data subjects, regulators, customers, processors, supervisory authorities)\n• Documented requirements per stakeholder (legal, contractual, regulatory)\n• Applicable legislation/regulation list (e.g. POPIA, GDPR, HIPAA)\n• Evidence of review and update process","remediation":"Compile a stakeholder register for the PIMS; map each stakeholder's privacy-related requirements; maintain a legislative compliance register and update when regulations change.","risk":""},{"ref":"1.3","clause":"ISO 27701 §5.3 (extends ISO 27001 §4.3)","title":"Context of the Organisation – Determining the scope of the PIMS","question":"Has the organisation determined the scope of its PIMS, including the types of PII processed, the roles of the organisation (controller and/or processor), and the processing purposes?","evidence":"• PIMS Scope Statement (documented and approved)\n• Statement identifying organisation as PII controller and/or processor\n• Types of PII and processing purposes documented\n• Boundaries and applicability of the PIMS defined\n• Scope aligned to the ISMS scope","remediation":"Draft a formal PIMS Scope Statement identifying whether the organisation acts as controller, processor, or both; define PII types, processing purposes, and organisational boundaries; align to the ISMS scope.","risk":""},{"ref":"1.4","clause":"ISO 27701 §5.4 (extends ISO 27001 §4.4)","title":"Context of the Organisation – Privacy information management system","question":"Has the organisation established, implemented, maintained and continually improved its PIMS, including the necessary processes and interactions?","evidence":"• PIMS framework documentation (policies, procedures, controls)\n• ISMS and PIMS integration evidence\n• Process map or procedure register\n• Management approval of the PIMS\n• Continual improvement records","remediation":"Establish a documented PIMS framework integrated with the ISMS; obtain top management approval; maintain a procedure register and evidence of continual improvement actions.","risk":""}],"skey":"S1","short":"Context","clause_ref":"§5","group":"PIMS Core","color":"#6366f1","desc":"Understand org context & PIMS scope"},{"id":"S2 – Leadership (S.6)","title":"S2 – Leadership (S.6)","questions":[{"ref":"2.1","clause":"ISO 27701 §6.1 (extends ISO 27001 §5.1)","title":"Leadership – Leadership and commitment","question":"Does top management demonstrate leadership and commitment to the PIMS by ensuring privacy policies and objectives are established, and that the PIMS achieves its intended outcomes?","evidence":"• Board/executive resolution or mandate supporting PIMS\n• Privacy and IS Policy signed by top management\n• Management review meeting minutes covering PIMS performance\n• Resources allocated to PIMS documented\n• Evidence that management promotes continual improvement","remediation":"Obtain a formal top-management mandate for the PIMS; ensure the privacy policy is signed at executive level; table PIMS performance at management review meetings at least annually.","risk":""},{"ref":"2.2","clause":"ISO 27701 §6.2 (extends ISO 27001 §5.2)","title":"Leadership – Policy","question":"Has the organisation established a privacy policy that is appropriate to its purpose, includes a commitment to satisfy applicable PII protection requirements, and is communicated internally and available to interested parties?","evidence":"• Approved Privacy Policy (dated, signed by top management)\n• Policy covers commitment to POPIA/applicable law, PII principles, continual improvement\n• Evidence of internal communication (intranet, email)\n• Public-facing privacy notice (if applicable)\n• Annual policy review record","remediation":"Draft, approve, and publish a Privacy Policy aligned to ISO 27701 §6.2 requirements; communicate internally; make available to data subjects via privacy notice; review annually.","risk":""},{"ref":"2.3","clause":"ISO 27701 §6.3 (extends ISO 27001 §5.3)","title":"Leadership – Organisational roles, responsibilities and authorities","question":"Has top management assigned and communicated PIMS roles, responsibilities and authorities, including designation of a person responsible for privacy (e.g. DPO/Privacy Officer)?","evidence":"• Documented RACI or roles register for PIMS\n• DPO / Privacy Officer appointment letter or contract\n• Job descriptions referencing privacy responsibilities\n• Evidence of communication of roles to the organisation\n• Where required, DPO registration with supervisory authority","remediation":"Formally appoint a DPO or Privacy Officer where required; document all PIMS roles in a RACI matrix; communicate responsibilities; register the DPO with the relevant supervisory authority if mandated.","risk":""}],"skey":"S2","short":"Leadership","clause_ref":"§6","group":"PIMS Core","color":"#8b5cf6","desc":"Top management commitment & policy"},{"id":"S3 – Planning (S.7)","title":"S3 – Planning (S.7)","questions":[{"ref":"3.1","clause":"ISO 27701 §7.1 (extends ISO 27001 §6.1.1)","title":"Planning – Actions to address risks and opportunities","question":"Has the organisation determined risks and opportunities that need to be addressed, and planned actions to address them in relation to PII processing?","evidence":"• Risk and opportunity register specific to PII processing\n• Privacy Risk Assessment methodology document\n• Documented risk treatment options for privacy risks\n• Integration of privacy risks into the IS risk register\n• Evidence of periodic risk review","remediation":"Conduct a dedicated privacy risk assessment covering PII processing activities; integrate findings into the IS risk register; plan and document treatment options; review at least annually and on significant change.","risk":""},{"ref":"3.2","clause":"ISO 27701 §7.2 (extends ISO 27001 §6.1.2); A.7.2.5 / B.8.2.4","title":"Planning – Information security risk assessment / DPIA","question":"Does the organisation conduct Privacy Impact Assessments (PIAs/DPIAs) for high-risk processing activities, and are results used to inform control selection?","evidence":"• PIA/DPIA methodology and trigger criteria\n• Completed DPIA records for high-risk processing activities\n• Evidence that DPIA results informed control selection\n• Consultation with DPO on DPIA outcomes\n• Register of processing activities requiring DPIA","remediation":"Define PIA/DPIA trigger criteria aligned to POPIA/GDPR (e.g. new technology, large-scale processing, sensitive data); complete DPIAs before commencing high-risk processing; consult DPO and, where required, the supervisory authority.","risk":""},{"ref":"3.3","clause":"ISO 27701 §7.3 (extends ISO 27001 §6.1.3)","title":"Planning – Information security risk treatment","question":"Has the organisation defined a risk treatment plan for PII-related risks and obtained risk owner approval for residual risks?","evidence":"• Risk treatment plan linked to privacy risk register\n• Statement of Applicability (SoA) including ISO 27701 controls\n• Risk owner sign-off on accepted residual risks\n• Treatment plan progress tracking records","remediation":"Produce a risk treatment plan covering all PII-related risks; update the SoA to include ISO 27701 Annex A and B controls; obtain documented risk owner approval for all residual risks.","risk":""},{"ref":"3.4","clause":"ISO 27701 §7.4 (extends ISO 27001 §6.2)","title":"Planning – Privacy objectives and planning to achieve them","question":"Has the organisation set privacy objectives, and planned how to achieve them (with metrics, resources, responsibilities and timeframes)?","evidence":"• Documented privacy objectives (SMART)\n• Privacy KPIs and metrics defined\n• Resources and responsibilities assigned to each objective\n• Progress tracking evidence\n• Objectives reviewed at management review","remediation":"Define measurable privacy objectives (e.g. % DPIA completion, data subject request response time); assign owners and budgets; track and report progress at management review meetings.","risk":""}],"skey":"S3","short":"Planning","clause_ref":"§7","group":"PIMS Core","color":"#a855f7","desc":"Risk assessment & PII objectives"},{"id":"S4 – Support (S.8)","title":"S4 – Support (S.8)","questions":[{"ref":"4.1","clause":"ISO 27701 §8.1 (extends ISO 27001 §7.1)","title":"Support – Resources","question":"Has the organisation determined and provided the resources needed for the establishment, implementation, maintenance and continual improvement of the PIMS?","evidence":"• PIMS budget allocation records\n• Privacy team headcount / FTE documentation\n• Technology and tooling budget for privacy controls\n• Management sign-off on resource adequacy\n• Resource review at management review meetings","remediation":"Document and obtain approval for PIMS resource requirements (people, technology, budget); review resource adequacy at management reviews; escalate resource gaps as a management risk.","risk":""},{"ref":"4.2","clause":"ISO 27701 §8.2 (extends ISO 27001 §7.2)","title":"Support – Competence","question":"Does the organisation ensure that persons doing work under its control that affects PII processing are competent, based on education, training or experience?","evidence":"• Competency requirements defined per privacy-relevant role\n• Training records for staff with PII processing responsibilities\n• Privacy-specific certifications (e.g. CIPP, CIPM) where applicable\n• Skills gap analysis and training plan\n• Third-party/contractor competency requirements in contracts","remediation":"Define competency requirements for all roles involved in PII processing; conduct skills gap analysis; provide targeted privacy training; record evidence of competence attainment.","risk":""},{"ref":"4.3","clause":"ISO 27701 §8.3 (extends ISO 27001 §7.3)","title":"Support – Awareness","question":"Are persons performing work under the organisation's control aware of the privacy policy, their contribution to PIMS effectiveness, and the implications of non-conformance?","evidence":"• Annual privacy awareness training programme\n• Training completion records (all staff)\n• Privacy awareness content covering policy, obligations, consequences\n• Specific training for staff with elevated PII access\n• Onboarding training for new staff","remediation":"Implement mandatory annual privacy awareness training covering the Privacy Policy, staff obligations under POPIA/applicable law, and consequences of non-compliance; track completion rates; provide role-specific deep-dives for high-risk roles.","risk":""},{"ref":"4.4","clause":"ISO 27701 §8.4 (extends ISO 27001 §7.4)","title":"Support – Communication","question":"Has the organisation determined the need for internal and external communications relevant to the PIMS (what, when, who, how)?","evidence":"• PIMS communication plan\n• Internal communication channels documented (intranet, emails, briefings)\n• External communication mechanisms (privacy notice, regulator engagement)\n• Data subject communication procedures\n• Records of PIMS communications issued","remediation":"Develop a PIMS communication plan defining internal and external communication channels; ensure data subjects can access privacy notices; document regulator communication procedures.","risk":""},{"ref":"4.5","clause":"ISO 27701 §8.5 (extends ISO 27001 §7.5)","title":"Support – Documented information","question":"Does the organisation maintain documented information required by the PIMS (policies, procedures, records of processing activities) and control it appropriately?","evidence":"• Document control policy (version control, approval, review)\n• Records of Processing Activities (RoPA) maintained\n• Privacy policies and procedures in document management system\n• Access controls on PIMS documentation\n• Retention and disposal schedule for PIMS records","remediation":"Implement a document control procedure for all PIMS documentation; maintain a Records of Processing Activities (RoPA) as required by POPIA/GDPR; apply access controls; define retention periods.","risk":""}],"skey":"S4","short":"Support","clause_ref":"§8","group":"PIMS Core","color":"#6366f1","desc":"Resources, awareness & documentation"},{"id":"S5 – Operation (S.9)","title":"S5 – Operation (S.9)","questions":[{"ref":"5.1","clause":"ISO 27701 §9.1 (extends ISO 27001 §8.1)","title":"Operation – Operational planning and control","question":"Does the organisation plan, implement, control and review the processes needed to meet PIMS requirements, and retain documented information to demonstrate control?","evidence":"• Process documentation for all PII processing activities\n• Operational procedures for privacy controls\n• Evidence of process monitoring and review\n• Change management process for PII-impacting changes\n• Documented information retained as evidence of control","remediation":"Document all PII processing procedures; implement change management that triggers privacy review for changes impacting PII; retain records demonstrating controls are operating effectively.","risk":""},{"ref":"5.2","clause":"ISO 27701 §9.2 (extends ISO 27001 §8.2)","title":"Operation – Information security risk assessment","question":"Does the organisation conduct information security risk assessments at planned intervals (at least annually) or when significant changes occur?","evidence":"• Risk assessment schedule (minimum annual)\n• Completed risk assessments with dates\n• Evidence of triggered reassessment on significant change\n• Privacy risk items included in IS risk assessments\n• Risk assessment results communicated to management","remediation":"Schedule IS/privacy risk assessments at least annually and upon significant change to systems, processes or regulations; document results and present to management; retain assessment records.","risk":""},{"ref":"5.3","clause":"ISO 27701 §9.3 (extends ISO 27001 §8.3)","title":"Operation – Information security risk treatment","question":"Does the organisation implement the information security risk treatment plan and retain documented evidence of results?","evidence":"• Risk treatment plan implementation records\n• Evidence of controls deployed for privacy risks\n• Status tracking of treatment actions\n• Residual risk acceptance sign-off\n• Updated SoA reflecting implemented controls","remediation":"Track implementation of risk treatment actions; update the SoA as controls are deployed; obtain management sign-off on residual risks; retain evidence of treatment implementation.","risk":""}],"skey":"S5","short":"Operation","clause_ref":"§9","group":"PIMS Core","color":"#7c3aed","desc":"Operational planning & control"},{"id":"S6 – Performance (S.10)","title":"S6 – Performance (S.10)","questions":[{"ref":"6.1","clause":"ISO 27701 §10.1 (extends ISO 27001 §9.1)","title":"Performance Evaluation – Monitoring, measurement, analysis and evaluation","question":"Does the organisation monitor, measure, analyse and evaluate its PIMS performance and the effectiveness of controls protecting PII?","evidence":"• Privacy KPI dashboard or metrics report\n• Defined metrics: data subject request response times, breach rates, training completion, DPIA completion rates\n• Evidence of regular measurement and trend analysis\n• Results presented to management\n• Metrics reviewed and updated periodically","remediation":"Define and implement a privacy metrics framework; measure KPIs monthly; report trends to management; use metrics to drive improvement actions.","risk":""},{"ref":"6.2","clause":"ISO 27701 §10.2 (extends ISO 27001 §9.2)","title":"Performance Evaluation – Internal audit","question":"Does the organisation conduct internal audits of the PIMS at planned intervals to determine whether it conforms to requirements and is effectively implemented?","evidence":"• PIMS internal audit programme\n• Completed audit reports covering PIMS controls\n• Auditor independence confirmed\n• Audit findings and nonconformity records\n• Management action plans responding to findings","remediation":"Include PIMS-specific controls in the internal audit programme; conduct PIMS audits at least annually; ensure auditor independence; track findings to closure and report to management.","risk":""},{"ref":"6.3","clause":"ISO 27701 §10.3 (extends ISO 27001 §9.3)","title":"Performance Evaluation – Management review","question":"Does top management review the PIMS at planned intervals (at least annually) to ensure its continuing suitability, adequacy, effectiveness and alignment with strategic direction?","evidence":"• Management review meeting agenda and minutes covering PIMS\n• Review inputs: audit results, incidents, risk status, objectives progress, interested party feedback\n• Review outputs: decisions on resource needs, improvement actions\n• Evidence of follow-up on prior review actions","remediation":"Hold formal management review meetings at least annually covering all required PIMS inputs; document decisions and actions; track follow-up actions to closure.","risk":""}],"skey":"S6","short":"Performance","clause_ref":"§10","group":"PIMS Core","color":"#4f46e5","desc":"Monitoring & measurement"},{"id":"S7 – Improvement (S.11)","title":"S7 – Improvement (S.11)","questions":[{"ref":"7.1","clause":"ISO 27701 §11.1 (extends ISO 27001 §10.1)","title":"Improvement – Nonconformity and corrective action","question":"When nonconformities occur, does the organisation take corrective action (react, evaluate cause, implement actions, review effectiveness) and retain documented information?","evidence":"• Nonconformity and corrective action register\n• Root cause analysis records for privacy nonconformities\n• Corrective action implementation evidence\n• Effectiveness review records\n• Nonconformities reported to management","remediation":"Implement a nonconformity management process; mandate root cause analysis for all PIMS nonconformities; track corrective actions and verify effectiveness; report to management review.","risk":""},{"ref":"7.2","clause":"ISO 27701 §11.2 (extends ISO 27001 §10.2)","title":"Improvement – Continual improvement","question":"Does the organisation continually improve the suitability, adequacy and effectiveness of the PIMS?","evidence":"• Continual improvement register / log\n• Evidence of improvements implemented from audit findings, incidents, management review\n• Privacy programme roadmap\n• Year-on-year improvement in privacy metrics\n• Lessons learned records from incidents and DPIAs","remediation":"Maintain a continual improvement register; ensure audit findings, incident lessons, and management review outputs are converted into improvement actions; demonstrate year-on-year progress in privacy metrics.","risk":""}],"skey":"S7","short":"Improvement","clause_ref":"§11","group":"PIMS Core","color":"#6366f1","desc":"Nonconformity & continual improvement"},{"id":"S8 – A.Conditions (A.7.2)","title":"S8 – A.Conditions (A.7.2)","questions":[{"ref":"8.1","clause":"ISO 27701 Annex A §A.7.2.1","title":"A – Controller: Identify and document purpose","question":"Does the organisation identify and document the lawful basis for each PII processing activity (e.g. consent, contract, legal obligation, legitimate interest)?","evidence":"• Records of Processing Activities (RoPA) with lawful basis per activity\n• Legal basis assessment documentation\n• Consent management records (where consent is the basis)\n• Legitimate interest assessments (LIA) where applicable\n• Retention and review of legal basis documentation","remediation":"Complete a RoPA documenting the lawful basis for every PII processing activity; conduct Legitimate Interest Assessments where LI is relied upon; maintain consent records; review bases when processing changes.","risk":""},{"ref":"8.2","clause":"ISO 27701 Annex A §A.7.2.2","title":"A – Controller: Identify lawful basis","question":"Does the organisation determine and document the specific purposes for which PII is collected and processed, and ensure these are communicated to data subjects?","evidence":"• Purpose limitation policy\n• Purposes documented per processing activity in RoPA\n• Privacy notice communicating purposes to data subjects\n• Evidence that PII is not used beyond stated purposes\n• Process for managing purpose changes","remediation":"Document specific processing purposes in the RoPA and privacy notice; implement controls preventing use of PII beyond stated purposes; notify data subjects of any change in purpose before further processing.","risk":""},{"ref":"8.3","clause":"ISO 27701 Annex A §A.7.2.3","title":"A – Controller: Determine when and how consent is to be obtained","question":"Does the organisation apply data minimisation principles, ensuring only PII that is adequate, relevant and limited to what is necessary for the processing purpose is collected?","evidence":"• Data minimisation policy\n• Evidence of data minimisation applied in system/form design\n• PII fields reviewed against necessity for each purpose\n• Data minimisation included in DPIA and SDL processes\n• Periodic review of PII collected vs. stated purposes","remediation":"Embed data minimisation requirements in system design (Privacy by Design); include data minimisation checks in DPIA and SDL processes; periodically audit PII collected against stated purposes and remove unnecessary fields.","risk":""},{"ref":"8.4","clause":"ISO 27701 Annex A §A.7.2.4","title":"A – Controller: Obtain and record consent","question":"Where consent is the lawful basis, does the organisation obtain, record and manage consent in a compliant manner (freely given, specific, informed, unambiguous, withdrawable)?","evidence":"• Consent management system or records\n• Consent obtained before processing commences\n• Consent language reviewed for clarity and compliance\n• Withdrawal mechanism in place and tested\n• Evidence that withdrawal is honoured promptly\n• Consent records retained as evidence","remediation":"Implement a consent management platform; ensure consent requests meet POPIA/GDPR standards (specific, informed, freely given); provide and test an easy withdrawal mechanism; honour withdrawals without detriment.","risk":""},{"ref":"8.5","clause":"ISO 27701 Annex A §A.7.2.5","title":"A – Controller: Privacy impact assessment","question":"Does the organisation conduct Privacy Impact Assessments for processing activities that are likely to result in high risk to the rights and freedoms of natural persons?","evidence":"• DPIA/PIA policy with trigger criteria\n• Completed DPIA records for high-risk processing\n• DPO consulted on DPIA outcomes\n• Supervisory authority consultation records (where required)\n• DPIA register maintained","remediation":"Define DPIA trigger criteria; complete DPIAs before commencing high-risk processing; consult the DPO; consult the supervisory authority where residual risk remains high; maintain a DPIA register.","risk":""},{"ref":"8.6","clause":"ISO 27701 Annex A §A.7.2.6","title":"A – Controller: Records related to processing PII","question":"Does the organisation have contracts or agreements in place with PII processors, and do these agreements meet applicable legal requirements (data processing agreements)?","evidence":"• Data Processing Agreements (DPAs) with all processors\n• DPA template reviewed for POPIA/GDPR compliance\n• Processor due diligence records\n• Sub-processor approval and notification process\n• Periodic review of processor agreements","remediation":"Ensure DPAs are in place with all PII processors before processing commences; include all mandated clauses (sub-processing, audit rights, breach notification, return/deletion of PII); conduct annual processor due diligence.","risk":""}],"skey":"S8","short":"Conditions","clause_ref":"A.7.2","group":"Annex A","color":"#0ea5e9","desc":"Collection & processing conditions"},{"id":"S9 – A.Obligations (A.7.3)","title":"S9 – A.Obligations (A.7.3)","questions":[{"ref":"9.1","clause":"ISO 27701 Annex A §A.7.3.1","title":"A – Controller: Providing information to PII principals","question":"Does the organisation provide data subjects with a clear and accessible privacy notice at the time of PII collection, containing all required information (identity, purposes, rights, transfers, retention)?","evidence":"• Privacy notice / policy (accessible, plain language)\n• All required elements present per POPIA/GDPR\n• Privacy notice provided at point of collection\n• Layered notice approach if applicable\n• Record of when notices were updated and communicated","remediation":"Review the privacy notice against all regulatory requirements (POPIA s.18, GDPR Art. 13/14); ensure plain language and accessibility; provide at point of collection; update and re-notify when processing changes.","risk":""},{"ref":"9.2","clause":"ISO 27701 Annex A §A.7.3.2","title":"A – Controller: Providing mechanism to modify or withdraw consent","question":"Does the organisation have a procedure for receiving, responding to and tracking data subject access requests (DSARs) within prescribed timeframes?","evidence":"• DSAR procedure with defined response timeframes\n• DSAR register / tracking log\n• Response letter templates\n• Evidence of responses issued within legal deadline\n• Identity verification process for DSARs","remediation":"Implement a DSAR procedure covering all data subject rights (access, correction, deletion, portability, objection); log all requests; respond within POPIA/applicable deadlines; verify identity before disclosure.","risk":""},{"ref":"9.3","clause":"ISO 27701 Annex A §A.7.3.3 – A.7.3.7","title":"A – Controller: Rights to access, correct, erase, portability, objection","question":"Does the organisation have procedures enabling data subjects to exercise all applicable rights (access, correction, deletion, restriction, portability, objection)?","evidence":"• Rights exercise forms or digital mechanisms for each right\n• Procedure for each right type (access, erasure, portability etc.)\n• Evidence of rights fulfilled within legal timeframes\n• Downstream notification process (processors notified of erasure/correction)\n• Records of rights requests and outcomes","remediation":"Establish and publish mechanisms for each data subject right; implement downstream notification to processors on erasure/correction; train staff on rights handling; log and track all requests.","risk":""},{"ref":"9.4","clause":"ISO 27701 Annex A §A.7.3.4","title":"A – Controller: Mechanism to withdraw consent / object to processing","question":"Does the organisation have a mechanism for data subjects to withdraw consent and does withdrawal result in cessation of processing without detriment?","evidence":"• Consent withdrawal mechanism (opt-out, unsubscribe, portal)\n• Process to halt processing on withdrawal\n• Evidence of downstream systems updated on withdrawal\n• No detriment policy documented\n• Testing of withdrawal mechanism","remediation":"Provide a simple, accessible consent withdrawal mechanism; implement automated downstream cessation of processing on withdrawal; test end-to-end withdrawal process; document no-detriment commitment.","risk":""}],"skey":"S9","short":"Obligations","clause_ref":"A.7.3","group":"Annex A","color":"#0284c7","desc":"Obligations to PII principals"},{"id":"S10 – A.PbD (A.7.4)","title":"S10 – A.PbD (A.7.4)","questions":[{"ref":"10.1","clause":"ISO 27701 Annex A §A.7.4.1","title":"A – Controller: Limit collection to what is necessary","question":"Does the organisation apply data minimisation by default, ensuring that only PII necessary for each specific purpose is processed, and that PII is not made accessible beyond what is necessary?","evidence":"• Privacy by Default policy\n• Evidence that systems/forms collect minimum required PII\n• Default settings are privacy-protective (opt-in, not opt-out)\n• Data minimisation reviewed in DPIA and SDL\n• Periodic audit of PII fields collected vs. necessity","remediation":"Implement Privacy by Default in all system designs; configure default settings to the most privacy-protective option; include data minimisation review in every DPIA and SDL gate; audit periodically.","risk":""},{"ref":"10.2","clause":"ISO 27701 Annex A §A.7.4.2","title":"A – Controller: Limit processing","question":"Does the organisation implement Privacy by Design, embedding privacy controls into processing systems and practices from inception rather than as an afterthought?","evidence":"• Privacy by Design policy/procedure\n• Evidence of privacy requirements in system design documents\n• DPIA conducted before system build\n• Privacy controls embedded in architecture and code\n• Privacy review as a gate in the SDL/SDLC","remediation":"Embed Privacy by Design in the SDL; mandate privacy requirements in architecture and design phases; conduct DPIA before building; include privacy architect/DPO sign-off as a project gate.","risk":""},{"ref":"10.3","clause":"ISO 27701 Annex A §A.7.4.3","title":"A – Controller: Accuracy and quality","question":"Does the organisation implement appropriate technical measures for de-identification, pseudonymisation or anonymisation of PII where possible?","evidence":"• De-identification/pseudonymisation policy\n• Evidence of pseudonymisation applied in analytics/test environments\n• Anonymisation techniques assessed for re-identification risk\n• De-identification applied to data shared with third parties\n• Re-identification risk assessment records","remediation":"Define and apply pseudonymisation/anonymisation techniques for analytics, testing, and data sharing; conduct re-identification risk assessments; prohibit real PII in test environments — use de-identified data.","risk":""},{"ref":"10.4","clause":"ISO 27701 Annex A §A.7.4.4","title":"A – Controller: Retention and disposal","question":"Does the organisation maintain accuracy of PII and implement processes for data subjects to request correction of inaccurate PII?","evidence":"• Data accuracy policy\n• Self-service portal or process for PII correction requests\n• Evidence of corrections actioned within legal timeframe\n• Data quality controls in systems (validation, verification)\n• Periodic data quality audit records","remediation":"Implement data quality controls at point of collection; provide a mechanism for data subjects to correct inaccurate PII; track correction requests; conduct periodic data quality audits.","risk":""},{"ref":"10.5","clause":"ISO 27701 Annex A §A.7.4.5","title":"A – Controller: PII disposal","question":"Does the organisation define and enforce retention periods for PII, and implement secure disposal processes when retention periods expire?","evidence":"• PII retention schedule aligned to regulatory requirements and processing purposes\n• Automated or manual retention enforcement evidence\n• Secure disposal procedure (deletion, degaussing, destruction)\n• Disposal records (certificates of destruction where required)\n• Backups included in retention and disposal scope","remediation":"Define retention periods for all PII categories in the RoPA; implement automated retention enforcement; document secure disposal procedures; obtain destruction certificates for sensitive media; include backups in scope.","risk":""},{"ref":"10.6","clause":"ISO 27701 Annex A §A.7.4.6","title":"A – Controller: Temporary files","question":"Does the organisation implement appropriate technical and organisational controls to prevent re-identification of de-identified or anonymised PII?","evidence":"• Re-identification risk assessment methodology\n• Technical controls preventing linkage attacks\n• Contractual prohibitions on re-identification for data recipients\n• Evidence of controls in analytics and data sharing processes","remediation":"Conduct re-identification risk assessments before releasing de-identified data; implement technical controls (k-anonymity, differential privacy where applicable); include contractual re-identification prohibitions in data sharing agreements.","risk":""}],"skey":"S10","short":"Privacy by Design","clause_ref":"A.7.4","group":"Annex A","color":"#0369a1","desc":"PbD & data minimisation"},{"id":"S11 – A.Transfers (A.7.5)","title":"S11 – A.Transfers (A.7.5)","questions":[{"ref":"11.1","clause":"ISO 27701 Annex A §A.7.5.1","title":"A – Controller: Identify basis for PII transfer between jurisdictions","question":"Does the organisation identify and document all third parties (processors, sub-processors) with whom PII is shared, and ensure appropriate contractual protections are in place?","evidence":"• Third-party / processor register with PII sharing details\n• DPAs in place with all PII recipients\n• Sub-processor authorisation and notification process\n• Annual review of third-party sharing arrangements\n• PII sharing included in RoPA","remediation":"Maintain a register of all third parties receiving PII; ensure DPAs are in place before sharing; implement a sub-processor management process; review arrangements annually.","risk":""},{"ref":"11.2","clause":"ISO 27701 Annex A §A.7.5.2","title":"A – Controller: Countries and international organisations to which PII can be transferred","question":"Where PII is transferred across jurisdictions/borders, has the organisation determined and documented the legal basis for the transfer (adequacy decision, SCCs, BCRs, etc.)?","evidence":"• Cross-border transfer impact assessment\n• Legal mechanism for each transfer (adequacy, SCCs, consent)\n• Transfer Impact Assessments (TIAs) where required\n• Record of cross-border transfers in RoPA\n• Monitoring of adequacy decisions for relevant countries","remediation":"Map all cross-border PII transfers; document the legal mechanism for each; conduct Transfer Impact Assessments where required; monitor changes to adequacy decisions affecting transfers.","risk":""},{"ref":"11.3","clause":"ISO 27701 Annex A §A.7.5.3","title":"A – Controller: Records of disclosure of PII to third parties","question":"Does the organisation have a procedure for responding to requests from public authorities and law enforcement for disclosure of PII, including legal review before disclosure?","evidence":"• Law enforcement / public authority disclosure procedure\n• Legal review requirement before disclosure\n• Records of disclosures made\n• Process to notify data subjects of disclosures (where legally permitted)\n• Escalation to DPO / legal for all disclosure requests","remediation":"Implement a disclosure-to-authorities procedure requiring legal review and DPO escalation; maintain records of all disclosures; notify data subjects of disclosures where legally permissible; challenge overbroad requests.","risk":""}],"skey":"S11","short":"Transfers","clause_ref":"A.7.5","group":"Annex A","color":"#0ea5e9","desc":"PII sharing & cross-border transfers"},{"id":"S12 – A.DSRs (A.7.6)","title":"S12 – A.DSRs (A.7.6)","questions":[{"ref":"12.1","clause":"ISO 27701 Annex A §A.7.6.1","title":"A – Controller: Access, correction and erasure","question":"Does the organisation have a process to provide data subjects with access to their PII on request, within required timeframes?","evidence":"• Data subject access request (DSAR) procedure\n• DSAR tracking log with response dates\n• Identity verification process before disclosure\n• Evidence of responses within legal deadline (30 days POPIA/GDPR)\n• Exemptions and refusal process documented","remediation":"Implement a DSAR procedure with identity verification; track all requests with receipt and response dates; respond within 30 days (or applicable deadline); document exemptions applied with legal basis.","risk":""},{"ref":"12.2","clause":"ISO 27701 Annex A §A.7.6.2","title":"A – Controller: Correct or complete PII","question":"Does the organisation have a process to correct or complete inaccurate or incomplete PII on request, and to notify third parties of corrections where PII has been shared?","evidence":"• Correction request procedure\n• Evidence of corrections made within timeframe\n• Downstream notification process (processors/recipients notified)\n• Records of corrections and notifications\n• Dispute process for contested corrections","remediation":"Implement a correction request procedure; action corrections promptly; notify all processors and recipients of corrected PII; maintain correction records; document how disputes are handled.","risk":""},{"ref":"12.3","clause":"ISO 27701 Annex A §A.7.6.3","title":"A – Controller: Erase or dispose of PII","question":"Does the organisation have a process to erase PII (right to erasure/right to be forgotten) and to confirm erasure to the data subject, including from processors?","evidence":"• Erasure request procedure\n• Evidence of erasure actioned within legal timeframe\n• Downstream erasure notification to processors/recipients\n• Confirmation of erasure provided to data subject\n• Exemptions to erasure documented (e.g. legal hold)\n• Backup purge included in scope","remediation":"Implement an erasure procedure covering all PII locations including backups; notify processors to erase; confirm erasure to data subject; document exemptions (e.g. legal retention obligations); purge PII from backups within retention cycles.","risk":""}],"skey":"S12","short":"DSR Rights","clause_ref":"A.7.6","group":"Annex A","color":"#0284c7","desc":"Access, correction & erasure"},{"id":"S13 – A.Breach (A.7.7-8)","title":"S13 – A.Breach (A.7.7-8)","questions":[{"ref":"13.1","clause":"ISO 27701 Annex A §A.7.7.1","title":"A – Controller: PII breach notification to supervisory authority","question":"Does the organisation have a PII breach identification, classification and notification procedure, enabling notification to the supervisory authority within required timeframes (e.g. 72 hours GDPR, POPIA §22)?","evidence":"• Data breach response plan with notification thresholds\n• Breach register including risk classification per incident\n• Evidence of regulatory notification within required timeframe\n• Breach notification templates for regulator and data subjects\n• Post-breach review records","remediation":"Develop a breach response plan with explicit notification timelines (72h to regulator, without undue delay to data subjects); implement a breach register; train staff on breach identification; test through tabletop exercises.","risk":""},{"ref":"13.2","clause":"ISO 27701 Annex A §A.7.7.2","title":"A – Controller: PII breach notification to PII principals","question":"Does the organisation notify affected data subjects of PII breaches where the breach is likely to result in high risk to their rights and freedoms?","evidence":"• Data subject breach notification procedure\n• Risk assessment process to determine notification threshold\n• Evidence of data subject notifications issued\n• Content of notifications reviewed against regulatory requirements\n• Records of notifications retained","remediation":"Define the threshold for notifying data subjects (high risk to rights and freedoms); implement a risk assessment per breach; issue notifications in plain language; retain notification records.","risk":""},{"ref":"13.3","clause":"ISO 27701 Annex A §A.7.8.1","title":"A – Controller: Complaints and inquiries","question":"Does the organisation have a process for receiving, investigating and responding to complaints and inquiries from data subjects regarding privacy?","evidence":"• Complaints handling procedure for privacy complaints\n• Complaints register / tracking log\n• Response timeframes defined and met\n• Escalation to DPO for complex complaints\n• Evidence of complaints resolved within timeframe\n• Supervisory authority complaint referral process","remediation":"Implement a privacy complaints procedure with defined response timeframes; log all complaints; escalate to DPO; track resolution; include regulator referral process for unresolved complaints.","risk":""}],"skey":"S13","short":"Breach","clause_ref":"A.7.7-8","group":"Annex A","color":"#0ea5e9","desc":"Breach notification & complaints"},{"id":"S14 – B.Processor (B.8)","title":"S14 – B.Processor (B.8)","questions":[{"ref":"14.1","clause":"ISO 27701 Annex B §B.8.1.1","title":"B – Processor: Customer agreement","question":"As a PII processor, does the organisation only process PII on documented instructions from the PII controller, and does it inform the controller if an instruction would infringe applicable law?","evidence":"• Data Processing Agreements (DPAs) documenting controller instructions\n• Evidence that processing is limited to controller instructions\n• Process for flagging unlawful instructions to controller\n• Sub-processing authorisation from controller\n• Records of processing activities as a processor","remediation":"Ensure all processing activities as a processor are governed by a DPA; implement controls limiting processing to controller instructions; document the process for raising concerns about unlawful instructions.","risk":""},{"ref":"14.2","clause":"ISO 27701 Annex B §B.8.1.2","title":"B – Processor: Processor's purposes","question":"As a PII processor, does the organisation only engage sub-processors with the controller's prior specific or general written authorisation, and impose equivalent obligations on sub-processors?","evidence":"• Sub-processor register with controller authorisation records\n• Sub-processor DPAs imposing equivalent obligations\n• Process for obtaining controller approval before engaging new sub-processors\n• Notification of intended sub-processor changes to controller","remediation":"Maintain a sub-processor register; obtain controller authorisation before engaging sub-processors; flow down all DPA obligations in sub-processor agreements; notify controllers of intended changes.","risk":""},{"ref":"14.3","clause":"ISO 27701 Annex B §B.8.1.3","title":"B – Processor: Use of sub-processors","question":"Does the organisation, as a PII processor, assist the PII controller in fulfilling its obligations regarding data subject rights, DPIAs and breach notification?","evidence":"• Procedure for responding to controller requests relating to data subject rights\n• Evidence of assistance provided for DSARs, DPIAs, breach notifications\n• SLA in DPA for response to controller requests\n• Timely breach notification to controller procedure","remediation":"Define procedures for assisting controllers with DSARs, DPIAs and breach notifications; include response SLAs in the DPA; implement breach notification to controller within contractually required timeframe.","risk":""},{"ref":"14.4","clause":"ISO 27701 Annex B §B.8.2.1","title":"B – Processor: Processor records","question":"As a PII processor, does the organisation maintain records of all processing activities carried out on behalf of controllers?","evidence":"• Records of processing activities (as processor) maintained\n• Records include: controller identity, processing categories, transfers, retention\n• Records accessible to supervisory authority on request\n• Records kept up to date","remediation":"Maintain a processor RoPA for all processing carried out on behalf of controllers; include all elements required by applicable law; keep records updated; make available to supervisory authorities on request.","risk":""},{"ref":"14.5","clause":"ISO 27701 Annex B §B.8.2.2","title":"B – Processor: Security of processing for PII principals","question":"As a PII processor, does the organisation implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk of PII processing?","evidence":"• Technical and organisational measures (TOMs) documented\n• TOMs proportionate to risk of processing\n• TOMs reviewed and updated when risks change\n• TOMs communicated to controller in DPA or security annex\n• Staff bound by confidentiality obligations","remediation":"Document TOMs specific to each controller relationship; ensure TOMs are proportionate to the risk of processing; review TOMs on contract renewal and when processing changes; include confidentiality obligations for all staff.","risk":""},{"ref":"14.6","clause":"ISO 27701 Annex B §B.8.2.3","title":"B – Processor: Obligation to inform controller","question":"Does the organisation, as a processor, notify the controller of PII breaches without undue delay and support the controller's breach notification obligations?","evidence":"• Breach identification and notification procedure (processor to controller)\n• Contractual notification timeframe (typically <24h to controller)\n• Breach register including processor-detected breaches\n• Evidence of notifications issued within contractual timeframe\n• Post-breach support for controller's regulatory notification","remediation":"Implement a breach notification procedure for notifying controllers without undue delay (typically within 24 hours); include all required information in notification; support controller's regulatory notification obligations.","risk":""},{"ref":"14.7","clause":"ISO 27701 Annex B §B.8.2.4","title":"B – Processor: Assistance with PII principals","question":"Does the organisation, as a processor, conduct DPIAs at the controller's request and provide necessary information to enable the controller to fulfil its DPIA obligations?","evidence":"• DPIA assistance procedure for controller requests\n• Evidence of TOMs and risk information provided for controller DPIAs\n• Contractual obligation to support DPIAs in DPA\n• Records of DPIA assistance provided","remediation":"Define a procedure for assisting controllers with DPIAs; provide accurate information on processing risks and TOMs; include DPIA assistance obligations in the DPA.","risk":""},{"ref":"14.8","clause":"ISO 27701 Annex B §B.8.2.5","title":"B – Processor: International transfers of PII","question":"Does the organisation, as a processor, return or securely delete all PII at the end of the contract, at the controller's choice, and provide written confirmation?","evidence":"• Contractual PII return/deletion obligation at contract end\n• Evidence of PII deletion or return at contract end\n• Written confirmation of deletion provided to controller\n• Deletion includes backups and sub-processor copies\n• Deletion records retained for audit","remediation":"Implement a contract-end PII disposal procedure; delete or return PII (per controller choice) including from backups and sub-processors; provide written deletion confirmation; retain records for audit.","risk":""}],"skey":"S14","short":"Processor","clause_ref":"B.8","group":"Annex B","color":"#8b5cf6","desc":"PII processor obligations"},{"id":"S15 – IS Access & Crypto","title":"S15 – IS Access & Crypto","questions":[{"ref":"15.1","clause":"ISO 27701 Annex A §A.7.4.1; ISO 27001 §A.9.1","title":"A – Controller: Limit collection / access control","question":"Is there an access control policy covering PII systems, incorporating privacy principles of least privilege, need-to-know and role-based access, reviewed at least annually?","evidence":"• Access Control Policy approved by management\n• Privacy principles (least privilege, need-to-know) explicitly included\n• Policy covers PII systems and repositories\n• Annual review record\n• Evidence of policy enforcement in IAM system","remediation":"Update the Access Control Policy to explicitly incorporate ISO 27701 privacy principles; restrict PII access to those with documented business need; review annually and after any significant change.","risk":""},{"ref":"15.2","clause":"ISO 27701 Annex A §A.7.4.1; ISO 27001 §A.9.2.1","title":"A – Controller: Limit access / unique identifiers","question":"Are user identities unique and individually accountable, with shared/generic accounts prohibited for PII processing systems?","evidence":"• Policy prohibiting shared accounts on PII systems\n• User account listing evidencing unique IDs\n• Service/application account register with approved exceptions\n• Audit of shared account usage\n• Monitoring alerts for shared account creation","remediation":"Enforce unique user IDs on all PII-processing systems via technical controls; maintain a service account register with approved justifications; audit for shared accounts quarterly.","risk":""},{"ref":"15.3","clause":"ISO 27701 Annex A §A.7.4.1; ISO 27001 §A.9.4.2","title":"A – Controller: Authentication for access to PII","question":"Is multi-factor authentication (MFA) enforced for access to all systems processing PII, particularly remotely accessible or internet-facing systems?","evidence":"• MFA policy mandating MFA for PII system access\n• Technical enforcement evidence (IAM/SSO/IdP configuration)\n• MFA coverage report (% of PII systems protected)\n• Step-up authentication for sensitive PII categories\n• Remote access MFA enforcement logs","remediation":"Mandate MFA for all PII system access, prioritising internet-facing and remote access; use an enterprise IAM/SSO solution; report MFA coverage monthly; implement step-up authentication for sensitive personal data.","risk":""},{"ref":"15.4","clause":"ISO 27701 Annex A §A.7.4.1; ISO 27001 §A.9.2.3","title":"A – Controller: Limit privileged access to PII systems","question":"Are privileged access rights to PII systems managed with enhanced controls (approval workflows, time-limited access, quarterly review, PAM tooling)?","evidence":"• Privileged Access Management (PAM) tool evidence\n• Privileged account register for PII systems\n• Approval workflow records for privileged access grants\n• Time-limited / just-in-time (JIT) access evidence\n• Quarterly privileged access review records signed by system owners","remediation":"Deploy PAM tooling covering all PII system privileged access; enforce approval workflows; implement JIT access; conduct quarterly privileged access reviews with documented sign-off.","risk":""},{"ref":"15.5","clause":"ISO 27701 Annex A §A.7.4.1; ISO 27001 §A.9.2.6","title":"A – Controller: Access revocation on change of role/termination","question":"Are access rights to PII systems promptly updated or revoked upon change in user role, termination, or transfer, with same-day revocation for terminations?","evidence":"• Joiner/Mover/Leaver (JML) procedure with privacy controls\n• HR-system linked access provisioning/de-provisioning\n• Same-day revocation SLA for terminations\n• Evidence of access revoked on termination events\n• Quarterly audit of inactive accounts on PII systems","remediation":"Automate access de-provisioning on HR termination events; enforce same-day revocation SLA; audit inactive accounts quarterly on all PII systems; retain de-provisioning evidence.","risk":""},{"ref":"15.6","clause":"ISO 27701 Annex A §A.7.4.2; ISO 27001 §A.10.1","title":"A – Controller: Encryption and pseudonymisation of PII","question":"Does the organisation apply encryption to PII at rest and in transit using approved algorithms and key lengths, with a documented cryptography policy?","evidence":"• Cryptography/encryption policy specifying approved algorithms (AES-256, TLS 1.2+)\n• Encryption applied to all PII at rest (databases, file stores, endpoints, backups)\n• Encryption applied to PII in transit (TLS for web/API, encrypted email where required)\n• Key management procedure (rotation, storage, access control)\n• Encryption coverage audit records","remediation":"Mandate AES-256 (at rest) and TLS 1.2+ (in transit) for all PII; implement key management with HSM or vault; conduct annual encryption coverage audits; include PII backups and portable media in scope.","risk":""},{"ref":"15.7","clause":"ISO 27701 Annex A §A.7.4.2; ISO 27001 §A.10.1.1; §A.8.3","title":"A – Controller: Portable media containing PII","question":"Are portable media and endpoint devices containing PII encrypted, with removable media controls enforced via policy and technical means?","evidence":"• Endpoint encryption deployment (BitLocker/FileVault)\n• Removable media encryption policy and enforcement\n• DLP controls limiting PII transfer to removable media\n• Inventory of portable devices containing PII\n• Encrypted media configuration verification records","remediation":"Enforce full-disk encryption on all endpoints; implement DLP to prevent unencrypted PII transfer to removable media; conduct quarterly endpoint encryption compliance checks.","risk":""}],"skey":"S15","short":"Access & Crypto","clause_ref":"IS-A","group":"IS Controls","color":"#14b8a6","desc":"Access control & cryptography"},{"id":"S16 – IS Logging & Vuln","title":"S16 – IS Logging & Vuln","questions":[{"ref":"16.1","clause":"ISO 27701 Annex A §A.7.4.5; ISO 27001 §A.12.4","title":"A – Controller: Log and monitor PII access events","question":"Does the organisation maintain audit logs of access to and processing of PII, protecting logs from tampering and retaining them for a period aligned to legal requirements?","evidence":"• Audit logging enabled on all PII systems (access, modification, deletion, export)\n• Logs retained for minimum period per regulatory requirement (recommend ≥12 months)\n• Log integrity controls (immutable/WORM storage or cryptographic hashing)\n• Access to logs restricted (read-only for operations)\n• Automated alerts for anomalous PII access events","remediation":"Enable audit logging on all PII processing systems capturing access, modification, deletion and export events; implement immutable log storage; restrict log access; retain logs per regulatory requirements; configure alerts for anomalous PII access.","risk":""},{"ref":"16.2","clause":"ISO 27701 Annex A §A.7.4.5; ISO 27001 §A.12.4.1","title":"A – Controller: Detect and respond to anomalous PII access","question":"Does the organisation monitor systems processing PII in real time, with automated alerting for suspicious or anomalous activity (e.g. bulk PII export, unusual access hours)?","evidence":"• SIEM/UEBA with PII-specific detection use cases\n• Use case library including bulk PII access, off-hours access, privilege escalation\n• Evidence of alerts triggered and investigated\n• SOC / analyst investigation records\n• Privacy-related alert escalation to DPO","remediation":"Implement SIEM with PII-specific detection use cases (bulk access, unusual export, privilege escalation); configure escalation of privacy-relevant alerts to the DPO; review and tune rules quarterly.","risk":""},{"ref":"16.3","clause":"ISO 27701 Annex A §A.7.4.4; ISO 27001 §A.12.6.1","title":"A – Controller: Assess and address technical vulnerabilities affecting PII systems","question":"Does the organisation conduct regular technical vulnerability assessments and penetration tests of systems processing PII, and remediate findings within defined SLAs?","evidence":"• Vulnerability scanning schedule with PII system coverage\n• Monthly internal scan results\n• Annual (minimum) penetration test reports including PII systems\n• Remediation SLAs by severity (Critical ≤7 days, High ≤30 days)\n• Remediation tracking register with closure evidence","remediation":"Conduct monthly vulnerability scans and annual penetration tests covering all PII-processing systems; define and enforce remediation SLAs; escalate overdue critical findings to management; retain scan and remediation records.","risk":""},{"ref":"16.4","clause":"ISO 27701 Annex A §A.7.4.4; ISO 27001 §A.12.6.1","title":"A – Controller: Patch PII systems promptly","question":"Does the organisation apply patch management with defined SLAs to ensure critical patches are applied promptly to systems processing PII?","evidence":"• Patch management policy with SLAs per severity\n• Patch deployment records for PII systems\n• Patch compliance rate reports\n• Exception register with risk acceptance for deferred patches\n• Emergency patch procedure","remediation":"Define patch SLAs (Critical ≤7 days, High ≤30 days) specifically for PII systems; automate deployment where possible; track compliance rates; escalate exceptions as privacy risk items.","risk":""},{"ref":"16.5","clause":"ISO 27701 Annex A §A.7.4.4; ISO 27001 §A.12.6.2","title":"A – Controller: Harden PII processing systems","question":"Does the organisation apply security configuration hardening baselines (e.g. CIS Benchmarks) to all systems processing PII, with deviation tracked and approved?","evidence":"• Configuration hardening standards (CIS Benchmarks or equivalent)\n• Automated compliance scanning results for PII systems\n• Deviation / exception register with risk acceptance\n• Change management process for configuration changes\n• Baseline applied before systems go into production","remediation":"Develop CIS-aligned hardening baselines for all system types; apply before production deployment; use automated compliance scanning; track and approve deviations as risk items; review baselines annually.","risk":""},{"ref":"16.6","clause":"ISO 27701 Annex A §A.7.4.4; ISO 27001 §A.12.2","title":"A – Controller: Protect PII systems from malicious code","question":"Does the organisation have a malware protection strategy for systems processing PII, including AV/EDR on all endpoints and servers, updated signatures, and managed through a central console?","evidence":"• AV/EDR deployed on all PII-processing endpoints and servers\n• Centralised management console with coverage reports\n• Real-time protection and daily signature updates\n• EDR detection and response evidence\n• Coverage gap remediation records","remediation":"Deploy enterprise EDR on all PII-processing systems; use a centralised console; enforce real-time protection and daily signature updates; report coverage gaps and remediate within 48 hours.","risk":""}],"skey":"S16","short":"Logging & Vuln","clause_ref":"IS-B","group":"IS Controls","color":"#0d9488","desc":"Logging, monitoring & vulnerability"},{"id":"S17 – IS Network & SDLC","title":"S17 – IS Network & SDLC","questions":[{"ref":"17.1","clause":"ISO 27701 Annex A §A.7.4.4; ISO 27001 §A.13.1.3","title":"A – Controller: Isolate PII-processing systems","question":"Are systems processing PII isolated or segmented in dedicated network zones, with firewall rules enforcing least-privilege inter-zone traffic?","evidence":"• Network segmentation design documenting PII system isolation\n• Firewall rule-sets showing least-privilege inter-zone policies\n• VLAN/micro-segmentation evidence for PII zones\n• Penetration test validating network isolation\n• Annual firewall rule review records","remediation":"Isolate PII-processing systems in dedicated network segments; enforce least-privilege firewall rules; validate isolation annually via penetration testing; review firewall rules annually and on change.","risk":""},{"ref":"17.2","clause":"ISO 27701 Annex A §A.7.4.6; ISO 27001 §A.12.1.4","title":"A – Controller: Separate dev/test/prod and protect PII","question":"Are development, test and production environments separated, with production PII prohibited in non-production environments, and data masking or synthetic data used instead?","evidence":"• Environment separation policy prohibiting production PII in dev/test\n• Network/logical separation evidence between environments\n• Data masking or synthetic data tool evidence\n• DPIA for any exemption to use production PII in testing\n• Access controls on production environment","remediation":"Enforce dev/test/prod separation via policy and technical controls; prohibit production PII in non-production environments; implement a data masking or synthetic data solution; conduct DPIA for any exemptions.","risk":""},{"ref":"17.3","clause":"ISO 27701 Annex A §A.7.4.6; ISO 27001 §A.14.2","title":"A – Controller: Privacy by Design in SDLC","question":"Does the organisation embed privacy and security requirements into the Software Development Lifecycle (SDL), including threat modelling, secure coding, DPIA, and pre-release penetration testing?","evidence":"• Secure Development Lifecycle (SDL) policy\n• Privacy and security requirements at project inception\n• Threat model artefacts per release\n• DPIA conducted before development of PII-processing features\n• Pre-release penetration test reports\n• Privacy sign-off gate before production release","remediation":"Embed DPIA, threat modelling, privacy requirements, and pre-release penetration testing into the SDL; mandate a privacy sign-off gate before production release of any PII-processing functionality.","risk":""},{"ref":"17.4","clause":"ISO 27701 Annex A §A.7.5.1; ISO 27001 §A.14.2.7","title":"A – Controller: Third-party development with PII access","question":"Does the organisation apply privacy and security requirements to outsourced development, including contractual security obligations, code review, and DPAs where PII is accessed by developers?","evidence":"• Outsourced development contracts with security and privacy requirements\n• DPAs with outsourced developers accessing PII\n• Code review process for outsourced code\n• SAST/DAST requirements in development contracts\n• Access controls limiting outsourced developer PII access","remediation":"Include security and privacy obligations in all outsourced development contracts; mandate DPAs where developers access PII; require code review and SAST/DAST; limit PII access for developers to the minimum necessary.","risk":""},{"ref":"17.5","clause":"ISO 27701 Annex A §A.7.4.3; ISO 27001 §A.12.3","title":"A – Controller: Backup and recovery of PII","question":"Does the organisation manage backup and recovery of PII systems, including encrypted backups, tested restores, and alignment of retention periods with the PII retention schedule?","evidence":"• Backup policy specifying encryption, frequency, retention, and offsite/cloud storage\n• Evidence that backups containing PII are encrypted\n• Restore test records (minimum quarterly)\n• Backup retention aligned to PII retention schedule\n• Backup disposal process aligned to PII disposal procedure","remediation":"Encrypt all backups containing PII; align backup retention periods to the PII retention schedule; test restores quarterly; implement a backup disposal procedure aligned to PII disposal requirements; store backups offsite or in a separate cloud region.","risk":""},{"ref":"17.6","clause":"ISO 27701 Annex A §A.7.4.2; ISO 27001 §A.6.2","title":"A – Controller: Mobile device access to PII","question":"Does the organisation control mobile devices accessing PII, using MDM, device encryption, remote wipe, and MFA, including for BYOD?","evidence":"• Mobile Device Management (MDM) platform with PII access policies\n• Encryption enforced on all devices accessing PII\n• Remote lock/wipe capability tested\n• MFA enforced for mobile access to PII systems\n• BYOD policy with containerisation/MAM for PII\n• Lost device register and wipe confirmation records","remediation":"Deploy MDM covering all devices (corporate and BYOD) accessing PII; enforce encryption, MFA, and remote wipe; implement containerisation for BYOD; conduct annual remote wipe capability testing; assess lost devices for PII breach risk.","risk":""},{"ref":"17.7","clause":"ISO 27701 Annex A §A.7.4.5; ISO 27001 §A.16.1.7","title":"A – Controller: Forensics and investigations involving PII","question":"Does the organisation conduct digital forensics in compliance with privacy principles, ensuring PII accessed during investigations is minimised, protected, and subject to appropriate access controls?","evidence":"• Digital forensics policy addressing privacy considerations\n• PII minimisation in forensic evidence collection documented\n• Chain-of-custody procedure protecting PII integrity\n• Access controls on forensic evidence repositories\n• DPO notified when PII is accessed in forensic investigations","remediation":"Develop a forensics policy incorporating PII minimisation principles; restrict forensic evidence access to investigators with documented need; notify the DPO when PII is accessed during investigations; implement chain-of-custody controls.","risk":""}],"skey":"S17","short":"Network & SDLC","clause_ref":"IS-C","group":"IS Controls","color":"#0f766e","desc":"Network security & secure SDLC"}];
+
+// ══════════════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════════════
+let ANS = {};   // {ref: 'Compliant'|'Partial'|'Non-Compliant'|'N/A'}
+let NOTES = {}; // {ref: string}
+let ORG = 'My Organisation';
+let CURRENT_SECTION = null;
+let ACTIVE_VIEW = 'dashboard';
+let CHARTS = {};
+
+// Persist / restore
+function persist() {
+  try { localStorage.setItem('iso27701-v1', JSON.stringify({a:ANS,n:NOTES,o:ORG})); } catch(e){}
+}
+function restore() {
+  try {
+    const d = localStorage.getItem('iso27701-v1');
+    if(d) { const p=JSON.parse(d); ANS=p.a||{}; NOTES=p.n||{}; ORG=p.o||'My Organisation'; }
+  } catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SCORING
+// ══════════════════════════════════════════════════════════════════════════
+function secStats(sec) {
+  let total=sec.questions.length, comp=0, part=0, nc=0, na=0;
+  sec.questions.forEach(q => {
+    const s = ANS[q.ref];
+    if(s==='Compliant') comp++;
+    else if(s==='Partial') part++;
+    else if(s==='Non-Compliant') nc++;
+    else if(s==='N/A') na++;
+  });
+  const answered = comp+part+nc+na;
+  const effective = comp+part+nc; // exclude N/A
+  const score = effective>0 ? Math.round((comp + part*0.5) / effective * 100) : null;
+  return {total,comp,part,nc,na,answered,score};
+}
+
+function globalStats() {
+  let total=0,comp=0,part=0,nc=0,na=0,answered=0;
+  SECTIONS.forEach(s => {
+    const st=secStats(s);
+    total+=st.total; comp+=st.comp; part+=st.part;
+    nc+=st.nc; na+=st.na; answered+=st.answered;
+  });
+  const effective=comp+part+nc;
+  const score = effective>0 ? Math.round((comp+part*0.5)/effective*100) : 0;
+  return {total,comp,part,nc,na,answered,score};
+}
+
+function ragLabel(score) {
+  if(score===null) return 'Not Assessed';
+  if(score>=80) return 'GREEN — Substantial Compliance';
+  if(score>=50) return 'AMBER — Partial Compliance';
+  return 'RED — Non-Compliant';
+}
+function ragColor(score) {
+  if(score===null) return '#64748b';
+  if(score>=80) return '#10b981';
+  if(score>=50) return '#f59e0b';
+  return '#ef4444';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════════════════
+function navTo(view, sectionId) {
+  ACTIVE_VIEW = view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+
+  if(view==='section') {
+    CURRENT_SECTION = sectionId;
+    document.getElementById('view-section').classList.add('active');
+    document.getElementById('nav-sec-'+sectionId)?.classList.add('active');
+    renderSection(sectionId);
+  } else {
+    document.getElementById('view-'+view).classList.add('active');
+    document.getElementById('nav-'+view)?.classList.add('active');
+    if(view==='dashboard') renderDashboard();
+    if(view==='findings') renderFindings();
+    if(view==='report') renderReport();
+  }
+  updateProgress();
+  updateSidebarScores();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SIDEBAR BUILD
+// ══════════════════════════════════════════════════════════════════════════
+function buildSidebar() {
+  const containers = {
+    'PIMS Core': document.getElementById('sidebar-sections-core'),
+    'Annex A': document.getElementById('sidebar-sections-annexa'),
+    'Annex B': document.getElementById('sidebar-sections-annexb'),
+    'IS Controls': document.getElementById('sidebar-sections-is'),
+  };
+  SECTIONS.forEach(sec => {
+    const grp = sec.group;
+    const container = containers[grp];
+    if(!container) return;
+    const item = document.createElement('div');
+    item.className = 'sidebar-item';
+    item.id = 'nav-sec-'+sec.id;
+    item.onclick = () => navTo('section', sec.id);
+    item.innerHTML = `
+      <div class="si-dot" style="background:${sec.color}"></div>
+      <div class="si-name">${sec.short}</div>
+      <div class="si-badge">${sec.clause_ref}</div>
+      <div class="si-score" id="si-score-${sec.id}">—</div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function updateSidebarScores() {
+  SECTIONS.forEach(sec => {
+    const st = secStats(sec);
+    const el = document.getElementById('si-score-'+sec.id);
+    const item = document.getElementById('nav-sec-'+sec.id);
+    if(!el) return;
+    if(st.score===null) { el.textContent='—'; el.style.color=''; item.classList.remove('done','partial'); return; }
+    el.textContent = st.score+'%';
+    el.style.color = ragColor(st.score);
+    item.classList.toggle('done', st.score>=80);
+    item.classList.toggle('partial', st.score>=50 && st.score<80);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════════════
+function updateProgress() {
+  const gs = globalStats();
+  const pct = Math.round(gs.answered / gs.total * 100);
+  document.getElementById('top-progress').style.width = pct+'%';
+  document.getElementById('top-progress-label').textContent = gs.answered+' / '+gs.total+' answered';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const gs = globalStats();
+  document.getElementById('stat-total').textContent = gs.total;
+  document.getElementById('stat-compliant').textContent = gs.comp;
+  document.getElementById('stat-partial').textContent = gs.part;
+  document.getElementById('stat-nc').textContent = gs.nc;
+
+  const eff = gs.comp+gs.part+gs.nc;
+  document.getElementById('stat-compliant-pct').textContent = eff>0 ? Math.round(gs.comp/eff*100)+'% of assessed' : '—';
+  document.getElementById('stat-partial-pct').textContent = eff>0 ? Math.round(gs.part/eff*100)+'% of assessed' : '—';
+  document.getElementById('stat-nc-pct').textContent = eff>0 ? Math.round(gs.nc/eff*100)+'% of assessed' : '—';
+
+  renderDonut();
+  renderBarChart();
+  renderRadar();
+  renderSectionBars();
+}
+
+function renderDonut() {
+  const gs = globalStats();
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  if(CHARTS.donut) CHARTS.donut.destroy();
+  CHARTS.donut = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels:['Compliant','Partial','Non-Compliant','N/A','Unanswered'],
+      datasets:[{
+        data:[gs.comp, gs.part, gs.nc, gs.na, gs.total-gs.answered],
+        backgroundColor:['#10b981','#f59e0b','#ef4444','#475569','#1e293b'],
+        borderColor:'transparent',borderWidth:0,
+        hoverOffset:8
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      cutout:'68%',
+      plugins:{
+        legend:{position:'right',labels:{color:'#94a3b8',font:{family:'Outfit',size:11},boxWidth:10,padding:12}},
+        tooltip:{callbacks:{label:(c)=>` ${c.label}: ${c.raw} (${Math.round(c.raw/77*100)}%)`}}
+      }
+    }
+  });
+}
+
+function renderBarChart() {
+  const ctx = document.getElementById('chart-bar-sections').getContext('2d');
+  if(CHARTS.bar) CHARTS.bar.destroy();
+  const labels = SECTIONS.map(s => s.short);
+  const scores = SECTIONS.map(s => { const st=secStats(s); return st.score??0; });
+  const colors = SECTIONS.map(s => { const st=secStats(s); return ragColor(st.score); });
+  CHARTS.bar = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{data:scores,backgroundColor:colors,borderRadius:4,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>` ${c.raw}%`}}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:9},maxRotation:45},grid:{display:false}},
+        y:{min:0,max:100,ticks:{color:'#64748b',font:{size:10},callback:(v)=>v+'%'},grid:{color:'rgba(30,58,95,.4)'}}
+      }
+    }
+  });
+}
+
+function renderRadar() {
+  const ctx = document.getElementById('chart-radar').getContext('2d');
+  if(CHARTS.radar) CHARTS.radar.destroy();
+  const labels = SECTIONS.map(s => s.short);
+  const scores = SECTIONS.map(s => { const st=secStats(s); return st.score??0; });
+  CHARTS.radar = new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Compliance Score',
+        data:scores,
+        backgroundColor:'rgba(99,102,241,.15)',
+        borderColor:'#6366f1',
+        borderWidth:2,
+        pointBackgroundColor:'#6366f1',
+        pointRadius:3,
+        pointHoverRadius:5
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Outfit',size:11}}}},
+      scales:{r:{
+        min:0,max:100,
+        ticks:{display:false},
+        grid:{color:'rgba(30,58,95,.6)'},
+        pointLabels:{color:'#94a3b8',font:{size:9}},
+        angleLines:{color:'rgba(30,58,95,.6)'}
+      }}
+    }
+  });
+}
+
+function renderSectionBars() {
+  const wrap = document.getElementById('dash-section-bars');
+  wrap.innerHTML = SECTIONS.map(sec => {
+    const st = secStats(sec);
+    const pct = st.score ?? 0;
+    const color = ragColor(st.score);
+    const compW = st.answered>0 ? Math.round(st.comp/st.total*100) : 0;
+    const partW = st.answered>0 ? Math.round(st.part/st.total*100) : 0;
+    const ncW   = st.answered>0 ? Math.round(st.nc/st.total*100) : 0;
+    return `<div class="sec-bar-item" onclick="navTo('section','${sec.id}')" style="cursor:pointer" title="${sec.title}">
+      <div class="sec-bar-label">${sec.short}</div>
+      <div class="sec-bar-track" style="position:relative;display:flex;overflow:hidden;border-radius:4px;height:10px">
+        <div style="width:${compW}%;background:#10b981;height:100%"></div>
+        <div style="width:${partW}%;background:#f59e0b;height:100%"></div>
+        <div style="width:${ncW}%;background:#ef4444;height:100%"></div>
+      </div>
+      <div class="sec-bar-pct" style="color:${color}">${st.score!==null?pct+'%':'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SECTION VIEW
+// ══════════════════════════════════════════════════════════════════════════
+function renderSection(sectionId) {
+  const sec = SECTIONS.find(s=>s.id===sectionId);
+  if(!sec) return;
+  const st = secStats(sec);
+  const content = document.getElementById('sec-content');
+
+  content.innerHTML = `
+    <div class="sec-header fade-up">
+      <div class="sec-header-icon" style="background:${sec.color}22;border:1px solid ${sec.color}44">
+        <span style="font-size:20px">${secIcon(sec.group)}</span>
+      </div>
+      <div class="sec-header-info">
+        <div class="sec-header-title">${sec.title}</div>
+        <div class="sec-header-clause">${sec.clause_ref} · ${sec.group}</div>
+        <div class="sec-header-desc">${sec.desc}</div>
+      </div>
+      <div class="sec-header-stats">
+        <div class="sec-mini-stat">
+          <div class="sec-mini-stat-val" style="color:${sec.color}">${sec.questions.length}</div>
+          <div class="sec-mini-stat-lbl">Controls</div>
+        </div>
+        <div class="sec-mini-stat">
+          <div class="sec-mini-stat-val" id="hdr-score">—</div>
+          <div class="sec-mini-stat-lbl">Score</div>
+        </div>
+        <div class="sec-mini-stat">
+          <div class="sec-mini-stat-val" id="hdr-answered">0</div>
+          <div class="sec-mini-stat-lbl">Answered</div>
+        </div>
+      </div>
+    </div>
+    <div class="questions-list fade-up-2" id="questions-list">
+      ${sec.questions.map(q => renderQuestion(q, sec)).join('')}
+    </div>
+    <div style="padding:24px 0;display:flex;gap:12px;justify-content:flex-end;margin-top:8px;border-top:1px solid var(--border)">
+      ${secPrevNext(sectionId)}
+    </div>
+  `;
+  updateSectionHeader(sec);
+}
+
+function secIcon(group) {
+  if(group==='PIMS Core') return '🏛️';
+  if(group==='Annex A') return '🎯';
+  if(group==='Annex B') return '⚙️';
+  return '🔒';
+}
+
+function secPrevNext(id) {
+  const idx = SECTIONS.findIndex(s=>s.id===id);
+  let btns = '';
+  if(idx>0) btns += `<button class="btn btn-ghost btn-sm" onclick="navTo('section','${SECTIONS[idx-1].id}')">← ${SECTIONS[idx-1].short}</button>`;
+  if(idx<SECTIONS.length-1) btns += `<button class="btn btn-primary btn-sm" onclick="navTo('section','${SECTIONS[idx+1].id}')">Next: ${SECTIONS[idx+1].short} →</button>`;
+  return btns;
+}
+
+function renderQuestion(q, sec) {
+  const status = ANS[q.ref] || '';
+  const note = NOTES[q.ref] || '';
+  const statusClass = status ? 'status-'+status.toLowerCase().replace(' ','-').replace('/','') : '';
+  const evLines = q.evidence.split('\n').filter(l=>l.trim()).map(l=>`<div class="ev-chip">${l.replace(/^[•\-]\s*/,'')}</div>`).join('');
+
+  return `<div class="q-card ${statusClass}" id="qcard-${q.ref}">
+    <div class="q-card-header" onclick="toggleQ('${q.ref}')">
+      <div class="q-ref">${q.ref}</div>
+      <div class="q-title">
+        <div class="q-clause">${q.clause}</div>
+        <div class="q-text">${q.question}</div>
+      </div>
+      <div class="q-status-wrap">
+        <div class="status-selector">
+          <button class="ss-btn sel-compliant ${status==='Compliant'?'active':''}" onclick="setStatus(event,'${q.ref}','Compliant')">✓ Compliant</button>
+          <button class="ss-btn sel-partial ${status==='Partial'?'active':''}" onclick="setStatus(event,'${q.ref}','Partial')">~ Partial</button>
+          <button class="ss-btn sel-nc ${status==='Non-Compliant'?'active':''}" onclick="setStatus(event,'${q.ref}','Non-Compliant')">✗ Non-Compliant</button>
+          <button class="ss-btn sel-na ${status==='N/A'?'active':''}" onclick="setStatus(event,'${q.ref}','N/A')">N/A</button>
+        </div>
+        <button class="q-expand-btn">▾</button>
+      </div>
+    </div>
+    <div class="q-body" id="qbody-${q.ref}">
+      <div class="q-body-grid">
+        <div class="q-body-section">
+          <div class="q-body-section-title"><span>📋</span> Expected Evidence</div>
+          <div class="evidence-chips">${evLines || '<div class="ev-chip" style="padding-left:0;color:var(--text3)">No evidence guidance available</div>'}</div>
+        </div>
+        <div class="q-body-section">
+          <div class="q-body-section-title"><span>🔧</span> Recommended Remediation</div>
+          <div class="q-body-text" style="white-space:normal">${q.remediation || 'No remediation guidance available.'}</div>
+        </div>
+      </div>
+      <div class="q-notes-wrap">
+        <div class="q-notes-label">📝 Findings & Notes</div>
+        <textarea class="q-notes" placeholder="Record your findings, evidence observed, exceptions, owner…" oninput="saveNote('${q.ref}',this.value)">${note}</textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleQ(ref) {
+  const body = document.getElementById('qbody-'+ref);
+  if(body) body.classList.toggle('open');
+}
+
+function setStatus(evt, ref, status) {
+  evt.stopPropagation();
+  ANS[ref] = status;
+  persist();
+  // Update card class
+  const card = document.getElementById('qcard-'+ref);
+  if(card) {
+    card.className = 'q-card status-'+status.toLowerCase().replace(' ','-').replace('/','');
+    // Update button active states
+    card.querySelectorAll('.ss-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if(btn.classList.contains('sel-'+status.toLowerCase().replace(' ','-').replace('/','').replace('non-compliant','nc').replace('compliant','compliant').replace('partial','partial').replace('n/a','na'))) {
+        btn.classList.add('active');
+      }
+    });
+    // Fix button matching
+    card.querySelectorAll('.ss-btn').forEach(btn => {
+      const map = {'Compliant':'sel-compliant','Partial':'sel-partial','Non-Compliant':'sel-nc','N/A':'sel-na'};
+      btn.classList.remove('active');
+      if(btn.classList.contains(map[status])) btn.classList.add('active');
+    });
+  }
+  updateProgress();
+  updateSidebarScores();
+  if(CURRENT_SECTION) updateSectionHeader(SECTIONS.find(s=>s.id===CURRENT_SECTION));
+}
+
+function saveNote(ref, val) {
+  if(val) NOTES[ref] = val;
+  else delete NOTES[ref];
+  persist();
+}
+
+function updateSectionHeader(sec) {
+  const st = secStats(sec);
+  const scoreEl = document.getElementById('hdr-score');
+  const answEl = document.getElementById('hdr-answered');
+  if(scoreEl) { scoreEl.textContent = st.score!==null ? st.score+'%' : '—'; scoreEl.style.color = ragColor(st.score); }
+  if(answEl) answEl.textContent = st.answered;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// FINDINGS
+// ══════════════════════════════════════════════════════════════════════════
+let findFilter = 'all';
+
+function filterFindings(f, btn) {
+  findFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFindings();
+}
+
+function renderFindings() {
+  const wrap = document.getElementById('findings-content');
+  let rows = [];
+  SECTIONS.forEach(sec => {
+    sec.questions.forEach(q => {
+      const s = ANS[q.ref] || 'Unanswered';
+      const n = NOTES[q.ref] || '';
+      rows.push({sec:sec.short, ref:q.ref, title:q.title, question:q.question, status:s, note:n, remediation:q.remediation, color:sec.color, risk:q.risk});
+    });
+  });
+
+  if(findFilter!=='all') {
+    rows = rows.filter(r => findFilter==='unanswered' ? r.status==='Unanswered' : r.status===findFilter);
+  }
+
+  if(!rows.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No findings match this filter</div></div>`;
+    return;
+  }
+
+  const pillClass = {Compliant:'sp-compliant',Partial:'sp-partial','Non-Compliant':'sp-nc','N/A':'sp-na',Unanswered:'sp-na'};
+
+  wrap.innerHTML = `<table class="findings-table">
+    <thead><tr>
+      <th>Ref</th><th>Section</th><th>Control Title</th><th>Status</th><th>Notes</th><th>Remediation</th>
+    </tr></thead>
+    <tbody>
+    ${rows.map(r=>`<tr>
+      <td><span style="font-family:var(--font-mono);font-size:.75rem;color:var(--indigo3)">${r.ref}</span></td>
+      <td><span style="font-size:.75rem;color:${r.color}">${r.sec}</span></td>
+      <td style="max-width:220px;font-size:.8rem;line-height:1.4">${r.title||r.question.substring(0,80)+'…'}</td>
+      <td><span class="status-pill ${pillClass[r.status]||'sp-na'}">${r.status}</span></td>
+      <td style="max-width:180px;font-size:.75rem;color:var(--text2)">${r.note||'—'}</td>
+      <td style="max-width:220px;font-size:.75rem;color:var(--text2);line-height:1.4">${r.remediation?r.remediation.substring(0,120)+'…':'—'}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// REPORT
+// ══════════════════════════════════════════════════════════════════════════
+function renderReport() {
+  const gs = globalStats();
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-ZA',{year:'numeric',month:'long',day:'numeric'});
+  const periodStr = today.toLocaleDateString('en-ZA',{year:'numeric',month:'long'});
+
+  // Gap register: all non-compliant + partial
+  const gaps = [];
+  SECTIONS.forEach(sec=>{
+    sec.questions.forEach(q=>{
+      const s=ANS[q.ref];
+      if(s==='Non-Compliant'||s==='Partial') {
+        gaps.push({...q, secShort:sec.short, secColor:sec.color, status:s});
+      }
+    });
+  });
+
+  // Recommendations: top priority non-compliant
+  const highPri = gaps.filter(g=>g.status==='Non-Compliant').slice(0,8);
+  const medPri  = gaps.filter(g=>g.status==='Partial').slice(0,6);
+
+  const scoreColor = ragColor(gs.score);
+  const ragText = ragLabel(gs.score);
+
+  document.getElementById('report-content').innerHTML = `
+
+  <!-- COVER -->
+  <div class="rpt-cover">
+    <div class="rpt-cover-eyebrow">Formal Assessment Report</div>
+    <div class="rpt-cover-title">ISO/IEC 27701:2019<br><em>PIMS Compliance Assessment</em></div>
+    <div class="rpt-cover-sub">Privacy Information Management System · 77 Controls · 17 Sections<br>Annex A (PII Controller) · Annex B (PII Processor) · IS Controls</div>
+    <div class="rpt-cover-meta">
+      <div class="rpt-meta-cell">
+        <div class="rpt-meta-label">Organisation</div>
+        <div class="rpt-meta-value">${ORG}</div>
+      </div>
+      <div class="rpt-meta-cell">
+        <div class="rpt-meta-label">Assessment Date</div>
+        <div class="rpt-meta-value">${dateStr}</div>
+      </div>
+      <div class="rpt-meta-cell">
+        <div class="rpt-meta-label">Overall Score</div>
+        <div class="rpt-meta-value" style="color:${scoreColor}">${gs.score}%</div>
+      </div>
+      <div class="rpt-meta-cell">
+        <div class="rpt-meta-label">RAG Status</div>
+        <div class="rpt-meta-value" style="color:${scoreColor}">${gs.score>=80?'GREEN':gs.score>=50?'AMBER':'RED'}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. EXECUTIVE SUMMARY -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 1</div>
+    <div class="rpt-section-title">Executive Summary</div>
+    <div class="rpt-divider"></div>
+
+    <div class="rpt-score-hero">
+      <div class="score-ring-wrap">
+        <canvas id="rpt-ring" width="140" height="140"></canvas>
+        <div class="score-ring-center">
+          <div class="score-ring-pct" style="color:${scoreColor}">${gs.score}%</div>
+          <div class="score-ring-label">Overall</div>
+        </div>
+      </div>
+      <div class="score-ring-stats">
+        <div class="srs-item">
+          <div class="srs-count" style="color:#10b981">${gs.comp}</div>
+          <div class="srs-label">Compliant</div>
+        </div>
+        <div class="srs-item">
+          <div class="srs-count" style="color:#f59e0b">${gs.part}</div>
+          <div class="srs-label">Partial</div>
+        </div>
+        <div class="srs-item">
+          <div class="srs-count" style="color:#ef4444">${gs.nc}</div>
+          <div class="srs-label">Non-Compliant</div>
+        </div>
+        <div class="srs-item">
+          <div class="srs-count" style="color:#64748b">${gs.total-gs.answered}</div>
+          <div class="srs-label">Not Assessed</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="rpt-text">
+      This report presents the findings of a compliance assessment conducted for <strong>${ORG}</strong> against the requirements of <strong>ISO/IEC 27701:2019</strong> — Privacy Information Management System (PIMS). The assessment evaluated ${gs.answered} of 77 controls across 17 sections, covering the PIMS core management clauses (§5–§11), Annex A obligations for PII controllers (A.7.2–A.7.8), Annex B obligations for PII processors (B.8), and applicable information security controls.
+    </p>
+    <p class="rpt-text">
+      The organisation achieved an overall weighted compliance score of <strong style="color:${scoreColor}">${gs.score}%</strong>, which places the organisation in a <strong style="color:${scoreColor}">${ragText}</strong> position. Of the ${gs.answered} assessed controls: <strong>${gs.comp} (${gs.answered>0?Math.round(gs.comp/gs.answered*100):0}%) are fully compliant</strong>, ${gs.part} are partially compliant, ${gs.nc} are non-compliant, and ${gs.na} are not applicable. ${gs.total-gs.answered>0?`A further ${gs.total-gs.answered} controls were not assessed during this review period.`:'All controls were assessed.'}
+    </p>
+
+    <div class="rpt-charts-2">
+      <div class="rpt-chart-card">
+        <div class="rpt-chart-title">Compliance Status Distribution</div>
+        <div class="rpt-chart-wrap"><canvas id="rpt-donut"></canvas></div>
+      </div>
+      <div class="rpt-chart-card">
+        <div class="rpt-chart-title">Section Score Heatmap</div>
+        <div class="rpt-chart-wrap"><canvas id="rpt-bars"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. SCOPE & METHODOLOGY -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 2</div>
+    <div class="rpt-section-title">Assessment Scope &amp; Methodology</div>
+    <div class="rpt-divider"></div>
+    <p class="rpt-text">This assessment was conducted against the full requirements of <strong>ISO/IEC 27701:2019</strong>, an international standard that specifies requirements and provides guidance for establishing, implementing, maintaining, and continually improving a Privacy Information Management System (PIMS). The standard extends ISO/IEC 27001 and ISO/IEC 27002 with privacy-specific requirements and guidance for organisations acting as PII controllers and/or PII processors.</p>
+    <p class="rpt-text"><strong>Assessment methodology:</strong> Each control was evaluated against documentary evidence, interviews, and operational observations. Compliance status was recorded as: <strong>Compliant</strong> (control fully implemented with adequate evidence), <strong>Partial</strong> (control partially implemented or evidence incomplete), <strong>Non-Compliant</strong> (control not implemented or implemented inadequately), or <strong>N/A</strong> (control not applicable to the organisation's context). Scores are weighted as: Compliant = 100%, Partial = 50%, Non-Compliant = 0%.</p>
+    <p class="rpt-text"><strong>Coverage:</strong> The assessment covers all 17 sections: 7 PIMS core management clauses (§5–§11), 6 Annex A PII Controller obligation sections (A.7.2–A.7.8), 1 Annex B PII Processor section (B.8), and 3 IS control sections covering access control, cryptography, logging, vulnerability management, network security, and SDLC security.</p>
+  </div>
+
+  <!-- 3. SECTION SCORECARD -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 3</div>
+    <div class="rpt-section-title">Section-by-Section Scorecard</div>
+    <div class="rpt-divider"></div>
+
+    <div class="rpt-chart-card" style="margin-bottom:24px">
+      <div class="rpt-chart-title">Compliance Radar — All 17 Sections</div>
+      <div class="rpt-chart-wrap-lg"><canvas id="rpt-radar"></canvas></div>
+    </div>
+
+    <table class="rpt-sec-table">
+      <thead><tr>
+        <th>Ref</th><th>Section</th><th>Group</th><th>Total Qs</th><th>Compliant</th><th>Partial</th><th>Non-Compliant</th><th>N/A</th><th>Score %</th><th>RAG</th>
+      </tr></thead>
+      <tbody>
+      ${SECTIONS.map(sec=>{
+        const st=secStats(sec);
+        const c=ragColor(st.score);
+        return `<tr>
+          <td style="font-family:var(--font-mono);font-size:.75rem;color:var(--indigo3)">${sec.skey}</td>
+          <td style="font-weight:500;color:#fff">${sec.short}</td>
+          <td style="font-size:.78rem;color:var(--text3)">${sec.group}</td>
+          <td style="text-align:center">${st.total}</td>
+          <td style="text-align:center;color:#10b981">${st.comp}</td>
+          <td style="text-align:center;color:#f59e0b">${st.part}</td>
+          <td style="text-align:center;color:#ef4444">${st.nc}</td>
+          <td style="text-align:center;color:#64748b">${st.na}</td>
+          <td style="font-family:var(--font-mono);font-weight:600;color:${c}">${st.score!==null?st.score+'%':'—'}</td>
+          <td><span class="rag-dot" style="background:${c}"></span><span style="font-size:.72rem;color:${c}">${st.score>=80?'Green':st.score>=50?'Amber':st.score!==null?'Red':'N/A'}</span></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. GROUP ANALYSIS -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 4</div>
+    <div class="rpt-section-title">Domain Analysis</div>
+    <div class="rpt-divider"></div>
+    ${renderGroupAnalysis()}
+  </div>
+
+  <!-- 5. GAP REGISTER -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 5</div>
+    <div class="rpt-section-title">Consolidated Gap Register</div>
+    <div class="rpt-divider"></div>
+    <p class="rpt-text">The following table captures all controls assessed as <strong>Non-Compliant</strong> or <strong>Partial</strong>, together with recommended remediation actions.</p>
+    ${gaps.length?`
+    <table class="gap-table">
+      <thead><tr>
+        <th>Ref</th><th>Section</th><th>Control</th><th>Status</th><th>Risk</th><th>Remediation</th>
+      </tr></thead>
+      <tbody>
+      ${gaps.map(g=>`<tr>
+        <td style="font-family:var(--font-mono);font-size:.72rem;color:var(--indigo3);white-space:nowrap">${g.ref}</td>
+        <td style="font-size:.75rem;color:${g.secColor};white-space:nowrap">${g.secShort}</td>
+        <td style="font-size:.78rem;max-width:200px;line-height:1.4">${g.title||g.question.substring(0,90)}</td>
+        <td><span class="status-pill ${g.status==='Non-Compliant'?'sp-nc':'sp-partial'}">${g.status}</span></td>
+        <td>${g.risk?`<span class="risk-badge risk-${g.risk.toLowerCase()}">${g.risk}</span>`:'—'}</td>
+        <td style="font-size:.75rem;color:var(--text2);max-width:220px;line-height:1.4">${g.remediation?g.remediation.substring(0,150)+'…':'See control details'}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+    `:`<div class="empty-state" style="background:var(--surface2);border-radius:var(--radius);padding:40px"><div class="empty-icon">✅</div><div class="empty-text" style="color:var(--compliant)">No gaps identified — all assessed controls are compliant or N/A.</div></div>`}
+  </div>
+
+  <!-- 6. RECOMMENDATIONS -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 6</div>
+    <div class="rpt-section-title">Priority Recommendations</div>
+    <div class="rpt-divider"></div>
+
+    ${highPri.length?`<p class="rpt-text"><strong>High Priority — Address within 30 days</strong> (Non-Compliant controls)</p>
+    ${highPri.map((g,i)=>`<div class="rec-item">
+      <div class="rec-num">${i+1}</div>
+      <div class="rec-content">
+        <div class="rec-title">[${g.ref}] ${g.title||g.question.substring(0,80)}</div>
+        <div class="rec-text">${g.remediation||'Implement required controls per ISO 27701 guidance.'}</div>
+        <div class="rec-meta">
+          <span class="priority-chip pri-high">HIGH</span>
+          <span class="status-pill sp-nc">Non-Compliant</span>
+          <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--text3)">${g.ref}</span>
+        </div>
+      </div>
+    </div>`).join('')}`:''}
+
+    ${medPri.length?`<p class="rpt-text" style="margin-top:20px"><strong>Medium Priority — Address within 90 days</strong> (Partially compliant controls)</p>
+    ${medPri.map((g,i)=>`<div class="rec-item">
+      <div class="rec-num" style="background:var(--partial);color:#111">${i+1}</div>
+      <div class="rec-content">
+        <div class="rec-title">[${g.ref}] ${g.title||g.question.substring(0,80)}</div>
+        <div class="rec-text">${g.remediation||'Complete partial implementation and gather full evidence.'}</div>
+        <div class="rec-meta">
+          <span class="priority-chip pri-medium">MEDIUM</span>
+          <span class="status-pill sp-partial">Partial</span>
+          <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--text3)">${g.ref}</span>
+        </div>
+      </div>
+    </div>`).join('')}`:''}
+
+    ${!highPri.length && !medPri.length?`<div class="empty-state" style="background:var(--surface2);border-radius:var(--radius);padding:40px"><div class="empty-icon">🎯</div><div class="empty-text" style="color:var(--compliant)">No immediate recommendations — complete the assessment to generate prioritised recommendations.</div></div>`:''}
+  </div>
+
+  <!-- 7. CONCLUSION -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Section 7</div>
+    <div class="rpt-section-title">Conclusion</div>
+    <div class="rpt-divider"></div>
+    <p class="rpt-text">This assessment has evaluated <strong>${ORG}</strong>'s compliance with the requirements of ISO/IEC 27701:2019. The overall compliance score of <strong style="color:${scoreColor}">${gs.score}%</strong> reflects the organisation's current position across all 17 assessed sections. ${gs.nc>0?`A total of <strong>${gs.nc} non-compliant controls</strong> have been identified and require prioritised remediation.`:''} ${gs.part>0?`${gs.part} controls are partially implemented and should be brought to full compliance.`:''}</p>
+    <p class="rpt-text">Management is advised to review the Gap Register in Section 5 and ensure that remediation owners and target dates are assigned for all identified gaps. A follow-up assessment is recommended within <strong>6–12 months</strong> to verify remediation effectiveness and monitor progress toward certification readiness.</p>
+    <p class="rpt-text"><em>This report was generated using the ISO/IEC 27701:2019 PIMS Assessment Tool on ${dateStr}.</em></p>
+  </div>
+
+  <!-- APPENDIX A: Full Control Reference -->
+  <div class="rpt-section">
+    <div class="rpt-section-number">Appendix A</div>
+    <div class="rpt-section-title">Full Control Reference</div>
+    <div class="rpt-divider"></div>
+    <table class="app-table">
+      <thead><tr><th>Ref</th><th>Section</th><th>Clause</th><th>Control</th><th>Status</th><th>Notes</th></tr></thead>
+      <tbody>
+      ${SECTIONS.map(sec=>sec.questions.map(q=>{
+        const s=ANS[q.ref]||'Not assessed';
+        const pillMap={'Compliant':'sp-compliant','Partial':'sp-partial','Non-Compliant':'sp-nc','N/A':'sp-na'};
+        return `<tr>
+          <td style="font-family:var(--font-mono);font-size:.7rem;color:var(--indigo3)">${q.ref}</td>
+          <td style="font-size:.72rem;color:${sec.color}">${sec.short}</td>
+          <td style="font-size:.68rem;color:var(--text3);white-space:nowrap">${q.clause.replace('ISO 27701 ','')}</td>
+          <td style="font-size:.75rem;line-height:1.4;max-width:240px">${q.question.substring(0,100)}…</td>
+          <td><span class="status-pill ${pillMap[s]||'sp-na'}" style="font-size:.65rem">${s}</span></td>
+          <td style="font-size:.7rem;color:var(--text3)">${NOTES[q.ref]||'—'}</td>
+        </tr>`;
+      }).join('')).join('')}
+      </tbody>
+    </table>
+  </div>
+  `;
+
+  // Render report charts after DOM update
+  setTimeout(renderReportCharts, 100);
+}
+
+function renderGroupAnalysis() {
+  const groups = ['PIMS Core','Annex A','Annex B','IS Controls'];
+  const groupLabels = {'PIMS Core':'PIMS Core Management (§5–§11)','Annex A':'Annex A — PII Controller Obligations','Annex B':'Annex B — PII Processor Obligations','IS Controls':'Information Security Controls'};
+  const groupDesc = {
+    'PIMS Core':'The PIMS Core covers the fundamental management system clauses: organisational context, leadership commitment, risk-based planning, resource support, operational control, performance evaluation, and continual improvement.',
+    'Annex A':'Annex A addresses the specific obligations of organisations acting as PII controllers, covering conditions for collection, obligations to data subjects, Privacy by Design, cross-border transfers, data subject rights, breach notification, and complaint handling.',
+    'Annex B':'Annex B covers the specific obligations of organisations acting as PII processors on behalf of controllers, including customer agreements, sub-processor management, and processing records.',
+    'IS Controls':'The IS Controls sections address technical and operational information security controls relevant to PII protection, including access control, cryptography, logging and monitoring, vulnerability management, network security, and security in the software development lifecycle.'
+  };
+
+  return groups.map(grp=>{
+    const secs = SECTIONS.filter(s=>s.group===grp);
+    let total=0,comp=0,part=0,nc=0,na=0;
+    secs.forEach(s=>{const st=secStats(s);total+=st.total;comp+=st.comp;part+=st.part;nc+=st.nc;na+=st.na;});
+    const eff=comp+part+nc;
+    const score=eff>0?Math.round((comp+part*0.5)/eff*100):null;
+    const c=ragColor(score);
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-family:var(--font-display);font-size:1.05rem;color:#fff">${groupLabels[grp]}</div>
+          <div style="font-size:.78rem;color:var(--text3);margin-top:3px">${secs.length} sections · ${total} controls</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-display);font-size:1.8rem;color:${c};line-height:1">${score!==null?score+'%':'—'}</div>
+          <div style="font-size:.7rem;color:${c}">${score>=80?'GREEN':score>=50?'AMBER':score!==null?'RED':'Not Assessed'}</div>
+        </div>
+      </div>
+      <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex;margin-bottom:10px">
+        <div style="width:${eff>0?Math.round(comp/total*100):0}%;background:#10b981;height:100%"></div>
+        <div style="width:${eff>0?Math.round(part/total*100):0}%;background:#f59e0b;height:100%"></div>
+        <div style="width:${eff>0?Math.round(nc/total*100):0}%;background:#ef4444;height:100%"></div>
+      </div>
+      <p style="font-size:.8rem;color:var(--text2);line-height:1.6;margin-bottom:10px">${groupDesc[grp]}</p>
+      <div style="display:flex;gap:16px;font-size:.75rem">
+        <span style="color:#10b981">✓ ${comp} Compliant</span>
+        <span style="color:#f59e0b">~ ${part} Partial</span>
+        <span style="color:#ef4444">✗ ${nc} Non-Compliant</span>
+        <span style="color:#64748b">— ${na} N/A</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderReportCharts() {
+  const gs = globalStats();
+
+  // Score ring
+  const ringCtx = document.getElementById('rpt-ring');
+  if(ringCtx) {
+    const ctx = ringCtx.getContext('2d');
+    const score = gs.score;
+    const color = ragColor(score);
+    ctx.clearRect(0,0,140,140);
+    const cx=70,cy=70,r=58,lw=14;
+    // Background ring
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,3*Math.PI/2);
+    ctx.strokeStyle='#1e293b'; ctx.lineWidth=lw; ctx.stroke();
+    // Score arc
+    const end = -Math.PI/2 + (score/100) * 2*Math.PI;
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end);
+    ctx.strokeStyle=color; ctx.lineWidth=lw;
+    ctx.lineCap='round'; ctx.stroke();
+  }
+
+  // Donut
+  const donutCtx = document.getElementById('rpt-donut');
+  if(donutCtx) {
+    if(CHARTS['rpt-donut']) CHARTS['rpt-donut'].destroy();
+    CHARTS['rpt-donut'] = new Chart(donutCtx.getContext('2d'), {
+      type:'doughnut',
+      data:{
+        labels:['Compliant','Partial','Non-Compliant','N/A','Unanswered'],
+        datasets:[{data:[gs.comp,gs.part,gs.nc,gs.na,gs.total-gs.answered],backgroundColor:['#10b981','#f59e0b','#ef4444','#475569','#1e293b'],borderColor:'transparent'}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+        plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},boxWidth:8,padding:8}}}}
+    });
+  }
+
+  // Bars
+  const barsCtx = document.getElementById('rpt-bars');
+  if(barsCtx) {
+    if(CHARTS['rpt-bars']) CHARTS['rpt-bars'].destroy();
+    CHARTS['rpt-bars'] = new Chart(barsCtx.getContext('2d'), {
+      type:'bar',
+      data:{
+        labels:SECTIONS.map(s=>s.short),
+        datasets:[
+          {label:'Compliant',data:SECTIONS.map(s=>secStats(s).comp),backgroundColor:'#10b981',stack:'s',borderRadius:{topLeft:4,topRight:4}},
+          {label:'Partial',data:SECTIONS.map(s=>secStats(s).part),backgroundColor:'#f59e0b',stack:'s'},
+          {label:'Non-Compliant',data:SECTIONS.map(s=>secStats(s).nc),backgroundColor:'#ef4444',stack:'s'}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#94a3b8',font:{size:9},boxWidth:8}}},
+        scales:{
+          x:{stacked:true,ticks:{color:'#64748b',font:{size:8},maxRotation:45},grid:{display:false}},
+          y:{stacked:true,ticks:{color:'#64748b',font:{size:9}},grid:{color:'rgba(30,58,95,.4)'}}
+        }
+      }
+    });
+  }
+
+  // Radar
+  const radarCtx = document.getElementById('rpt-radar');
+  if(radarCtx) {
+    if(CHARTS['rpt-radar']) CHARTS['rpt-radar'].destroy();
+    CHARTS['rpt-radar'] = new Chart(radarCtx.getContext('2d'), {
+      type:'radar',
+      data:{
+        labels:SECTIONS.map(s=>s.short),
+        datasets:[
+          {label:'Score %',data:SECTIONS.map(s=>{const st=secStats(s);return st.score??0;}),backgroundColor:'rgba(99,102,241,.2)',borderColor:'#6366f1',borderWidth:2,pointBackgroundColor:'#6366f1',pointRadius:3},
+          {label:'Target (100%)',data:SECTIONS.map(()=>100),backgroundColor:'transparent',borderColor:'rgba(255,255,255,.1)',borderWidth:1,borderDash:[4,4],pointRadius:0}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#94a3b8',font:{size:10},boxWidth:8}}},
+        scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},grid:{color:'rgba(30,58,95,.5)'},pointLabels:{color:'#94a3b8',font:{size:9}},angleLines:{color:'rgba(30,58,95,.5)'}}}
+      }
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ORG NAME EDITING
+// ══════════════════════════════════════════════════════════════════════════
+function resetAll() {
+  if(!confirm('Reset all assessment data? This cannot be undone.')) return;
+  ANS={}; NOTES={};
+  persist();
+  updateProgress();
+  updateSidebarScores();
+  if(ACTIVE_VIEW==='section') renderSection(CURRENT_SECTION);
+  else if(ACTIVE_VIEW==='dashboard') renderDashboard();
+  showToast('Assessment data reset.');
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════
+restore();
+buildSidebar();
+updateProgress();
+updateSidebarScores();
+renderDashboard();
+
+// ══════════════════════════════════════════════════════════════════════════
+// ELECTRON DESKTOP INTEGRATION
+// ══════════════════════════════════════════════════════════════════════════
+(function() {
+  if (!window.electronAPI) return;
+
+  // Show desktop mode badge
+  const tb = document.querySelector('.topbar-meta');
+  if(tb) tb.innerHTML += '<br><span style="color:var(--indigo3);font-size:.65rem">Desktop App</span>';
+
+  // Version in title
+  window.electronAPI.getAppVersion().then(v => {
+    document.title = `ISO/IEC 27701:2019 PIMS Assessment v${v}`;
+  });
+
+  // Menu actions from native menu bar
+  // Listen for data loaded from native file dialog
+  window.electronAPI.onLoadData && window.electronAPI.onLoadData(json => {
+    try { importData(json); } catch(e) { showToast('❌ Could not load file'); }
+  });
+
+  window.electronAPI.onMenuAction(action => {
+    const actions = {
+      'nav-dashboard':    () => navTo('dashboard'),
+      'nav-findings':     () => navTo('findings'),
+      'nav-report':       () => navTo('report'),
+      'print-report':     () => { navTo('report'); setTimeout(window.print, 600); },
+      'save-data':        () => exportData(),
+      'load-data':        () => window.electronAPI.loadData().then(d => { if(d) importData(d); }),
+      'reset-data':       () => resetAll(),
+      'zoom-in':          () => {},
+      'zoom-out':         () => {},
+    };
+    if(actions[action]) actions[action]();
+  });
+
+  // Override exportData to use native file dialog
+  window._origExportData = window.exportData;
+  window.exportData = function() {
+    const payload = JSON.stringify({ a: ANS, n: NOTES, o: ORG, v: 1, date: new Date().toISOString() });
+    const filename = `ISO27701_Assessment_${(ORG||'Organisation').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+    window.electronAPI.saveTextFile(payload, filename).then(r => {
+      if(r.success) showToast('✅ Data saved to ' + r.filename);
+    });
+  };
+})();
+
+// ── Import / Export ────────────────────────────────────────────────────────
+function exportData() {
+  const payload = JSON.stringify({ a: ANS, n: NOTES, o: ORG, v: 1, date: new Date().toISOString() }, null, 2);
+  const filename = `ISO27701_Assessment_${(ORG||'Org').replace(/[^a-z0-9]/gi,'_')}_${new Date().toISOString().slice(0,10)}.json`;
+  if (window.electronAPI) {
+    window.electronAPI.saveTextFile(payload, filename).then(r => {
+      if(r.success) showToast('✅ Saved: ' + r.filename);
+    });
+  } else {
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    showToast('✅ Assessment data exported!');
+  }
+}
+function triggerImport() { document.getElementById('import-file').click(); }
+function handleImport(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      importData(e.target.result);
+      input.value = '';
+    } catch(err) { showToast('❌ Invalid file format'); }
+  };
+  reader.readAsText(file);
+}
+function importData(jsonStr) {
+  const d = JSON.parse(jsonStr);
+  if(d.a) ANS = d.a;
+  if(d.n) NOTES = d.n;
+  if(d.o) ORG = d.o;
+  persist();
+  updateProgress(); updateSidebarScores();
+  if(ACTIVE_VIEW==='section' && CURRENT_SECTION) renderSection(CURRENT_SECTION);
+  else if(ACTIVE_VIEW==='findings') renderFindings();
+  else if(ACTIVE_VIEW==='report') renderReport();
+  else renderDashboard();
+  showToast(`✅ Assessment data loaded for ${ORG}`);
+}
+</script>
+</body>
+</html>

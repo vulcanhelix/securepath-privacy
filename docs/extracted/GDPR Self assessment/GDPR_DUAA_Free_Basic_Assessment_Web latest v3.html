@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  CyberWin — UK GDPR & DUAA 2025 Self-Assessment Tool           ║
+  ║  Powered by CyberWin | cyberwin.com                            ║
+  ║                                                                  ║
+  ║  EMBEDDING ON YOUR WEBSITE                                       ║
+  ║  Option 1 – Direct link: host this file anywhere and link to it  ║
+  ║                                                                  ║
+  ║  Option 2 – Inline iframe (paste into your page):               ║
+  ║  <iframe                                                         ║
+  ║    src="URL_TO_THIS_FILE"                                        ║
+  ║    id="cyberwin-gdpr"                                            ║
+  ║    width="100%" height="900"                                     ║
+  ║    style="border:none;overflow:hidden"                           ║
+  ║    scrolling="no"                                                ║
+  ║    allowfullscreen>                                              ║
+  ║  </iframe>                                                       ║
+  ║  <script>                                                        ║
+  ║    window.addEventListener('message', function(e) {             ║
+  ║      if (e.data && e.data.type === 'cyberwin-resize') {          ║
+  ║        document.getElementById('cyberwin-gdpr').height =         ║
+  ║          e.data.height + 'px';                                   ║
+  ║      }                                                           ║
+  ║    });                                                           ║
+  ║  </script>                                                       ║
+  ║                                                                  ║
+  ║  No domain restrictions. Works on any website or domain.         ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<!-- Allow embedding on any third-party site -->
+<meta http-equiv="X-Frame-Options" content="ALLOWALL"/>
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors *"/>
+<meta name="referrer" content="no-referrer-when-downgrade"/>
+<title>UK GDPR &amp; DUAA 2025 Self-Assessment | CyberWin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@300;400;500&display=swap" crossorigin/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08101e;
+  --bg2:#0d1a2e;
+  --bg3:#112040;
+  --panel:#0f1e35;
+  --panel2:#152540;
+  --border:#1e3354;
+  --border2:#244070;
+  --steel:#2a5f9e;
+  --steel2:#3a7bc8;
+  --steel3:#5b9bd5;
+  --electric:#60a5fa;
+  --electric2:#93c5fd;
+  --amber:#f59e0b;
+  --amber2:#fbbf24;
+  --amber3:#fcd34d;
+  --ink:#e8eef6;
+  --ink2:#b8c8dc;
+  --ink3:#7a9ab8;
+  --dim:#4a6882;
+  --risk-high:#ef4444;
+  --risk-high-bg:rgba(239,68,68,.08);
+  --risk-high-border:rgba(239,68,68,.25);
+  --risk-mid:#f59e0b;
+  --risk-mid-bg:rgba(245,158,11,.08);
+  --risk-mid-border:rgba(245,158,11,.25);
+  --risk-low:#22c55e;
+  --risk-low-bg:rgba(34,197,94,.08);
+  --risk-low-border:rgba(34,197,94,.25);
+  --font-display:'Syne','Segoe UI','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Lora',Georgia,'Times New Roman',serif;
+  --font-mono:'JetBrains Mono','Consolas','Courier New',monospace;
+  --radius:4px;
+}
+
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+
+/* Grid background */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(42,95,158,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(42,95,158,.04) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+/* Radial glow */
+body::after{
+  content:'';position:fixed;top:-200px;right:-200px;
+  width:700px;height:700px;border-radius:50%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,rgba(42,95,158,.08),transparent 70%);
+}
+
+/* ── HEADER ── */
+.site-header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,16,30,.88);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 56px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{
+  width:34px;height:34px;border:1px solid var(--steel);border-radius:var(--radius);
+  display:grid;place-items:center;position:relative;overflow:hidden;
+}
+.brand-icon::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(42,95,158,.3),transparent)}
+.brand-icon svg{width:16px;height:16px;stroke:var(--electric);fill:none}
+.brand-name{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:.04em}
+.brand-name span{color:var(--electric)}
+.brand-sub{font-family:var(--font-mono);font-size:.6rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:1px}
+
+.header-right{display:flex;align-items:center;gap:20px}
+.progress-dots{display:flex;gap:3px;align-items:center}
+.pdot{width:5px;height:5px;border-radius:50%;background:var(--border2);transition:all .3s}
+.pdot.done{background:var(--steel2)}
+.pdot.active{background:var(--amber);width:16px;border-radius:2px}
+.hdr-pct{font-family:var(--font-mono);font-size:.68rem;color:var(--ink3);letter-spacing:.1em}
+
+/* ── HERO ── */
+#hero{position:relative;z-index:1}
+.hero-wrap{
+  max-width:1140px;margin:0 auto;padding:80px 56px 72px;
+  display:grid;grid-template-columns:1fr 380px;gap:64px;align-items:start;
+}
+.hero-kicker{
+  display:flex;align-items:center;gap:12px;
+  font-family:var(--font-mono);font-size:.68rem;color:var(--electric);
+  letter-spacing:.16em;text-transform:uppercase;margin-bottom:24px;
+}
+.kicker-line{width:32px;height:1px;background:var(--electric);opacity:.5}
+.hero-laws{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.law-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border:1px solid var(--border2);border-radius:2px;
+  font-family:var(--font-mono);font-size:.65rem;color:var(--ink3);letter-spacing:.1em;
+  background:rgba(42,95,158,.08);
+}
+.law-badge.active{border-color:var(--electric);color:var(--electric);background:rgba(96,165,250,.08)}
+.law-badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.hero-title{
+  font-family:var(--font-display);font-size:clamp(2rem,4.5vw,3.4rem);
+  font-weight:700;color:var(--ink);line-height:1.08;margin-bottom:20px;
+  letter-spacing:-.01em;
+}
+.hero-title .accent{color:var(--electric)}
+.hero-title .accent2{color:var(--amber)}
+.hero-body{font-size:.93rem;color:var(--ink2);line-height:1.8;margin-bottom:40px;max-width:520px}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--electric);color:var(--bg);
+  padding:13px 26px;border-radius:var(--radius);
+  font-family:var(--font-display);font-size:.88rem;font-weight:600;
+  letter-spacing:.04em;cursor:pointer;border:none;
+  transition:all .22s;text-decoration:none;
+}
+.hero-cta:hover{background:var(--electric2);transform:translateY(-2px);box-shadow:0 8px 32px rgba(96,165,250,.25)}
+.hero-cta svg{width:15px;height:15px;transition:transform .2s}
+.hero-cta:hover svg{transform:translateX(4px)}
+
+/* Info panel */
+.hero-panel{
+  border:1px solid var(--border2);border-radius:var(--radius);
+  background:var(--panel);overflow:hidden;
+  position:sticky;top:80px;
+}
+.hp-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.hp-title{font-family:var(--font-mono);font-size:.65rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+.hp-live{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:.6rem;color:var(--risk-low)}
+.hp-live-dot{width:6px;height:6px;border-radius:50%;background:var(--risk-low);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hp-body{padding:20px}
+.hp-stat-row{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.hp-stat{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)}
+.hp-stat-label{font-family:var(--font-mono);font-size:.65rem;color:var(--ink3);letter-spacing:.08em}
+.hp-stat-val{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--electric)}
+.hp-frameworks{display:flex;flex-direction:column;gap:8px}
+.hp-fw{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius);border-left:2px solid}
+.hp-fw.gdpr{border-color:var(--electric)}
+.hp-fw.duaa{border-color:var(--amber)}
+.hp-fw-name{font-family:var(--font-display);font-size:.78rem;font-weight:600;color:var(--ink);margin-bottom:2px}
+.hp-fw-desc{font-size:.75rem;color:var(--ink3);line-height:1.4}
+
+/* ── ASSESSMENT ── */
+#assessment{display:none;position:relative;z-index:1}
+
+.assess-bar{
+  position:sticky;top:60px;z-index:90;
+  background:rgba(8,16,30,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  height:52px;display:flex;align-items:center;padding:0 56px;gap:20px;
+}
+.ab-section{font-family:var(--font-display);font-size:.88rem;font-weight:600;color:var(--ink);letter-spacing:.02em}
+.ab-divider{width:1px;height:20px;background:var(--border2)}
+.ab-count{font-family:var(--font-mono);font-size:.65rem;color:var(--ink3);letter-spacing:.1em}
+.ab-bar{flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.ab-fill{height:100%;background:linear-gradient(90deg,var(--electric),var(--electric2));border-radius:1px;transition:width .5s ease}
+.ab-answered{font-family:var(--font-mono);font-size:.65rem;color:var(--ink3)}
+.ab-back{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:.65rem;color:var(--ink3);
+  background:none;border:none;cursor:pointer;padding:0;
+  white-space:nowrap;transition:color .2s;letter-spacing:.06em;text-transform:uppercase;
+}
+.ab-back:hover{color:var(--electric)}
+
+/* Section tabs */
+.section-nav-wrap{max-width:1140px;margin:0 auto;padding:28px 56px 0}
+.sec-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);overflow-x:auto}
+.sec-tab{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 20px;border:none;background:none;
+  font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;
+  color:var(--dim);cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;
+  transition:all .2s;
+}
+.sec-tab:hover{color:var(--ink3)}
+.sec-tab.active{color:var(--electric);border-bottom-color:var(--electric)}
+.sec-tab.complete{color:var(--risk-low)}
+.sec-tab.complete .stab-check{background:var(--risk-low);border-color:var(--risk-low);color:var(--bg)}
+.stab-num{
+  width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);
+  display:grid;place-items:center;font-size:.6rem;font-weight:600;
+  flex-shrink:0;transition:all .2s;
+}
+.sec-tab.active .stab-num{border-color:var(--electric);color:var(--electric)}
+.stab-check{width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);display:grid;place-items:center;font-size:.6rem;flex-shrink:0}
+
+/* Question page */
+.q-page{display:none;max-width:1140px;margin:0 auto;padding:44px 56px 60px}
+.q-page.active{display:block}
+.sec-header{margin-bottom:36px}
+.sec-eyebrow{
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
+}
+.sec-badge{
+  font-family:var(--font-mono);font-size:.6rem;color:var(--electric);
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:3px 10px;border:1px solid rgba(96,165,250,.3);border-radius:2px;
+  background:rgba(96,165,250,.06);
+}
+.sec-law-tags{display:flex;gap:6px}
+.law-tag{font-family:var(--font-mono);font-size:.58rem;letter-spacing:.1em;padding:2px 8px;border-radius:2px;border:1px solid}
+.law-tag.gdpr{color:var(--electric);border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.05)}
+.law-tag.duaa{color:var(--amber2);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.05)}
+.sec-title{font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:var(--ink);margin-bottom:8px;letter-spacing:-.01em}
+.sec-desc{font-size:.88rem;color:var(--ink3);line-height:1.7;max-width:620px}
+.sec-rule{width:48px;height:2px;background:linear-gradient(90deg,var(--electric),transparent);margin:20px 0 32px}
+
+/* Question cards */
+.q-list{display:flex;flex-direction:column;gap:16px;margin-bottom:40px}
+.q-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px 28px;transition:border-color .2s;position:relative;overflow:hidden;
+}
+.q-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--border);transition:background .2s}
+.q-card.answered::before{background:var(--electric)}
+.q-card.answered{border-color:var(--border2)}
+.q-card:hover{border-color:var(--border2)}
+.q-meta{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.q-ref{font-family:var(--font-mono);font-size:.6rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+.q-article{font-family:var(--font-mono);font-size:.58rem;padding:2px 7px;border-radius:2px;border:1px solid;letter-spacing:.06em}
+.q-article.gdpr{color:var(--electric);border-color:rgba(96,165,250,.25);background:rgba(96,165,250,.06)}
+.q-article.duaa{color:var(--amber2);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.06)}
+.q-article.both{color:var(--ink3);border-color:var(--border2);background:var(--bg3)}
+.q-new{font-family:var(--font-mono);font-size:.55rem;padding:2px 7px;border-radius:2px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber2);letter-spacing:.06em}
+.q-text{font-size:.97rem;color:var(--ink);line-height:1.55;margin-bottom:14px;font-family:var(--font-body)}
+.q-hint{font-size:.78rem;color:var(--ink3);line-height:1.6;padding:10px 14px;background:var(--bg3);border-left:2px solid var(--border2);border-radius:0 var(--radius) var(--radius) 0;margin-bottom:16px}
+.q-hint strong{color:var(--electric2)}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;border:1px solid var(--border2);border-radius:var(--radius);
+  background:var(--bg3);color:var(--ink2);
+  font-family:var(--font-mono);font-size:.75rem;letter-spacing:.04em;
+  cursor:pointer;transition:all .15s;
+}
+.opt:hover{border-color:var(--steel3);color:var(--ink);background:var(--panel2)}
+.opt-radio{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border2);display:grid;place-items:center;flex-shrink:0;transition:all .15s}
+.opt-radio-fill{width:5px;height:5px;border-radius:50%;background:currentColor;transform:scale(0);opacity:0;transition:all .15s}
+.opt.sel-yes{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4);color:var(--risk-low)}
+.opt.sel-yes .opt-radio{border-color:var(--risk-low)}
+.opt.sel-yes .opt-radio-fill{transform:scale(1);opacity:1}
+.opt.sel-no{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.4);color:var(--risk-high)}
+.opt.sel-no .opt-radio{border-color:var(--risk-high)}
+.opt.sel-no .opt-radio-fill{transform:scale(1);opacity:1}
+.opt.sel-partial{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:var(--amber2)}
+.opt.sel-partial .opt-radio{border-color:var(--amber2)}
+.opt.sel-partial .opt-radio-fill{transform:scale(1);opacity:1}
+.opt.sel-na{background:var(--bg2);border-color:var(--border);color:var(--dim)}
+.opt.sel-na .opt-radio{border-color:var(--dim)}
+.opt.sel-na .opt-radio-fill{transform:scale(1);opacity:1}
+
+/* Nav */
+.page-nav{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)}
+.nav-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;border-radius:var(--radius);border:1px solid var(--border2);
+  font-family:var(--font-display);font-size:.82rem;font-weight:600;letter-spacing:.04em;
+  cursor:pointer;transition:all .2s;background:transparent;color:var(--ink2);
+}
+.nav-btn:hover{border-color:var(--steel3);color:var(--ink);background:var(--panel2)}
+.nav-btn.primary{background:var(--electric);color:var(--bg);border-color:var(--electric)}
+.nav-btn.primary:hover{background:var(--electric2);border-color:var(--electric2);transform:translateY(-1px);box-shadow:0 6px 24px rgba(96,165,250,.3)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+
+/* ─────── REPORT ─────── */
+#report{display:none;position:relative;z-index:1}
+.rpt-bar{
+  background:rgba(8,16,30,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 56px;position:sticky;top:60px;z-index:90;
+}
+.rbt-left{font-family:var(--font-display);font-size:.88rem;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:12px}
+.rbt-badge{font-family:var(--font-mono);font-size:.6rem;padding:3px 8px;border:1px solid var(--border2);border-radius:2px;color:var(--dim)}
+.rbt-actions{display:flex;gap:10px}
+.rbt-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 16px;border-radius:var(--radius);
+  font-family:var(--font-display);font-size:.78rem;font-weight:600;letter-spacing:.03em;
+  cursor:pointer;border:none;transition:all .2s;
+}
+.rbt-ghost{background:rgba(255,255,255,.06);color:var(--ink2);border:1px solid var(--border2)}
+.rbt-ghost:hover{background:rgba(255,255,255,.1);color:var(--ink)}
+.rbt-primary{background:var(--amber);color:var(--bg)}
+.rbt-primary:hover{background:var(--amber2)}
+
+/* Report document */
+.rpt-doc{max-width:900px;margin:0 auto;padding:52px 56px 100px}
+
+/* Cover */
+.rpt-cover{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:48px 52px;margin-bottom:48px;position:relative;overflow:hidden;
+}
+.rpt-cover::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--electric),var(--amber),var(--electric2));
+}
+.rpt-cover::after{
+  content:'UK GDPR';position:absolute;bottom:-20px;right:24px;
+  font-family:var(--font-display);font-size:8rem;font-weight:800;color:rgba(96,165,250,.03);
+  letter-spacing:-.02em;pointer-events:none;line-height:1;
+}
+.cv-kicker{font-family:var(--font-mono);font-size:.62rem;color:var(--electric);letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px}
+.cv-title{font-family:var(--font-display);font-size:2.2rem;font-weight:700;color:var(--ink);line-height:1.1;margin-bottom:8px;letter-spacing:-.02em}
+.cv-sub{font-size:.88rem;color:var(--ink3);line-height:1.65;max-width:520px;margin-bottom:32px}
+.cv-frameworks{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+.cv-fw{display:flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid;border-radius:var(--radius)}
+.cv-fw.gdpr{border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.06)}
+.cv-fw.duaa{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)}
+.cv-fw-dot{width:6px;height:6px;border-radius:50%}
+.cv-fw.gdpr .cv-fw-dot{background:var(--electric)}
+.cv-fw.duaa .cv-fw-dot{background:var(--amber2)}
+.cv-fw-name{font-family:var(--font-mono);font-size:.65rem;letter-spacing:.08em}
+.cv-fw.gdpr .cv-fw-name{color:var(--electric)}
+.cv-fw.duaa .cv-fw-name{color:var(--amber2)}
+.cv-org-row{display:flex;align-items:baseline;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.cv-org-name{font-family:var(--font-display);font-size:1.35rem;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.cv-org-email{font-family:var(--font-mono);font-size:.7rem;color:var(--ink3);letter-spacing:.04em}
+.cv-meta-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cv-meta-cell{padding:12px 16px;border-right:1px solid var(--border)}
+.cv-meta-cell:last-child{border-right:none}
+.cv-meta-lbl{font-family:var(--font-mono);font-size:.58rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.cv-meta-val{font-family:var(--font-display);font-size:.88rem;font-weight:600;color:var(--ink)}
+
+/* Score hero */
+.score-hero{
+  display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:center;
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:32px 36px;margin-bottom:40px;
+}
+.ring-area{display:flex;flex-direction:column;align-items:center;gap:12px}
+canvas#scoreRing{display:block}
+.ring-label{font-family:var(--font-mono);font-size:.62rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-align:center}
+.verdict{flex:1}
+.verdict-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 14px;border-radius:2px;border:1px solid;
+  font-family:var(--font-mono);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:14px;
+}
+.verdict-badge.high{background:var(--risk-high-bg);border-color:var(--risk-high-border);color:var(--risk-high)}
+.verdict-badge.mid{background:var(--risk-mid-bg);border-color:var(--risk-mid-border);color:var(--risk-mid)}
+.verdict-badge.low{background:var(--risk-low-bg);border-color:var(--risk-low-border);color:var(--risk-low)}
+.verdict-title{font-family:var(--font-display);font-size:1.55rem;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:10px}
+.verdict-body{font-size:.85rem;color:var(--ink3);line-height:1.75}
+.verdict-body strong{color:var(--ink2)}
+.score-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
+.s-tile{text-align:center;padding:14px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)}
+.s-tile-num{font-family:var(--font-display);font-size:1.6rem;font-weight:700;line-height:1}
+.s-tile-lbl{font-family:var(--font-mono);font-size:.58rem;color:var(--dim);margin-top:4px;letter-spacing:.08em;text-transform:uppercase}
+
+/* Report sections */
+.rpt-sec{margin-bottom:44px}
+.rpt-sec-label{font-family:var(--font-mono);font-size:.6rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.rpt-sec-title{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-.01em}
+.rpt-rule{height:1px;background:linear-gradient(90deg,var(--electric),transparent);margin-bottom:22px;opacity:.4}
+.rpt-p{font-size:.86rem;color:var(--ink3);line-height:1.8;margin-bottom:14px}
+.rpt-p strong{color:var(--ink2)}
+.rpt-p a{color:var(--electric);text-decoration:none}
+
+/* Domain cards */
+.domain-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+.dom-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;position:relative;overflow:hidden;
+}
+.dom-card::after{
+  content:attr(data-n);position:absolute;bottom:-10px;right:8px;
+  font-family:var(--font-display);font-size:4rem;font-weight:800;
+  color:rgba(255,255,255,.03);line-height:1;pointer-events:none;
+}
+.dom-card.c-green{border-left:3px solid var(--risk-low)}
+.dom-card.c-amber{border-left:3px solid var(--risk-mid)}
+.dom-card.c-red{border-left:3px solid var(--risk-high)}
+.dc-lbl{font-family:var(--font-mono);font-size:.58rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.dc-name{font-family:var(--font-display);font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:14px;line-height:1.3}
+.dc-score{display:flex;align-items:baseline;gap:4px;margin-bottom:10px}
+.dc-big{font-family:var(--font-display);font-size:1.8rem;font-weight:700;line-height:1}
+.dc-den{font-size:.78rem;color:var(--dim)}
+.dom-card.c-green .dc-big{color:var(--risk-low)}
+.dom-card.c-amber .dc-big{color:var(--risk-mid)}
+.dom-card.c-red .dc-big{color:var(--risk-high)}
+.dc-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.dc-fill{height:100%;border-radius:2px}
+.dom-card.c-green .dc-fill{background:var(--risk-low)}
+.dom-card.c-amber .dc-fill{background:var(--risk-mid)}
+.dom-card.c-red .dc-fill{background:var(--risk-high)}
+.dc-status{font-family:var(--font-mono);font-size:.6rem;color:var(--dim)}
+
+/* Charts */
+.chart-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.chart-label{font-family:var(--font-display);font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.chart-label-tag{font-family:var(--font-mono);font-size:.6rem;color:var(--dim);border:1px solid var(--border2);padding:2px 8px;border-radius:2px}
+canvas.ccv{display:block;width:100%}
+
+/* Category bars */
+.cat-bars-wrap{display:flex;flex-direction:column;gap:10px}
+.cbar-row{display:flex;align-items:center;gap:12px}
+.cbar-lbl{font-size:.78rem;color:var(--ink2);width:200px;flex-shrink:0;line-height:1.3;font-family:var(--font-body)}
+.cbar-track{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;display:flex}
+.cbar-seg{height:100%;transition:width .6s ease}
+.cbar-pct{font-family:var(--font-mono);font-size:.68rem;color:var(--ink3);width:38px;text-align:right}
+.chart-legend{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+.cl-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:.62rem;color:var(--dim)}
+.cl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* Findings table */
+.f-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.f-table th{
+  background:var(--bg3);color:var(--dim);
+  padding:9px 14px;text-align:left;
+  font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  border-bottom:1px solid var(--border2);font-weight:400;
+}
+.f-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:top}
+.f-table tr:last-child td{border-bottom:none}
+.f-table tr:hover td{background:var(--panel2)}
+.f-pill{display:inline-block;padding:2px 9px;border-radius:2px;font-family:var(--font-mono);font-size:.62rem;letter-spacing:.06em;border:1px solid}
+.f-pill.yes{background:var(--risk-low-bg);color:var(--risk-low);border-color:var(--risk-low-border)}
+.f-pill.no{background:var(--risk-high-bg);color:var(--risk-high);border-color:var(--risk-high-border)}
+.f-pill.partial{background:var(--risk-mid-bg);color:var(--risk-mid);border-color:var(--risk-mid-border)}
+.f-pill.na{background:var(--bg3);color:var(--dim);border-color:var(--border)}
+.f-art{font-family:var(--font-mono);font-size:.6rem;color:var(--dim)}
+
+/* Recommendations */
+.rec-list{display:flex;flex-direction:column;gap:12px}
+.rec{
+  display:flex;gap:16px;padding:18px 22px;
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  transition:border-color .2s;
+}
+.rec:hover{border-color:var(--border2)}
+.rec-icon{
+  width:34px;height:34px;border-radius:var(--radius);flex-shrink:0;
+  display:grid;place-items:center;margin-top:2px;
+}
+.rec-icon.high{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3)}
+.rec-icon.high svg{stroke:var(--risk-high)}
+.rec-icon.mid{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3)}
+.rec-icon.mid svg{stroke:var(--amber2)}
+.rec-icon svg{width:14px;height:14px;fill:none;stroke-width:2}
+.rec-body{}
+.rec-meta{display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap}
+.rec-pri{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;padding:2px 8px;border-radius:2px;border:1px solid}
+.rec-pri.high{background:var(--risk-high-bg);color:var(--risk-high);border-color:var(--risk-high-border)}
+.rec-pri.mid{background:var(--risk-mid-bg);color:var(--risk-mid);border-color:var(--risk-mid-border)}
+.rec-law{font-family:var(--font-mono);font-size:.58rem;color:var(--dim);border:1px solid var(--border2);padding:2px 7px;border-radius:2px}
+.rec-title{font-family:var(--font-display);font-size:.9rem;font-weight:600;color:var(--ink);margin-bottom:5px}
+.rec-text{font-size:.8rem;color:var(--ink3);line-height:1.65}
+
+/* Penalty box */
+.penalty-box{
+  background:var(--risk-high-bg);border:1px solid var(--risk-high-border);
+  border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.pb-icon{color:var(--risk-high);flex-shrink:0;margin-top:2px}
+.pb-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+.pb-title{font-family:var(--font-display);font-size:.88rem;font-weight:600;color:var(--risk-high);margin-bottom:4px}
+.pb-text{font-size:.8rem;color:var(--ink3);line-height:1.65}
+
+/* Print */
+@media print{
+  .site-header,.assess-bar,.rpt-bar,#hero,#assessment{display:none!important}
+  #report{display:block!important}
+  body{background:#fff;color:#000}
+  .rpt-doc{padding:0;max-width:100%}
+  .rpt-cover,.score-hero,.dom-card,.chart-box,.rec,.f-table td,.f-table th{background:#fff!important;border-color:#ddd!important;color:#000!important}
+  .cv-title,.rpt-sec-title,.verdict-title,.dc-name,.rec-title{color:#111!important}
+}
+
+/* ── INTAKE FORM ── */
+.intake-form{margin-bottom:32px}
+.intake-row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.intake-field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:200px}
+.intake-label{font-family:var(--font-mono);font-size:.62rem;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase}
+.intake-input{
+  background:var(--panel);border:1px solid var(--border2);border-radius:var(--radius);
+  padding:11px 14px;color:var(--ink);font-family:var(--font-body);font-size:.9rem;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  width:100%;
+}
+.intake-input::placeholder{color:var(--dim)}
+.intake-input:focus{border-color:var(--electric);box-shadow:0 0 0 3px rgba(96,165,250,.1)}
+.intake-input.error{border-color:var(--risk-high);box-shadow:0 0 0 3px rgba(239,68,68,.1)}
+.intake-err{font-family:var(--font-mono);font-size:.6rem;color:var(--risk-high);letter-spacing:.06em;min-height:14px}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .45s ease both}
+.fu2{animation:fadeUp .45s .08s ease both}
+.fu3{animation:fadeUp .45s .16s ease both}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--panel2);color:var(--ink);border:1px solid var(--border2);
+  padding:11px 18px;border-radius:var(--radius);
+  font-family:var(--font-mono);font-size:.78rem;letter-spacing:.04em;
+  opacity:0;transform:translateY(6px);transition:all .28s;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateY(0)}
+
+@media(max-width:900px){
+  .hero-wrap{grid-template-columns:1fr;padding:52px 24px}
+  .hero-panel{display:none}
+  .q-page,.rpt-doc,.section-nav-wrap{padding-left:24px;padding-right:24px}
+  .assess-bar,.rpt-bar,.site-header{padding:0 24px}
+  .domain-cards{grid-template-columns:1fr}
+  .cv-meta-grid{grid-template-columns:repeat(2,1fr)}
+  .score-hero{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 2L3 7v5c0 5.5 4.1 10.7 9 12 4.9-1.3 9-6.5 9-12V7L12 2z"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">Cyber<span>Win</span></div>
+      <div class="brand-sub">Assessment Platform</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="progress-dots" id="progressDots"></div>
+    <div class="hdr-pct" id="hdrPct">Assessment</div>
+  </div>
+</header>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div class="hero-wrap">
+    <div>
+      <div class="hero-kicker fu"><span class="kicker-line"></span>Compliance Self-Assessment</div>
+      <div class="hero-laws fu">
+        <span class="law-badge active"><span class="law-badge-dot"></span>UK GDPR</span>
+        <span class="law-badge active"><span class="law-badge-dot"></span>Data (Use and Access) Act 2025</span>
+        <span class="law-badge"><span class="law-badge-dot"></span>DPA 2018</span>
+        <span class="law-badge"><span class="law-badge-dot"></span>PECR (as amended)</span>
+      </div>
+      <h1 class="hero-title fu2">How compliant is your<br>organisation with <span class="accent">UK GDPR</span><br>&amp; the <span class="accent2">DUAA 2025?</span></h1>
+      <p class="hero-body fu3">A structured 20-question readiness assessment mapped to the current UK data protection framework — including the new obligations introduced by the Data (Use and Access) Act 2025 that took effect from June 2025. Generate a formal compliance gap report in under 10 minutes.</p>
+      <div class="intake-form fu3">
+        <div class="intake-row">
+          <div class="intake-field">
+            <label class="intake-label" for="clientCompany">Organisation Name</label>
+            <input class="intake-input" id="clientCompany" type="text" placeholder="e.g. Acme Ltd" autocomplete="organization"/>
+            <div class="intake-err" id="errCompany"></div>
+          </div>
+          <div class="intake-field">
+            <label class="intake-label" for="clientEmail">Contact Email</label>
+            <input class="intake-input" id="clientEmail" type="email" placeholder="e.g. dpo@acme.co.uk" autocomplete="email"/>
+            <div class="intake-err" id="errEmail"></div>
+          </div>
+        </div>
+      </div>
+      <button class="hero-cta fu3" onclick="startAssessment()">
+        Start Assessment
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="hero-panel fu2">
+      <div class="hp-header">
+        <div class="hp-title">Assessment Overview</div>
+        <div class="hp-live"><span class="hp-live-dot"></span>Current 2025/26</div>
+      </div>
+      <div class="hp-body">
+        <div class="hp-stat-row">
+          <div class="hp-stat"><span class="hp-stat-label">Total Questions</span><span class="hp-stat-val">20</span></div>
+          <div class="hp-stat"><span class="hp-stat-label">Domains</span><span class="hp-stat-val">4</span></div>
+          <div class="hp-stat"><span class="hp-stat-label">Est. Completion</span><span class="hp-stat-val">~8 min</span></div>
+        </div>
+        <div class="hp-frameworks">
+          <div class="hp-fw gdpr">
+            <div>
+              <div class="hp-fw-name">UK GDPR &amp; DPA 2018</div>
+              <div class="hp-fw-desc">Core data protection principles, lawful bases, data subject rights, controller obligations, DPO requirements, DPIA and breach notification.</div>
+            </div>
+          </div>
+          <div class="hp-fw duaa">
+            <div>
+              <div class="hp-fw-name">Data (Use &amp; Access) Act 2025</div>
+              <div class="hp-fw-desc">Recognised legitimate interests, automated decision-making reforms, children&apos;s higher protection, PECR alignment, complaints procedures &amp; DSARs.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ASSESSMENT ══ -->
+<div id="assessment">
+  <div class="assess-bar">
+    <button class="ab-back" onclick="goHome()" title="Back to Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+    <div class="ab-divider"></div>
+    <div class="ab-section" id="abSection">Governance &amp; Accountability</div>
+    <div class="ab-divider"></div>
+    <div class="ab-count" id="abCount">Section 1 of 4</div>
+    <div class="ab-bar"><div class="ab-fill" id="abFill" style="width:0%"></div></div>
+    <div class="ab-answered" id="abAnswered">0 / 20</div>
+  </div>
+
+  <div class="section-nav-wrap">
+    <div class="sec-tabs" id="secTabs">
+      <button class="sec-tab active" id="stab-0" onclick="goSec(0)"><span class="stab-num" id="snum-0">1</span>Governance</button>
+      <button class="sec-tab" id="stab-1" onclick="goSec(1)"><span class="stab-num" id="snum-1">2</span>Lawful Basis &amp; Rights</button>
+      <button class="sec-tab" id="stab-2" onclick="goSec(2)"><span class="stab-num" id="snum-2">3</span>Data Management</button>
+      <button class="sec-tab" id="stab-3" onclick="goSec(3)"><span class="stab-num" id="snum-3">4</span>DUAA 2025 Specific</button>
+    </div>
+  </div>
+
+  <div class="q-page active" id="page-0">
+    <div class="sec-header">
+      <div class="sec-eyebrow"><span class="sec-badge">Section 01</span><div class="sec-law-tags"><span class="law-tag gdpr">UK GDPR Art. 5 / 24</span><span class="law-tag both">DPA 2018</span></div></div>
+      <div class="sec-title">Governance &amp; Accountability</div>
+      <p class="sec-desc">Accountability is a core UK GDPR principle (Art. 5(2)). Organisations must demonstrate compliance, not merely assert it. This section assesses your governance structures, designated roles, record-keeping and staff awareness obligations.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="q-list" id="qlist-0"></div>
+    <div class="page-nav">
+      <div></div>
+      <button class="nav-btn primary" onclick="goSec(1)">Lawful Basis &amp; Rights <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <div class="q-page" id="page-1">
+    <div class="sec-header">
+      <div class="sec-eyebrow"><span class="sec-badge">Section 02</span><div class="sec-law-tags"><span class="law-tag gdpr">UK GDPR Art. 6 / 7 / 12-22</span><span class="law-tag duaa">DUAA 2025</span></div></div>
+      <div class="sec-title">Lawful Basis &amp; Data Subject Rights</div>
+      <p class="sec-desc">Every processing activity requires a documented lawful basis under Art. 6. The DUAA 2025 introduced a new &apos;recognised legitimate interests&apos; basis and new individual rights including a statutory right to raise complaints directly with controllers.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="q-list" id="qlist-1"></div>
+    <div class="page-nav">
+      <button class="nav-btn" onclick="goSec(0)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Governance</button>
+      <button class="nav-btn primary" onclick="goSec(2)">Data Management <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <div class="q-page" id="page-2">
+    <div class="sec-header">
+      <div class="sec-eyebrow"><span class="sec-badge">Section 03</span><div class="sec-law-tags"><span class="law-tag gdpr">UK GDPR Art. 25 / 32 / 33-34</span><span class="law-tag duaa">DUAA 2025</span></div></div>
+      <div class="sec-title">Data Management &amp; Security</div>
+      <p class="sec-desc">Privacy by Design (Art. 25), appropriate technical and organisational security measures (Art. 32), 72-hour breach notification (Art. 33), and the DUAA 2025 updated international transfer test — all require active technical implementation.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="q-list" id="qlist-2"></div>
+    <div class="page-nav">
+      <button class="nav-btn" onclick="goSec(1)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Lawful Basis &amp; Rights</button>
+      <button class="nav-btn primary" onclick="goSec(3)">DUAA 2025 Specific <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <div class="q-page" id="page-3">
+    <div class="sec-header">
+      <div class="sec-eyebrow"><span class="sec-badge">Section 04</span><div class="sec-law-tags"><span class="law-tag duaa">DUAA 2025 — New Obligations</span></div></div>
+      <div class="sec-title">DUAA 2025 — New Specific Requirements</div>
+      <p class="sec-desc">The Data (Use and Access) Act 2025, which came into force from June 2025 on a phased basis, introduces specific new obligations. This section assesses your readiness against the key reforms including automated decision-making, children&apos;s protections, cookie reforms and the new complaints regime.</p>
+      <div class="sec-rule"></div>
+    </div>
+    <div class="q-list" id="qlist-3"></div>
+    <div class="page-nav">
+      <button class="nav-btn" onclick="goSec(2)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Data Management</button>
+      <button class="nav-btn primary" onclick="genReport()">Generate Report <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REPORT ══ -->
+<div id="report">
+  <div class="rpt-bar">
+    <div class="rbt-left">
+      UK GDPR &amp; DUAA 2025 Compliance Report
+      <span class="rbt-badge">Confidential</span>
+    </div>
+    <div class="rbt-actions">
+      <button class="rbt-btn rbt-ghost" onclick="retake()">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        Retake
+      </button>
+      <button class="rbt-btn rbt-primary" onclick="window.print()">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+    </div>
+  </div>
+  <div class="rpt-doc" id="rptDoc"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// QUESTION DATA
+// ════════════════════════════════════════════════════════════
+const SECTIONS = [
+  {
+    id:0, key:'gov', name:'Governance & Accountability', short:'Governance',
+    qs:[
+      {
+        id:'g1',
+        text:'Does your organisation have a documented accountability framework demonstrating how you comply with UK GDPR principles?',
+        hint:'Art. 5(2) UK GDPR requires controllers to be able to <strong>demonstrate</strong> compliance — not merely assert it. This includes records, policies, and audit trails.',
+        law:'UK GDPR Art. 5(2)',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — documented and maintained'},{v:'partial',l:'Partially in place'},{v:'no',l:'No — not yet established'}]
+      },
+      {
+        id:'g2',
+        text:'Have you assessed whether your organisation is required to appoint a Data Protection Officer (DPO) and acted accordingly?',
+        hint:'A DPO is mandatory under Art. 37 UK GDPR for public authorities, organisations engaged in large-scale systematic monitoring, or large-scale processing of special category data.',
+        law:'UK GDPR Art. 37–39',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — DPO appointed or confirmed not required'},{v:'partial',l:'Under review'},{v:'no',l:'No — not assessed'}]
+      },
+      {
+        id:'g3',
+        text:'Do you maintain a complete and up-to-date Record of Processing Activities (RoPA)?',
+        hint:'Art. 30 UK GDPR requires a RoPA covering: data categories, purposes, lawful basis, recipients, retention periods, and security measures. Organisations with fewer than 250 staff may still require one if processing is high-risk or regular.',
+        law:'UK GDPR Art. 30',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — complete and reviewed regularly'},{v:'partial',l:'Partially complete'},{v:'no',l:'No'}]
+      },
+      {
+        id:'g4',
+        text:'Do all staff who handle personal data receive regular, documented data protection training?',
+        hint:'Art. 24 and Art. 39(1)(b) require appropriate training as part of your technical and organisational measures. Training should be role-specific and recorded.',
+        law:'UK GDPR Art. 24 / 39',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — mandatory and documented'},{v:'partial',l:'Some staff trained'},{v:'no',l:'No formal training'}]
+      },
+      {
+        id:'g5',
+        text:'Has senior leadership (board-level) formally committed to and taken responsibility for data protection compliance?',
+        hint:'The ICO expects accountability to be embedded at board level. A named senior individual with board-level responsibility is considered best practice and supports demonstrating compliance.',
+        law:'UK GDPR Art. 5(2) / 24',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — board sponsor named'},{v:'partial',l:'Partially — informal commitment'},{v:'no',l:'No senior oversight'}]
+      }
+    ]
+  },
+  {
+    id:1, key:'rights', name:'Lawful Basis & Data Subject Rights', short:'Lawful Basis',
+    qs:[
+      {
+        id:'r1',
+        text:'Have you identified, documented, and communicated the lawful basis for every personal data processing activity?',
+        hint:'Art. 6 UK GDPR requires a lawful basis for all processing. The DUAA 2025 added <strong>Recognised Legitimate Interests</strong> (e.g. crime prevention, safeguarding) that require no balancing test, but most processing still requires documented justification.',
+        law:'UK GDPR Art. 6 | DUAA 2025',
+        lawType:'both',
+        isNew:false,
+        opts:[{v:'yes',l:'Yes — all activities documented'},{v:'partial',l:'Partially documented'},{v:'no',l:'No'}]
+      },
+      {
+        id:'r2',
+        text:'Where you rely on consent as your lawful basis, is it freely given, specific, informed, unambiguous, and easily withdrawable?',
+        hint:'Art. 7 UK GDPR: consent must be as easy to withdraw as to give. Pre-ticked boxes and bundled consent are invalid. Records of consent must be maintained.',
+        law:'UK GDPR Art. 7',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — GDPR-compliant consent'},{v:'partial',l:'Partially compliant'},{v:'no',l:'No'},{v:'na',l:'N/A — consent not relied upon'}]
+      },
+      {
+        id:'r3',
+        text:'Can your organisation respond to Data Subject Access Requests (DSARs) conducting only reasonable and proportionate searches within one month?',
+        hint:'The DUAA 2025 <strong>codified</strong> that only "reasonable and proportionate" searches are required. The one-month clock can be <strong>paused</strong> when additional information is needed from the requester — this is now explicit in statute.',
+        law:'UK GDPR Art. 15 | DUAA 2025',
+        lawType:'both',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — documented DSAR process'},{v:'partial',l:'Partially — informal process'},{v:'no',l:'No formal process'}]
+      },
+      {
+        id:'r4',
+        text:'Do you have documented procedures to fulfil all data subject rights within statutory timeframes (access, rectification, erasure, restriction, portability, objection)?',
+        hint:'Arts. 15–22 UK GDPR. Each right has different conditions and timescales. Erasure, restriction and objection must be responded to without undue delay. Processes should be tested and staff trained.',
+        law:'UK GDPR Art. 15–22',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — all rights covered'},{v:'partial',l:'Some rights covered'},{v:'no',l:'No formal process'}]
+      },
+      {
+        id:'r5',
+        text:'Have you established a formal complaints procedure enabling individuals to raise data protection concerns directly with your organisation?',
+        hint:'The DUAA 2025 introduces a <strong>statutory right</strong> for individuals to complain directly to controllers. From June 2026, you must: provide a complaints mechanism (e.g. online form), acknowledge within 30 days, investigate, and notify the outcome.',
+        law:'DUAA 2025 — New Obligation',
+        lawType:'duaa',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — formal process in place'},{v:'partial',l:'Informal process only'},{v:'no',l:'No complaints mechanism'}]
+      }
+    ]
+  },
+  {
+    id:2, key:'security', name:'Data Management & Security', short:'Security',
+    qs:[
+      {
+        id:'s1',
+        text:'Have you implemented Privacy by Design and Privacy by Default across your systems and new projects?',
+        hint:'Art. 25 UK GDPR requires privacy-protective measures to be embedded from the outset — not bolted on later. Default settings must process only the minimum data necessary.',
+        law:'UK GDPR Art. 25',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — embedded in development'},{v:'partial',l:'Partially — some projects'},{v:'no',l:'No'}]
+      },
+      {
+        id:'s2',
+        text:'Have you implemented appropriate technical and organisational security measures proportionate to the risk to personal data?',
+        hint:'Art. 32 UK GDPR requires risk-appropriate measures including encryption, pseudonymisation, access controls, resilience testing, and regular security reviews.',
+        law:'UK GDPR Art. 32',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — formally documented'},{v:'partial',l:'Some measures in place'},{v:'no',l:'No formal security measures'}]
+      },
+      {
+        id:'s3',
+        text:'Do you have a documented process for identifying, assessing, and notifying personal data breaches within 72 hours to the ICO?',
+        hint:'Art. 33 UK GDPR: breaches risking individuals\' rights must be reported to the ICO within 72 hours. Art. 34 requires notification to affected individuals if high risk. A tested incident response plan is essential.',
+        law:'UK GDPR Art. 33–34',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — tested procedure exists'},{v:'partial',l:'Partially documented'},{v:'no',l:'No breach procedure'}]
+      },
+      {
+        id:'s4',
+        text:'Do you conduct Data Protection Impact Assessments (DPIAs) before undertaking high-risk processing activities?',
+        hint:'Art. 35 UK GDPR mandates DPIAs for processing likely to result in high risk — including systematic profiling, large-scale special category data, or novel technology. The ICO publishes a list of processing requiring mandatory DPIAs.',
+        law:'UK GDPR Art. 35',
+        lawType:'gdpr',
+        opts:[{v:'yes',l:'Yes — formal DPIA process'},{v:'partial',l:'Partial — ad hoc'},{v:'no',l:'No'},{v:'na',l:'N/A — no high-risk processing'}]
+      },
+      {
+        id:'s5',
+        text:'When transferring personal data outside the UK, do you apply the DUAA 2025 "not materially lower" data protection test?',
+        hint:'The DUAA 2025 replaced the "essentially equivalent" test with a <strong>"not materially lower"</strong> standard for international transfers. You must assess whether the destination country provides adequate protection before transfer, and document your assessment.',
+        law:'DUAA 2025 — Amended Test',
+        lawType:'duaa',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — updated transfer assessments'},{v:'partial',l:'Partially updated'},{v:'no',l:'No formal transfer assessment'},{v:'na',l:'N/A — no international transfers'}]
+      }
+    ]
+  },
+  {
+    id:3, key:'duaa', name:'DUAA 2025 — Specific Requirements', short:'DUAA 2025',
+    qs:[
+      {
+        id:'d1',
+        text:'If you rely on Legitimate Interests as a lawful basis, have you reviewed whether any of your activities qualify as "Recognised Legitimate Interests" under the DUAA 2025?',
+        hint:'The DUAA 2025 introduced <strong>Recognised Legitimate Interests</strong> — a list of processing purposes (crime prevention, national security, safeguarding, responding to public interest bodies) that do not require a balancing test or Legitimate Interests Assessment. This can significantly reduce compliance burden for qualifying activities.',
+        law:'DUAA 2025 — New Lawful Basis',
+        lawType:'duaa',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — reviewed and documented'},{v:'partial',l:'Under review'},{v:'no',l:'No — not assessed'},{v:'na',l:'N/A — do not use legitimate interests'}]
+      },
+      {
+        id:'d2',
+        text:'Have you reviewed your use of automated decision-making in light of the DUAA 2025 reforms?',
+        hint:'The DUAA 2025 <strong>narrowed</strong> the restriction on automated decision-making — the prohibition now applies only where significant decisions are based <strong>entirely or partly</strong> on processing of <strong>special category data</strong>. This makes it significantly easier to deploy automated/AI-based decision tools for non-special-category data, provided transparency and human review are available.',
+        law:'DUAA 2025 — ADM Reform',
+        lawType:'duaa',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — policies updated'},{v:'partial',l:'Under review'},{v:'no',l:'No — not yet reviewed'},{v:'na',l:'N/A — no automated decision-making'}]
+      },
+      {
+        id:'d3',
+        text:'If your online service is likely to be accessed by children, have you implemented "children\'s higher protection matters" in your data protection by design obligations?',
+        hint:'The DUAA 2025 introduces an <strong>explicit statutory requirement</strong> for internet society services likely accessed by children to factor in children\'s higher protection matters: how to protect/support children, that children merit specific protection due to lower awareness of risks, and that children have different needs at different ages. ICO Age Appropriate Design Code compliance will generally satisfy this.',
+        law:'DUAA 2025 — Children\'s Protection',
+        lawType:'duaa',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — implemented'},{v:'partial',l:'Partially addressed'},{v:'no',l:'No'},{v:'na',l:'N/A — no child-accessible service'}]
+      },
+      {
+        id:'d4',
+        text:'Have you reviewed your cookie consent practices in light of the DUAA 2025 amendments to PECR?',
+        hint:'The DUAA 2025 removes the requirement for <strong>prior explicit consent for non-intrusive analytics and functionality cookies</strong> (statistical data collection, remembering preferences/locations), provided users are clearly informed and have a simple, free method to opt out. Fines for PECR breaches are now aligned with UK GDPR — up to <strong>£17.5m or 4% of global turnover</strong>.',
+        law:'DUAA 2025 | PECR (amended)',
+        lawType:'duaa',
+        isNew:true,
+        opts:[{v:'yes',l:'Yes — reviewed and updated'},{v:'partial',l:'Under review'},{v:'no',l:'No — not yet reviewed'},{v:'na',l:'N/A — no cookies'}]
+      },
+      {
+        id:'d5',
+        text:'Have you updated your privacy notice to reflect DUAA 2025 changes, including the new data subject complaints procedure?',
+        hint:'Privacy notices must reflect current processing and legal obligations. With the DUAA 2025 introducing a statutory right to complain to controllers (coming into force June 2026), privacy notices should include the complaints process. Notices must also reflect any changes to lawful basis, cookie practices, or transfer mechanisms.',
+        law:'UK GDPR Art. 13–14 | DUAA 2025',
+        lawType:'both',
+        isNew:false,
+        opts:[{v:'yes',l:'Yes — notices updated'},{v:'partial',l:'Partially updated'},{v:'no',l:'No — not reviewed'}]
+      }
+    ]
+  }
+];
+
+const SCORE = {yes:2,partial:1,no:0,na:0};
+const ANS = {};
+let CUR = 0;
+let CLIENT = { company: '', email: '' };
+
+// ════════════════════════════════════════════════════════════
+// BUILD
+// ════════════════════════════════════════════════════════════
+function buildAll() {
+  let gIdx = 0;
+  SECTIONS.forEach(sec => {
+    const list = document.getElementById('qlist-' + sec.id);
+    sec.qs.forEach((q, qi) => {
+      const before = SECTIONS.slice(0, sec.id).reduce((s,s2) => s + s2.qs.length, 0);
+      const gNum = before + qi + 1;
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.id = 'qcard-' + q.id;
+      const artClass = q.lawType || 'gdpr';
+      const newBadge = q.isNew ? '<span class="q-new">NEW 2025</span>' : '';
+      card.innerHTML =
+        '<div class="q-meta">' +
+          '<span class="q-ref">Q' + String(gNum).padStart(2,'0') + '</span>' +
+          '<span class="q-article ' + artClass + '">' + q.law + '</span>' +
+          newBadge +
+        '</div>' +
+        '<div class="q-text">' + q.text + '</div>' +
+        (q.hint ? '<div class="q-hint">' + q.hint + '</div>' : '') +
+        '<div class="opts" id="opts-' + q.id + '">' +
+          q.opts.map(o =>
+            '<button class="opt" onclick="pick(\'' + q.id + '\',\'' + o.v + '\')" id="opt-' + q.id + '-' + o.v + '">' +
+              '<span class="opt-radio"><span class="opt-radio-fill"></span></span>' +
+              o.l +
+            '</button>'
+          ).join('') +
+        '</div>';
+      list.appendChild(card);
+      gIdx++;
+    });
+  });
+  buildDots();
+}
+
+function buildDots() {
+  const wrap = document.getElementById('progressDots');
+  const total = SECTIONS.reduce((s,sec) => s + sec.qs.length, 0);
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('span');
+    d.className = 'pdot';
+    d.id = 'dot-' + i;
+    wrap.appendChild(d);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// ANSWER
+// ════════════════════════════════════════════════════════════
+function pick(qid, val) {
+  ANS[qid] = val;
+  const wrap = document.getElementById('opts-' + qid);
+  wrap.querySelectorAll('.opt').forEach(b => { b.className = 'opt'; });
+  const sel = document.getElementById('opt-' + qid + '-' + val);
+  if (sel) sel.classList.add('sel-' + val);
+  document.getElementById('qcard-' + qid)?.classList.add('answered');
+  syncProgress();
+}
+
+function syncProgress() {
+  const total = SECTIONS.reduce((s,sec) => s + sec.qs.length, 0);
+  const done = Object.keys(ANS).length;
+  const pct = Math.round(done / total * 100);
+  document.getElementById('abFill').style.width = pct + '%';
+  document.getElementById('abAnswered').textContent = done + ' / ' + total;
+  document.getElementById('hdrPct').textContent = pct + '%';
+
+  let gIdx = 0;
+  SECTIONS.forEach(sec => {
+    sec.qs.forEach(q => {
+      const dot = document.getElementById('dot-' + gIdx);
+      if (dot) {
+        dot.className = 'pdot';
+        if (ANS[q.id]) dot.classList.add('done');
+      }
+      gIdx++;
+    });
+    const allDone = sec.qs.every(q => ANS[q.id]);
+    const tab = document.getElementById('stab-' + sec.id);
+    const num = document.getElementById('snum-' + sec.id);
+    if (allDone) {
+      tab?.classList.add('complete');
+      if (num) num.textContent = '✓';
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════
+function startAssessment() {
+  const companyEl = document.getElementById('clientCompany');
+  const emailEl   = document.getElementById('clientEmail');
+  const errC      = document.getElementById('errCompany');
+  const errE      = document.getElementById('errEmail');
+  let ok = true;
+
+  const company = companyEl.value.trim();
+  const email   = emailEl.value.trim();
+  const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  companyEl.classList.remove('error'); errC.textContent = '';
+  emailEl.classList.remove('error');   errE.textContent = '';
+
+  if (!company) {
+    companyEl.classList.add('error');
+    errC.textContent = 'Organisation name is required';
+    ok = false;
+  }
+  if (!email || !emailRx.test(email)) {
+    emailEl.classList.add('error');
+    errE.textContent = email ? 'Please enter a valid email address' : 'Contact email is required';
+    ok = false;
+  }
+  if (!ok) return;
+
+  CLIENT.company = company;
+  CLIENT.email   = email;
+
+  document.getElementById('hero').style.display = 'none';
+  document.getElementById('assessment').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  goSec(0);
+}
+
+function goHome() {
+  document.getElementById('assessment').style.display = 'none';
+  document.getElementById('report').style.display = 'none';
+  document.getElementById('hero').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goSec(idx) {
+  CUR = idx;
+  document.querySelectorAll('.q-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + idx)?.classList.add('active');
+  document.querySelectorAll('.sec-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('stab-' + idx)?.classList.add('active');
+  const sec = SECTIONS[idx];
+  document.getElementById('abSection').textContent = sec.name;
+  document.getElementById('abCount').textContent = 'Section ' + (idx + 1) + ' of ' + SECTIONS.length;
+  window.scrollTo({ top: 60, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════════════════════
+// SCORING
+// ════════════════════════════════════════════════════════════
+function calcScores() {
+  let tot = 0, mx = 0;
+  const secs = SECTIONS.map(sec => {
+    let s = 0, m = 0;
+    sec.qs.forEach(q => {
+      const v = ANS[q.id];
+      s += SCORE[v] || 0;
+      if (v !== 'na') m += 2;
+    });
+    tot += s; mx += m;
+    return { s, m, pct: m > 0 ? Math.round(s / m * 100) : 0 };
+  });
+  return { tot, mx, pct: mx > 0 ? Math.round(tot / mx * 100) : 0, secs };
+}
+
+function riskOf(pct) {
+  if (pct >= 70) return { level:'low', label:'Compliant', color:'#22c55e', desc:'Good level of compliance' };
+  if (pct >= 40) return { level:'mid', label:'Partially Compliant', color:'#f59e0b', desc:'Gaps require remediation' };
+  return { level:'high', label:'Non-Compliant', color:'#ef4444', desc:'Urgent action required' };
+}
+
+// ════════════════════════════════════════════════════════════
+// REPORT
+// ════════════════════════════════════════════════════════════
+function genReport() {
+  const missing = SECTIONS.flatMap(sec => sec.qs.filter(q => !ANS[q.id]));
+  if (missing.length) {
+    showToast(missing.length + ' question(s) unanswered — please complete all sections');
+    for (let i = 0; i < SECTIONS.length; i++) {
+      if (SECTIONS[i].qs.some(q => !ANS[q.id])) { goSec(i); break; }
+    }
+    return;
+  }
+
+  const sc = calcScores();
+  const risk = riskOf(sc.pct);
+  const today = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'long', day:'numeric' });
+  const yesN = Object.values(ANS).filter(v => v === 'yes').length;
+  const noN = Object.values(ANS).filter(v => v === 'no').length;
+  const partN = Object.values(ANS).filter(v => v === 'partial').length;
+  const naN = Object.values(ANS).filter(v => v === 'na').length;
+  const recs = buildRecs(sc);
+
+  document.getElementById('rptDoc').innerHTML = buildReportHTML(sc, risk, today, yesN, noN, partN, naN, recs);
+  document.getElementById('assessment').style.display = 'none';
+  document.getElementById('report').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => {
+    drawRing(sc.pct, risk);
+    drawRadar(sc);
+    drawDistBars(sc);
+    drawStackedBar(sc);
+  }, 80);
+}
+
+function buildRecs(sc) {
+  const db = {
+    g1:{ title:'Establish an Accountability Framework', law:'UK GDPR Art. 5(2)', text:'Document your data protection governance structure. Create an accountability log evidencing: policies in place, training records, DPIAs conducted, RoPA maintained, and breach response tested. The ICO may request evidence of accountability during investigations or audits.' },
+    g2:{ title:'Assess and Action DPO Obligations', law:'UK GDPR Art. 37', text:'Conduct a formal DPO necessity assessment against the Art. 37 criteria. If required, designate a suitably qualified DPO with appropriate autonomy, resource and access to senior management. Document the outcome either way.' },
+    g3:{ title:'Build and Maintain a Complete RoPA', law:'UK GDPR Art. 30', text:'Create a comprehensive Record of Processing Activities covering every processing operation, its purpose, lawful basis, data categories, recipients, retention periods, and security measures. Review and update at least annually and after any significant change.' },
+    g4:{ title:'Implement Mandatory Data Protection Training', law:'UK GDPR Art. 24', text:'Roll out role-specific, mandatory data protection training for all staff. Training should cover: lawful bases, data subject rights, breach identification and reporting obligations, and handling of special category data. Maintain training completion records.' },
+    g5:{ title:'Secure Board-Level Accountability', law:'UK GDPR Art. 5(2)', text:'Name a senior individual at board level with formal responsibility for data protection. Include data protection as a standing board agenda item. The ICO expects organisations to demonstrate that accountability starts at the top.' },
+    r1:{ title:'Document Lawful Basis for All Processing', law:'UK GDPR Art. 6 | DUAA 2025', text:'Map every processing activity to a specific Art. 6 lawful basis (or Art. 9 for special category data). Document this in your RoPA and privacy notice. Consider whether any activities qualify as Recognised Legitimate Interests under the DUAA 2025, which removes the need for a balancing test.' },
+    r2:{ title:'Audit and Remediate Consent Mechanisms', law:'UK GDPR Art. 7', text:'Audit all consent collection points. Remove pre-ticked boxes and bundled consent. Ensure withdrawal is as easy as giving consent. Maintain time-stamped records of each consent obtained. Consider whether legitimate interests or another basis is more appropriate.' },
+    r3:{ title:'Establish a Robust DSAR Process', law:'UK GDPR Art. 15 | DUAA 2025', text:'Implement a documented DSAR procedure reflecting DUAA 2025 changes: searches need only be "reasonable and proportionate," and the one-month clock can be paused when clarification is needed. Train staff to recognise DSARs. Track all requests and responses.' },
+    r4:{ title:'Operationalise All Data Subject Rights', law:'UK GDPR Art. 15-22', text:'Create documented procedures for each right: access (Art. 15), rectification (Art. 16), erasure (Art. 17), restriction (Art. 18), portability (Art. 20), objection (Art. 21). Assign responsibility, set response timescales, and test the process.' },
+    r5:{ title:'Implement Statutory Complaints Procedure', law:'DUAA 2025 — New Obligation', text:'Establish a formal data protection complaints mechanism ahead of the June 2026 commencement date. This must include: an accessible complaints form (ICO recommends electronic), acknowledgement within 30 days, documented investigation, and notification of outcome. Update your privacy notice to reference the process.' },
+    s1:{ title:'Embed Privacy by Design and by Default', law:'UK GDPR Art. 25', text:'Integrate privacy requirements into your project lifecycle, procurement processes, and system design standards. Data minimisation and privacy-protective defaults must be in place from the outset. Conduct Art. 25 assessments for new systems.' },
+    s2:{ title:'Formalise Information Security Controls', law:'UK GDPR Art. 32', text:'Conduct a risk assessment of your personal data processing activities and implement proportionate technical and organisational measures. Consider encryption, pseudonymisation, access controls, MFA, patching schedules, and resilience testing. Document your security rationale.' },
+    s3:{ title:'Establish and Test Breach Response Procedure', law:'UK GDPR Art. 33-34', text:'Create a documented personal data breach response plan covering: detection, containment, risk assessment, 72-hour ICO notification (where required), and communication to affected individuals for high-risk breaches. Run tabletop exercises to test the plan.' },
+    s4:{ title:'Implement DPIA Process for High-Risk Processing', law:'UK GDPR Art. 35', text:'Establish a formal DPIA process using the ICO\'s recommended methodology. Conduct DPIAs before commencing high-risk processing (profiling, biometric data, new technology). Consult the ICO before processing where residual risk remains high after mitigation.' },
+    s5:{ title:'Update International Transfer Assessments', law:'DUAA 2025 — Transfer Test', text:'Replace "essentially equivalent" assessments with the new DUAA 2025 "not materially lower" standard. Update your Transfer Risk Assessments (TRAs), Standard Contractual Clauses documentation, and binding corporate rules where applicable. Document the updated assessment rationale.' },
+    d1:{ title:'Review Activities for Recognised Legitimate Interests', law:'DUAA 2025 — Annex 2', text:'Review your processing activities against the DUAA 2025 Recognised Legitimate Interests list (crime prevention, national security, safeguarding, emergency response, public body requests). Qualifying activities no longer require a balancing test — update your RoPA and privacy notice to reflect this where applicable.' },
+    d2:{ title:'Review Automated Decision-Making Policies', law:'DUAA 2025 — ADM', text:'Audit all automated and AI-driven decision processes. Under the DUAA 2025, the prohibition on automated decision-making (formerly Art. 22 UK GDPR) now only applies where significant decisions are based entirely or partly on special category data. Update policies, ensure transparency, provide human review mechanisms, and create accessible challenge processes.' },
+    d3:{ title:'Implement Children\'s Higher Protection Measures', law:'DUAA 2025 — Children', text:'If your online service may be accessed by children, implement the DUAA 2025 children\'s higher protection matters in your data protection by design obligations. Confirm compliance with the ICO Age Appropriate Design Code. Review profiling, consent ages, and default settings for child users.' },
+    d4:{ title:'Update Cookie Consent for DUAA 2025 / PECR Reforms', law:'DUAA 2025 | PECR', text:'Review your cookie management in light of DUAA 2025 PECR amendments. Analytics and functionality cookies may no longer require prior consent, but users must be clearly informed and have a simple opt-out. Update your cookie notice and consent management platform. Note: PECR fines are now aligned with UK GDPR (up to £17.5m or 4% turnover).' },
+    d5:{ title:'Update Privacy Notices to Reflect DUAA 2025', law:'UK GDPR Art. 13-14 | DUAA 2025', text:'Review and update all privacy notices to reflect: new lawful bases (Recognised Legitimate Interests), updated ADM approach, revised cookie practices, updated international transfer basis, and the forthcoming statutory complaints procedure. Set a review date and assign ownership.' }
+  };
+
+  const out = [];
+  SECTIONS.forEach(sec => {
+    sec.qs.forEach(q => {
+      const v = ANS[q.id];
+      if (v === 'no' || v === 'partial') {
+        const r = db[q.id];
+        if (r) out.push({ ...r, pri: v === 'no' ? 'high' : 'mid', sec: sec.short, qid: q.id, isNew: q.isNew });
+      }
+    });
+  });
+  out.sort((a,b) => (a.pri === 'high' ? 0 : 1) - (b.pri === 'high' ? 0 : 1));
+  return out.slice(0, 12);
+}
+
+const PILL_MAP = { yes:'yes', no:'no', partial:'partial', na:'na' };
+const PILL_LBL = { yes:'Compliant', no:'Gap', partial:'Partial', na:'N/A' };
+
+function buildReportHTML(sc, risk, today, yesN, noN, partN, naN, recs) {
+  const total = SECTIONS.reduce((s,sec) => s + sec.qs.length, 0);
+  const gc = risk.level === 'low' ? 'c-green' : risk.level === 'mid' ? 'c-amber' : 'c-red';
+
+  const covRows = SECTIONS.flatMap(sec =>
+    sec.qs.map((q, qi) => {
+      const before = SECTIONS.slice(0, sec.id).reduce((s,s2) => s + s2.qs.length, 0);
+      const n = before + qi + 1;
+      const v = ANS[q.id] || 'na';
+      const s = SCORE[v] || 0;
+      const mx = v === 'na' ? 0 : 2;
+      return '<tr>' +
+        '<td style="font-family:var(--font-mono);font-size:.65rem;color:var(--dim)">Q' + String(n).padStart(2,'0') + '</td>' +
+        '<td style="font-size:.72rem;color:var(--dim)">' + sec.short + '</td>' +
+        '<td>' + q.text.substring(0, 65) + (q.text.length > 65 ? '&hellip;' : '') + '</td>' +
+        '<td><span class="q-article ' + (q.lawType || 'gdpr') + '" style="font-size:.58rem;padding:2px 6px;border-radius:2px;border:1px solid;margin:0">' + (q.isNew ? '★ ' : '') + q.law.split('|')[0].trim() + '</span></td>' +
+        '<td><span class="f-pill ' + PILL_MAP[v] + '">' + PILL_LBL[v] + '</span></td>' +
+        '</tr>';
+    })
+  ).join('');
+
+  return '' +
+  '<div class="rpt-cover">' +
+    '<div class="cv-kicker">Confidential — Compliance Assessment Report</div>' +
+    '<div class="cv-title">UK GDPR &amp; DUAA 2025<br>Self-Assessment</div>' +
+    '<p class="cv-sub">This report presents the findings of a self-assessment conducted against current UK data protection law, incorporating the substantive reforms introduced by the Data (Use and Access) Act 2025 (phased commencement June 2025 – June 2026).</p>' +
+    '<div class="cv-frameworks">' +
+      '<div class="cv-fw gdpr"><span class="cv-fw-dot"></span><span class="cv-fw-name">UK GDPR &amp; DPA 2018</span></div>' +
+      '<div class="cv-fw duaa"><span class="cv-fw-dot"></span><span class="cv-fw-name">Data (Use &amp; Access) Act 2025</span></div>' +
+    '</div>' +
+    (CLIENT.company ? '<div class="cv-org-row"><div class="cv-org-name">' + CLIENT.company + '</div>' + (CLIENT.email ? '<div class="cv-org-email">' + CLIENT.email + '</div>' : '') + '</div>' : '') +
+    '<div class="cv-meta-grid">' +
+      '<div class="cv-meta-cell"><div class="cv-meta-lbl">Organisation</div><div class="cv-meta-val">' + (CLIENT.company || '—') + '</div></div>' +
+      '<div class="cv-meta-cell"><div class="cv-meta-lbl">Date</div><div class="cv-meta-val">' + today + '</div></div>' +
+      '<div class="cv-meta-cell"><div class="cv-meta-lbl">Overall Score</div><div class="cv-meta-val" style="color:' + risk.color + '">' + sc.pct + '%</div></div>' +
+      '<div class="cv-meta-cell"><div class="cv-meta-lbl">Risk Level</div><div class="cv-meta-val" style="color:' + risk.color + '">' + risk.label + '</div></div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="score-hero">' +
+    '<div class="ring-area"><canvas id="scoreRing" width="160" height="160"></canvas><div class="ring-label">Overall Readiness</div></div>' +
+    '<div class="verdict">' +
+      '<div class="verdict-badge ' + risk.level + '">' + risk.label.toUpperCase() + '</div>' +
+      '<div class="verdict-title">' + (risk.level === 'low' ? 'Your organisation demonstrates strong UK GDPR compliance readiness.' : risk.level === 'mid' ? 'Material compliance gaps identified — structured remediation required.' : 'Significant non-compliance risk — urgent action required.') + '</div>' +
+      '<p class="verdict-body">' + (risk.level === 'low' ? 'With a score of <strong>' + sc.pct + '%</strong>, your organisation has established solid data protection foundations across both the UK GDPR/DPA 2018 framework and the new DUAA 2025 requirements. Focus on maintaining documentation currency and ensuring DUAA 2025 phased obligations are tracked as they come into force through to June 2026.' : risk.level === 'mid' ? 'Your score of <strong>' + sc.pct + '%</strong> reflects a partially implemented compliance programme. Several obligations under both the UK GDPR and the recently enacted DUAA 2025 remain unaddressed. The ICO has significant enforcement powers — fines up to £17.5m or 4% of global turnover — and a structured remediation programme should be prioritised.' : 'A score of <strong>' + sc.pct + '%</strong> indicates material non-compliance with UK data protection law. The ICO can issue enforcement notices, conduct audits, and impose fines up to £17.5m or 4% of global annual turnover. Immediate engagement with qualified data protection legal counsel is strongly recommended.') + '</p>' +
+      '<div class="score-tiles">' +
+        '<div class="s-tile"><div class="s-tile-num" style="color:var(--risk-low)">' + yesN + '</div><div class="s-tile-lbl">Compliant</div></div>' +
+        '<div class="s-tile"><div class="s-tile-num" style="color:var(--risk-mid)">' + partN + '</div><div class="s-tile-lbl">Partial</div></div>' +
+        '<div class="s-tile"><div class="s-tile-num" style="color:var(--risk-high)">' + noN + '</div><div class="s-tile-lbl">Gaps</div></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="rpt-sec">' +
+    '<div class="rpt-sec-label">Section 1</div>' +
+    '<div class="rpt-sec-title">Domain Performance</div>' +
+    '<div class="rpt-rule"></div>' +
+    '<p class="rpt-p">The scorecard below presents your compliance readiness across the four domains assessed. Each domain is scored on a weighted basis: Compliant = 2 pts, Partial = 1 pt, Gap = 0 pts, N/A = excluded from denominator.</p>' +
+    '<div class="domain-cards">' +
+      SECTIONS.map((sec, i) => {
+        const ss = sc.secs[i];
+        const r = riskOf(ss.pct);
+        const cc = r.level === 'low' ? 'c-green' : r.level === 'mid' ? 'c-amber' : 'c-red';
+        const st = r.level === 'low' ? 'Strong' : r.level === 'mid' ? 'Developing' : 'Critical Gap';
+        return '<div class="dom-card ' + cc + '" data-n="' + (i+1) + '">' +
+          '<div class="dc-lbl">Domain ' + (i+1) + '</div>' +
+          '<div class="dc-name">' + sec.name + '</div>' +
+          '<div class="dc-score"><span class="dc-big">' + ss.s + '</span><span class="dc-den">/ ' + ss.m + ' pts</span></div>' +
+          '<div class="dc-bar"><div class="dc-fill" style="width:' + ss.pct + '%"></div></div>' +
+          '<div class="dc-status">' + ss.pct + '% &mdash; ' + st + '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    '<div class="chart-box">' +
+      '<div class="chart-label">Compliance Radar <span class="chart-label-tag">4 Domains</span></div>' +
+      '<canvas class="ccv" id="radarCv" style="height:280px"></canvas>' +
+    '</div>' +
+    '<div class="chart-box">' +
+      '<div class="chart-label">Response Distribution by Domain <span class="chart-label-tag">Stacked</span></div>' +
+      '<div class="cat-bars-wrap" id="distBarsWrap"></div>' +
+      '<div class="chart-legend">' +
+        '<span class="cl-item"><span class="cl-dot" style="background:var(--risk-low)"></span>Compliant</span>' +
+        '<span class="cl-item"><span class="cl-dot" style="background:var(--risk-mid)"></span>Partial</span>' +
+        '<span class="cl-item"><span class="cl-dot" style="background:var(--risk-high)"></span>Gap</span>' +
+        '<span class="cl-item"><span class="cl-dot" style="background:var(--border2)"></span>N/A</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="chart-box">' +
+      '<div class="chart-label">Domain Score Comparison <span class="chart-label-tag">Bar Chart</span></div>' +
+      '<canvas class="ccv" id="barCv" style="height:200px"></canvas>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="rpt-sec">' +
+    '<div class="rpt-sec-label">Section 2</div>' +
+    '<div class="rpt-sec-title">Question-Level Findings</div>' +
+    '<div class="rpt-rule"></div>' +
+    '<p class="rpt-p">The table below sets out your response to each of the 20 assessment questions, mapped to the relevant legislative provision. Questions marked <strong style="color:var(--amber2)">&#9733; NEW</strong> represent obligations introduced or amended by the DUAA 2025.</p>' +
+    '<div class="chart-box" style="padding:0;overflow:auto">' +
+      '<table class="f-table">' +
+        '<thead><tr><th>#</th><th>Domain</th><th>Question</th><th>Provision</th><th>Response</th></tr></thead>' +
+        '<tbody>' + covRows + '</tbody>' +
+      '</table>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="rpt-sec">' +
+    '<div class="rpt-sec-label">Section 3</div>' +
+    '<div class="rpt-sec-title">Priority Recommendations</div>' +
+    '<div class="rpt-rule"></div>' +
+    (risk.level !== 'low' ? '<div class="penalty-box"><div class="pb-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div class="pb-title">ICO Enforcement Risk</div><div class="pb-text">The ICO can issue enforcement notices, conduct compulsory audits, and impose fines up to <strong>£17.5 million or 4% of global annual turnover</strong> (whichever is higher) for serious UK GDPR infringements. Following DUAA 2025 PECR alignment, cookie and electronic marketing violations now carry the same maximum penalties. The gaps identified in this assessment represent material regulatory exposure.</div></div></div>' : '') +
+    '<p class="rpt-p">Recommendations are generated from your assessment responses. <strong>High priority</strong> items represent confirmed compliance gaps. <strong>Medium priority</strong> items represent partial implementation requiring completion.</p>' +
+    (recs.length ?
+      '<div class="rec-list">' +
+        recs.map(r =>
+          '<div class="rec">' +
+            '<div class="rec-icon ' + r.pri + '">' +
+              (r.pri === 'high'
+                ? '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+                : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+              ) +
+            '</div>' +
+            '<div class="rec-body">' +
+              '<div class="rec-meta">' +
+                '<span class="rec-pri ' + r.pri + '">' + (r.pri === 'high' ? 'HIGH PRIORITY' : 'MEDIUM PRIORITY') + '</span>' +
+                '<span class="rec-law">' + r.law + '</span>' +
+                (r.isNew ? '<span class="q-new" style="font-size:.55rem;padding:2px 7px">NEW DUAA 2025</span>' : '') +
+              '</div>' +
+              '<div class="rec-title">' + r.title + '</div>' +
+              '<div class="rec-text">' + r.text + '</div>' +
+            '</div>' +
+          '</div>'
+        ).join('') +
+      '</div>'
+      :
+      '<div style="text-align:center;padding:40px;color:var(--dim);font-family:var(--font-display);font-size:1rem">No priority recommendations — strong compliance posture evidenced.</div>'
+    ) +
+  '</div>' +
+
+  '<div class="rpt-sec">' +
+    '<div class="rpt-sec-label">Section 4</div>' +
+    '<div class="rpt-sec-title">Regulatory Context &amp; Methodology</div>' +
+    '<div class="rpt-rule"></div>' +
+    '<p class="rpt-p">This assessment evaluates compliance against the <strong>UK General Data Protection Regulation</strong> (UK GDPR), <strong>Data Protection Act 2018</strong> (DPA 2018), <strong>Privacy and Electronic Communications Regulations 2003</strong> (PECR) as amended, and the <strong>Data (Use and Access) Act 2025</strong> (DUAA 2025), which received Royal Assent on 19 June 2025 and is being implemented on a phased basis through to June 2026.</p>' +
+    '<p class="rpt-p"><strong>DUAA 2025 key reforms assessed:</strong> Recognised Legitimate Interests (no balancing test required); narrowed automated decision-making restrictions (applies only to special category data decisions); children\'s higher protection matters for internet society services; PECR cookie consent exemptions for analytics/functionality cookies; codified "reasonable and proportionate" DSAR search standard; new statutory complaints right (commencement June 2026); and the revised "not materially lower" international transfer test.</p>' +
+    '<p class="rpt-p"><strong>Scoring methodology:</strong> Compliant = 2 pts, Partial = 1 pt, Gap/N/A = 0 pts. Overall score = points scored / maximum applicable points. Thresholds: <strong>70%+</strong> = Compliant (Green); <strong>40–69%</strong> = Partially Compliant (Amber); <strong>&lt;40%</strong> = Non-Compliant (Red).</p>' +
+    '<p class="rpt-p"><strong>Supervisory Authority:</strong> Information Commissioner\'s Office (ICO) — <a href="https://ico.org.uk" target="_blank">ico.org.uk</a>. Maximum fines: £17.5m or 4% of global annual turnover (higher figure applies). PECR fines now aligned with UK GDPR following DUAA 2025.</p>' +
+    '<p class="rpt-p" style="font-size:.76rem;color:var(--dim);border-top:1px solid var(--border);padding-top:18px;margin-top:4px">This report was generated on ' + today + ' using an automated self-assessment tool. It constitutes an indicative readiness review only and does not represent a formal legal audit or legal advice. Organisations should engage qualified data protection solicitors and/or ICO-registered practitioners for formal compliance work. Law as at March 2026.</p>' +
+  '</div>';
+}
+
+// ════════════════════════════════════════════════════════════
+// CANVAS CHARTS
+// ════════════════════════════════════════════════════════════
+function drawRing(pct, risk) {
+  const cv = document.getElementById('scoreRing');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = 160, H = 160, cx = 80, cy = 80, R = 62, lw = 12;
+  ctx.clearRect(0, 0, W, H);
+
+  // Track
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = '#1e3354'; ctx.lineWidth = lw; ctx.stroke();
+
+  // Score arc
+  const end = -Math.PI / 2 + (pct / 100) * Math.PI * 2;
+  const grad = ctx.createLinearGradient(cx - R, cy, cx + R, cy);
+  grad.addColorStop(0, risk.color);
+  grad.addColorStop(1, risk.color + 'cc');
+  ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI / 2, end);
+  ctx.strokeStyle = grad; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
+
+  // Glow dot at end
+  const ex = cx + R * Math.cos(end), ey = cy + R * Math.sin(end);
+  ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+  ctx.fillStyle = risk.color; ctx.shadowColor = risk.color; ctx.shadowBlur = 10; ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Center text
+  ctx.font = 'bold 28px Syne, sans-serif';
+  ctx.fillStyle = risk.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(pct + '%', cx, cy - 8);
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.fillStyle = '#4a6882'; ctx.fillText(risk.label, cx, cy + 14);
+}
+
+function drawRadar(sc) {
+  const cv = document.getElementById('radarCv');
+  if (!cv) return;
+  const W = cv.offsetWidth || 800, H = 280;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const cx = W / 2, cy = H / 2, maxR = Math.min(W, H) * 0.32;
+  const n = 4;
+  const labels = SECTIONS.map(s => s.short);
+  const scores = sc.secs.map(s => s.pct);
+  const aOff = -Math.PI / 2;
+  const ang = i => aOff + (i / n) * Math.PI * 2;
+
+  // Grid
+  for (let s = 1; s <= 5; s++) {
+    const r = (s / 5) * maxR;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = ang(i);
+      i === 0 ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a)) : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#1e3354'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '8px JetBrains Mono, monospace'; ctx.fillStyle = '#4a6882';
+    ctx.textAlign = 'center'; ctx.fillText((s * 20) + '%', cx + 3, cy - r + 10);
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const a = ang(i);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + maxR * Math.cos(a), cy + maxR * Math.sin(a));
+    ctx.strokeStyle = '#244070'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // Data area
+  const pts = scores.map((v, i) => { const r = (v / 100) * maxR; return [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))]; });
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  pts.slice(1).forEach(p => ctx.lineTo(p[0], p[1]));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(96,165,250,.1)'; ctx.fill();
+  ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Points with glow
+  pts.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(p[0], p[1], 5, 0, Math.PI * 2);
+    const r = riskOf(scores[i]);
+    ctx.fillStyle = r.color; ctx.shadowColor = r.color; ctx.shadowBlur = 8; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#0d1a2e'; ctx.lineWidth = 2; ctx.stroke();
+  });
+
+  // Labels
+  labels.forEach((lbl, i) => {
+    const a = ang(i);
+    const r = maxR + 30;
+    const lx = cx + r * Math.cos(a), ly = cy + r * Math.sin(a);
+    const align = Math.abs(Math.cos(a)) < 0.15 ? 'center' : Math.cos(a) < 0 ? 'right' : 'left';
+    ctx.font = '11px Syne, sans-serif'; ctx.fillStyle = '#b8c8dc';
+    ctx.textAlign = align; ctx.textBaseline = 'middle';
+    ctx.fillText(lbl, lx, ly);
+    ctx.font = 'bold 10px JetBrains Mono, monospace';
+    ctx.fillStyle = riskOf(scores[i]).color;
+    ctx.fillText(scores[i] + '%', lx, ly + 14);
+  });
+}
+
+function drawDistBars(sc) {
+  const wrap = document.getElementById('distBarsWrap');
+  if (!wrap) return;
+  wrap.innerHTML = SECTIONS.map((sec, i) => {
+    const ss = sc.secs[i];
+    const counts = { yes: 0, partial: 0, no: 0, na: 0 };
+    sec.qs.forEach(q => { const v = ANS[q.id]; if (v) counts[v] = (counts[v] || 0) + 1; });
+    const total = sec.qs.length;
+    return '<div class="cbar-row">' +
+      '<div class="cbar-lbl">' + sec.short + '</div>' +
+      '<div class="cbar-track">' +
+        '<div class="cbar-seg" style="width:' + (counts.yes/total*100) + '%;background:#22c55e"></div>' +
+        '<div class="cbar-seg" style="width:' + (counts.partial/total*100) + '%;background:#f59e0b"></div>' +
+        '<div class="cbar-seg" style="width:' + (counts.no/total*100) + '%;background:#ef4444"></div>' +
+        '<div class="cbar-seg" style="width:' + (counts.na/total*100) + '%;background:#244070"></div>' +
+      '</div>' +
+      '<div class="cbar-pct">' + ss.pct + '%</div>' +
+    '</div>';
+  }).join('');
+}
+
+function drawStackedBar(sc) {
+  const cv = document.getElementById('barCv');
+  if (!cv) return;
+  const W = cv.offsetWidth || 800, H = 200;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const pL = 120, pR = 60, pT = 20, pB = 28;
+  const cW = W - pL - pR, cH = H - pT - pB;
+  const maxVal = 100;
+  const barH = 28, gap = 16;
+
+  // Y grid
+  for (let s = 0; s <= 5; s++) {
+    const v = s * 20;
+    const x = pL + (v / maxVal) * cW;
+    ctx.beginPath(); ctx.moveTo(x, pT); ctx.lineTo(x, pT + cH);
+    ctx.strokeStyle = '#1e3354'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '8px JetBrains Mono, monospace'; ctx.fillStyle = '#4a6882';
+    ctx.textAlign = 'center'; ctx.fillText(v + '%', x, pT + cH + 14);
+  }
+
+  // Bars
+  SECTIONS.forEach((sec, i) => {
+    const ss = sc.secs[i];
+    const y = pT + i * (barH + gap);
+    const w = (ss.pct / maxVal) * cW;
+    const r = riskOf(ss.pct);
+
+    // Bar bg
+    ctx.fillStyle = '#1e3354';
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pL, y, cW, barH, [3]) : ctx.rect(pL, y, cW, barH);
+    ctx.fill();
+
+    // Bar fill
+    if (w > 0) {
+      const g = ctx.createLinearGradient(pL, 0, pL + w, 0);
+      g.addColorStop(0, r.color + '80'); g.addColorStop(1, r.color);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pL, y, w, barH, [3]) : ctx.rect(pL, y, w, barH);
+      ctx.fill();
+    }
+
+    // Label
+    ctx.font = '11px Syne, sans-serif'; ctx.fillStyle = '#b8c8dc';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(sec.short, pL - 8, y + barH / 2);
+
+    // Value
+    ctx.font = 'bold 10px JetBrains Mono, monospace'; ctx.fillStyle = r.color;
+    ctx.textAlign = 'left'; ctx.fillText(ss.pct + '%', pL + w + 6, y + barH / 2);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function retake() {
+  Object.keys(ANS).forEach(k => delete ANS[k]);
+  document.querySelectorAll('.opt').forEach(b => { b.className = 'opt'; });
+  document.querySelectorAll('.q-card').forEach(c => c.classList.remove('answered'));
+  document.querySelectorAll('.sec-tab').forEach(t => t.classList.remove('complete'));
+  SECTIONS.forEach(sec => {
+    const n = document.getElementById('snum-' + sec.id);
+    if (n) n.textContent = String(sec.id + 1);
+  });
+  document.querySelectorAll('.pdot').forEach(d => d.className = 'pdot');
+  CLIENT.company = ''; CLIENT.email = '';
+  const cc = document.getElementById('clientCompany');
+  const ce = document.getElementById('clientEmail');
+  if (cc) { cc.value = ''; cc.classList.remove('error'); }
+  if (ce) { ce.value = ''; ce.classList.remove('error'); }
+  const ec = document.getElementById('errCompany');
+  const ee = document.getElementById('errEmail');
+  if (ec) ec.textContent = '';
+  if (ee) ee.textContent = '';
+  document.getElementById('report').style.display = 'none';
+  document.getElementById('assessment').style.display = 'none';
+  document.getElementById('hero').style.display = '';
+  syncProgress();
+  goSec(0);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+buildAll();
+
+// ════════════════════════════════════════════════════════════
+// IFRAME EMBED SUPPORT — communicates height to parent page
+// Allows any third-party site to embed this tool responsively
+// ════════════════════════════════════════════════════════════
+(function() {
+  function notifyHeight() {
+    var h = document.documentElement.scrollHeight;
+    try { window.parent.postMessage({ type: 'cyberwin-resize', height: h }, '*'); } catch(e) {}
+  }
+  // Notify on load and whenever content changes
+  notifyHeight();
+  if (window.ResizeObserver) {
+    new ResizeObserver(notifyHeight).observe(document.body);
+  } else {
+    setInterval(notifyHeight, 800);
+  }
+  // Listen for parent requesting current height
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'cyberwin-ping') notifyHeight();
+  });
+})();
+</script>
+</body>
+</html>

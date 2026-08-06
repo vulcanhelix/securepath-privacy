@@ -1,0 +1,80 @@
+# SecurePath staging — lean Supabase: postgres + GoTrue + PostgREST.
+# No Kong: Caddy on the host does /auth/v1 + /rest/v1 path routing with fresh JWTs.
+# All ports bound to 127.0.0.1 only (docker bypasses ufw; never bind 0.0.0.0 here).
+name: securepath-staging
+services:
+  db:
+    image: supabase/postgres:15.8.1.049
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:55432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 20
+
+  auth:
+    image: supabase/gotrue:v2.176.1
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:55321:9999"
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      API_EXTERNAL_URL: https://securepath.dev
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: https://securepath.dev
+      GOTRUE_URI_ALLOW_LIST: https://securepath.dev/*
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      # ponytail: autoconfirm until Resend key provided; then set false + SMTP_* vars
+      GOTRUE_MAILER_AUTOCONFIRM: "${MAILER_AUTOCONFIRM:-true}"
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
+      GOTRUE_SMTP_SENDER_NAME: SecurePath
+      GOTRUE_SMTP_ADMIN_EMAIL: ${MAIL_FROM_ADDR:-noreply@mail.securepathconsulting.co.za}
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/confirm
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: https://securepath.dev/mail-templates/confirmation.html
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: https://securepath.dev/mail-templates/recovery.html
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: https://securepath.dev/mail-templates/magic_link.html
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: "20"
+      GOTRUE_MFA_ENABLED: "true"
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/confirm
+      GOTRUE_MAILER_URLPATHS_MAGIC_LINK: /auth/confirm
+
+  rest:
+    image: postgrest/postgrest:v12.2.12
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:55322:3000"
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+
+volumes:
+  db-data:

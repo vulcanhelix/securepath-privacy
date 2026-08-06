@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SA Privacy & Cybersecurity Framework</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1923; color: #e8edf2; overflow: hidden; height: 100vh; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0a1220; }
+  ::-webkit-scrollbar-thumb { background: #1e3050; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2a4060; }
+  input::placeholder { color: #3a5570; }
+  input:focus { outline: none; border-color: #1a6faf !important; }
+  button { font-family: 'Segoe UI', sans-serif; }
+  textarea { font-family: 'Segoe UI', sans-serif; }
+  select { font-family: 'Segoe UI', sans-serif; }
+
+  @media print {
+    body { background: #fff !important; color: #111 !important; overflow: visible !important; height: auto !important; }
+    #root { display: none !important; }
+    #print-area { display: block !important; }
+  }
+  #print-area { display: none; }
+
+  .pr-page { font-family: 'Segoe UI', Arial, sans-serif; color: #111; background: #fff; }
+  .pr-cover { background: #1F3864; color: #fff; padding: 50px 40px 40px; }
+  .pr-cover h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  .pr-cover .sub { font-size: 14px; opacity: 0.75; margin-top: 8px; }
+  .pr-cover .meta { font-size: 11px; opacity: 0.55; margin-top: 6px; }
+  .pr-section { padding: 24px 40px; border-bottom: 1px solid #e5e7eb; }
+  .pr-section h2 { font-size: 15px; font-weight: 700; color: #1F3864; margin-bottom: 14px; border-bottom: 2px solid #2E75B6; padding-bottom: 6px; }
+  .pr-section h3 { font-size: 12px; font-weight: 700; color: #374151; margin: 14px 0 7px; }
+  .pr-kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+  .pr-kpi { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+  .pr-kpi .val { font-size: 22px; font-weight: 800; color: #1F3864; }
+  .pr-kpi .lbl { font-size: 9px; color: #6b7280; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .pr-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 8px; }
+  .pr-table th { background: #1F3864; color: #fff; padding: 7px 9px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .pr-table td { padding: 6px 9px; border-bottom: 1px solid #f1f5f9; vertical-align: top; line-height: 1.4; }
+  .pr-table tr:nth-child(even) td { background: #f8fafc; }
+  .pr-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 9px; font-weight: 700; }
+  .pr-badge.Critical { background: #fee2e2; color: #991b1b; }
+  .pr-badge.High { background: #ffedd5; color: #9a3412; }
+  .pr-badge.Medium { background: #fef9c3; color: #854d0e; }
+  .pr-badge.Low { background: #dcfce7; color: #166534; }
+  .pr-badge.Done { background: #dcfce7; color: #166534; }
+  .pr-badge.Pending { background: #fee2e2; color: #991b1b; }
+  .pr-prog-bar { height: 7px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin: 4px 0; }
+  .pr-prog-bar .fill { height: 100%; background: #2E75B6; border-radius: 4px; }
+  .pr-footer { background: #f8fafc; padding: 14px 40px; font-size: 9px; color: #9ca3af; border-top: 2px solid #2E75B6; display: flex; justify-content: space-between; }
+  .pr-info-box { background: #eff6ff; border-left: 4px solid #2E75B6; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 10.5px; color: #1e3a5f; line-height: 1.6; }
+  .pr-popia-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .pr-popia-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 9px; }
+  .pr-popia-num { width: 19px; height: 19px; background: #1F3864; color: #fff; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; margin-bottom: 4px; }
+  .pr-popia-title { font-size: 10px; font-weight: 700; color: #1F3864; }
+  .pr-popia-phase { font-size: 9px; color: #6b7280; margin-top: 3px; }
+  .page-break { page-break-before: always; padding-top: 20px; }
+  @page { margin: 12mm 10mm; size: A4; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="print-area"></div>
+<script type="text/babel">
+
+const PHASES = [
+  {
+    id: 1, title: "Governance & Accountability", subtitle: "Establish leadership, roles & policy foundation",
+    weeks: "Weeks 1–3", icon: "⚖️", color: "#1a3a5c", accent: "#2E75B6", light: "#deeaf1",
+    sections: [
+      {
+        title: "1.1 Appoint the Information Officer (IO)",
+        description: "Every responsible party under POPIA must designate an Information Officer. For most SMEs this will be the owner, CEO, or a senior manager. The IO must be registered with the Information Regulator.",
+        tasks: [
+          { id:"1.1.1", task:"Formally appoint an Information Officer (IO) by written resolution or letter of appointment", responsible:"Owner / CEO", timeframe:"Week 1", output:"Signed IO Appointment Letter", priority:"Critical" },
+          { id:"1.1.2", task:"Register the IO on the Information Regulator e-portal at www.justice.gov.za/inforeg", responsible:"IO / Admin", timeframe:"Week 1", output:"IR Registration Confirmation", priority:"Critical" },
+          { id:"1.1.3", task:"Appoint Deputy IO(s) for Tier 2 & 3 companies (51+ users) with documented delegation of authority", responsible:"IO", timeframe:"Week 2", output:"Deputy IO Appointment Letter", priority:"High" },
+          { id:"1.1.4", task:"Define and document the IO's role, responsibilities, and reporting line", responsible:"Owner / IO", timeframe:"Week 2", output:"IO Role Description Document", priority:"High" },
+          { id:"1.1.5", task:"Allocate dedicated time and budget for IO duties (minimum 20% of time for Tier 1; dedicated role for Tier 3)", responsible:"Owner", timeframe:"Week 1", output:"Budget Approval / Time Allocation", priority:"High" },
+        ]
+      },
+      {
+        title: "1.2 Establish Privacy & Security Governance Committee",
+        description: "For Tier 1 (micro/small), this may be a single person with defined responsibilities. Tier 2 and Tier 3 should form a small committee with IT, HR, and Operations representation.",
+        tasks: [
+          { id:"1.2.1", task:"Define committee members or governance contacts for Privacy and IT Security", responsible:"IO / Owner", timeframe:"Week 1", output:"Governance Responsibility Matrix", priority:"High" },
+          { id:"1.2.2", task:"Schedule recurring governance meeting (monthly for Tier 1 & 2; bi-weekly for Tier 3)", responsible:"IO", timeframe:"Week 2", output:"Meeting calendar + agenda template", priority:"Medium" },
+          { id:"1.2.3", task:"Create a Privacy & Security risk register template and assign an owner", responsible:"IO / IT", timeframe:"Week 3", output:"Risk Register (blank template populated)", priority:"High" },
+          { id:"1.2.4", task:"Define escalation path for security incidents and privacy complaints", responsible:"IO", timeframe:"Week 2", output:"Escalation Flowchart", priority:"High" },
+        ]
+      },
+      {
+        title: "1.3 Scope & Gap Review (Post-Assessment)",
+        description: "Using the completed assessment outputs, formally prioritise and assign remediation tasks.",
+        tasks: [
+          { id:"1.3.1", task:"Review assessment findings and categorise gaps as Critical / High / Medium / Low", responsible:"IO / IT", timeframe:"Week 1", output:"Prioritised Gap List", priority:"Critical" },
+          { id:"1.3.2", task:"Create a Master Implementation Plan spreadsheet with task, owner, deadline, and status columns", responsible:"IO", timeframe:"Week 1", output:"Master Implementation Plan", priority:"Critical" },
+          { id:"1.3.3", task:"Brief senior management on findings, obligations, and consequences of non-compliance (fines up to R10 million or 10 years imprisonment under POPIA)", responsible:"IO", timeframe:"Week 2", output:"Management Briefing Sign-off", priority:"High" },
+          { id:"1.3.4", task:"Obtain written management commitment and budget approval for implementation", responsible:"Owner / CFO", timeframe:"Week 2", output:"Signed Commitment & Budget Approval", priority:"High" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 2, title: "Data Mapping & Asset Register", subtitle: "Know what personal data you hold and where",
+    weeks: "Weeks 2–5", icon: "🗺️", color: "#1a4a2e", accent: "#2e9952", light: "#e2efda",
+    sections: [
+      {
+        title: "2.1 Build the Personal Information (PI) Inventory",
+        description: "You cannot protect what you do not know you have. Systematically identify all personal information your organisation collects, processes, stores, and shares.",
+        tasks: [
+          { id:"2.1.1", task:"Conduct data discovery interviews with each department head to identify all personal data collected", responsible:"IO / HR / IT", timeframe:"Week 2–3", output:"Departmental Data Discovery Notes", priority:"Critical" },
+          { id:"2.1.2", task:"List every type of personal information processed: names, IDs, email, health info, financial records, biometrics, etc.", responsible:"IO", timeframe:"Week 3", output:"Personal Information Type Register", priority:"Critical" },
+          { id:"2.1.3", task:"Identify all special personal information categories (health, race, religion, criminal records, biometrics) — these require heightened protection", responsible:"IO", timeframe:"Week 3", output:"Special PI Register with justification for processing", priority:"Critical" },
+          { id:"2.1.4", task:"Identify all data subjects: employees, customers, suppliers, website visitors, job applicants", responsible:"IO / HR", timeframe:"Week 3", output:"Data Subject Category List", priority:"High" },
+          { id:"2.1.5", task:"Map data flows: where data enters, how it moves through the business, where it exits (to third parties, cloud, email, etc.)", responsible:"IO / IT", timeframe:"Week 3–4", output:"Data Flow Diagram", priority:"High" },
+        ]
+      },
+      {
+        title: "2.2 Build the Information Asset Register",
+        description: "List all systems, applications, and databases that store or process personal information and classify each by sensitivity.",
+        tasks: [
+          { id:"2.2.1", task:"List all systems, applications, and databases that store or process personal information (CRM, accounting, payroll, HR, email, cloud storage)", responsible:"IT / IO", timeframe:"Week 3–4", output:"Information Asset Register", priority:"Critical" },
+          { id:"2.2.2", task:"For each asset record: system name, owner, data type, location, retention period, and access rights", responsible:"IT", timeframe:"Week 4", output:"Completed Asset Register (all fields populated)", priority:"High" },
+          { id:"2.2.3", task:"Classify each asset by sensitivity: Public / Internal / Confidential / Restricted", responsible:"IO / IT", timeframe:"Week 4", output:"Asset Classification Labels applied", priority:"High" },
+          { id:"2.2.4", task:"Identify assets that are end-of-life, unpatched, or unsupported — flag for remediation", responsible:"IT", timeframe:"Week 4", output:"EOL Asset Risk List", priority:"High" },
+          { id:"2.2.5", task:"Document who has access to each system and whether access rights are appropriate (least privilege)", responsible:"IT", timeframe:"Week 4–5", output:"Access Rights Matrix", priority:"High" },
+        ]
+      },
+      {
+        title: "2.3 Lawful Basis and Retention Rules",
+        description: "For each PI category, document the lawful basis for processing and set retention periods with secure deletion plans.",
+        tasks: [
+          { id:"2.3.1", task:"Document the lawful basis for processing each PI category under POPIA (consent, contractual necessity, legal obligation, legitimate interest)", responsible:"IO", timeframe:"Week 4–5", output:"Lawful Basis Register", priority:"Critical" },
+          { id:"2.3.2", task:"Set a retention period for each data category based on legal requirements and business need", responsible:"IO / Legal", timeframe:"Week 5", output:"Retention Schedule", priority:"High" },
+          { id:"2.3.3", task:"Identify personal information held beyond its retention period and schedule for secure deletion", responsible:"IT / IO", timeframe:"Week 5", output:"Data Purge Plan with completion date", priority:"High" },
+          { id:"2.3.4", task:"Document cross-border data transfers (if any cloud services, offshore processors, or international clients exist)", responsible:"IO / IT", timeframe:"Week 5", output:"Cross-Border Transfer Register", priority:"Medium" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 3, title: "Policy & Documentation Framework", subtitle: "Create, adopt and communicate all required policies",
+    weeks: "Weeks 4–8", icon: "📋", color: "#5a2600", accent: "#c75000", light: "#fce4d6",
+    sections: [
+      {
+        title: "3.1 Privacy Policies (POPIA Required)",
+        description: "POPIA requires documented policies that must be approved by management, communicated to staff, and reviewed annually.",
+        tasks: [
+          { id:"3.1.1", task:"Draft and adopt a Privacy Policy (external-facing) covering what data is collected, why, how long kept, data subject rights, and IO contact. Publish on website.", responsible:"IO / Legal", timeframe:"Week 4–6", output:"Approved Privacy Policy (published)", priority:"Critical" },
+          { id:"3.1.2", task:"Draft and adopt a PAIA Manual — mandatory for all private bodies. Template available from Information Regulator website.", responsible:"IO", timeframe:"Week 5–7", output:"Approved PAIA Manual (published on website)", priority:"Critical" },
+          { id:"3.1.3", task:"Draft a Privacy Notice for employees covering HR data, payroll, monitoring, and surveillance", responsible:"IO / HR", timeframe:"Week 5–6", output:"Employee Privacy Notice — signed by all staff", priority:"Critical" },
+          { id:"3.1.4", task:"Draft an Internal Privacy Policy covering data minimisation, staff data handling obligations, and breach reporting duties", responsible:"IO", timeframe:"Week 6–7", output:"Signed Internal Privacy Policy", priority:"High" },
+          { id:"3.1.5", task:"Create a Consent Management Process — when and how to obtain valid POPIA consent, consent withdrawal process, and consent records", responsible:"IO / Sales / IT", timeframe:"Week 6–8", output:"Consent Form Templates + Consent Register", priority:"High" },
+          { id:"3.1.6", task:"Create a Data Subject Rights Procedure — how to handle access, correction, deletion, and objection requests within POPIA's 30-day obligation", responsible:"IO", timeframe:"Week 7–8", output:"DSR Procedure Document + Request Form", priority:"High" },
+        ]
+      },
+      {
+        title: "3.2 Cybersecurity Policies",
+        description: "A complete suite of cybersecurity policies covering all aspects of information security, acceptable use, and incident response.",
+        tasks: [
+          { id:"3.2.1", task:"Draft and adopt an Information Security Policy (master policy) covering acceptable use, classification, access control, and incident reporting", responsible:"IO / IT", timeframe:"Week 5–7", output:"Signed Information Security Policy", priority:"Critical" },
+          { id:"3.2.2", task:"Draft an Acceptable Use Policy (AUP) for all devices, internet use, email, and social media — all staff must sign", responsible:"IT / HR", timeframe:"Week 5–6", output:"Signed AUP — all staff (filed in HR)", priority:"Critical" },
+          { id:"3.2.3", task:"Draft a Password and Access Management Policy covering minimum password requirements, MFA mandate, shared account prohibition, and password manager use", responsible:"IT", timeframe:"Week 6", output:"Password Policy (published in IT handbook)", priority:"Critical" },
+          { id:"3.2.4", task:"Draft a Remote Work and BYOD Policy covering VPN use, device encryption, screen lock, and home network security", responsible:"IT / HR", timeframe:"Week 6–7", output:"Remote Work / BYOD Policy — staff signed", priority:"High" },
+          { id:"3.2.5", task:"Draft an Incident Response Policy — define what constitutes an incident, response steps, reporting obligations (notify IR within 72 hours), and post-incident review", responsible:"IO / IT", timeframe:"Week 7–8", output:"IR Policy + IR Playbook (step-by-step)", priority:"Critical" },
+          { id:"3.2.6", task:"Draft a Backup and Recovery Policy covering backup frequency, offsite/cloud backup, retention, and restoration testing schedule", responsible:"IT", timeframe:"Week 7", output:"Backup Policy (aligned to recovery objectives)", priority:"High" },
+          { id:"3.2.7", task:"Draft a Patch Management Policy covering update frequency for OS, applications, and firmware (critical patches within 72 hours)", responsible:"IT", timeframe:"Week 7", output:"Patch Policy with maintenance window schedule", priority:"High" },
+          { id:"3.2.8", task:"Draft a Third-Party / Supplier Security Policy governing how vendors access your systems and data", responsible:"IO / Procurement", timeframe:"Week 8", output:"Third-Party Security Policy", priority:"High" },
+          { id:"3.2.9", task:"Create a Clean Desk and Screen Lock Policy — physical security of printed data and unattended devices", responsible:"IO / HR", timeframe:"Week 6", output:"Clean Desk Policy communicated to all staff", priority:"Medium" },
+        ]
+      },
+      {
+        title: "3.3 Policy Management Process",
+        description: "Establish a Policy Register and review cycle to ensure all policies remain current and acknowledged by staff.",
+        tasks: [
+          { id:"3.3.1", task:"Create a Policy Register listing all policies, their owners, version numbers, approval dates, and next review dates", responsible:"IO", timeframe:"Week 8", output:"Policy Register (maintained centrally)", priority:"High" },
+          { id:"3.3.2", task:"Define policy review cycle — annual review for all policies, triggered review after any incident or regulatory change", responsible:"IO", timeframe:"Week 8", output:"Policy Review Calendar", priority:"Medium" },
+          { id:"3.3.3", task:"Obtain management sign-off on all policies and file signed copies", responsible:"Owner / IO", timeframe:"Week 8", output:"Signed policy archive (digital + hard copy)", priority:"High" },
+          { id:"3.3.4", task:"Distribute all applicable policies to staff and obtain signed acknowledgements — file in HR records", responsible:"HR / IO", timeframe:"Week 8–10", output:"Staff policy acknowledgement log (100% of staff)", priority:"Critical" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 4, title: "Technical Controls Implementation", subtitle: "Deploy technical cybersecurity & privacy controls",
+    weeks: "Weeks 6–12", icon: "🔐", color: "#1a3a5c", accent: "#0070c0", light: "#deeaf1",
+    sections: [
+      {
+        title: "4.1 Identity & Access Management",
+        description: "Controls that prevent the most common attack vectors: unauthorised access, credential theft, and privilege escalation.",
+        tasks: [
+          { id:"4.1.1", task:"Audit all user accounts across all systems — remove orphan accounts, ex-staff accounts, and shared accounts immediately", responsible:"IT", timeframe:"Week 6–7", output:"User Account Audit Report + Remediation Log", priority:"Critical" },
+          { id:"4.1.2", task:"Implement Multi-Factor Authentication (MFA) on all email accounts, remote access (VPN, RDP), and any cloud portals", responsible:"IT", timeframe:"Week 6–8", output:"MFA enabled — 100% of accounts confirmed", priority:"Critical" },
+          { id:"4.1.3", task:"Deploy a Password Manager (e.g. Bitwarden, 1Password) for all staff and enforce minimum 14-character unique passwords", responsible:"IT", timeframe:"Week 7–8", output:"Password Manager deployed — all staff onboarded", priority:"High" },
+          { id:"4.1.4", task:"Implement Role-Based Access Control (RBAC) — users must only have access to systems and data required for their role", responsible:"IT", timeframe:"Week 7–9", output:"RBAC matrix implemented and documented", priority:"High" },
+          { id:"4.1.5", task:"Establish a User Provisioning and De-provisioning Process — accounts created/revoked within 24 hours of HR trigger", responsible:"IT / HR", timeframe:"Week 8", output:"Onboarding/Offboarding IT Checklist (HR integrated)", priority:"Critical" },
+          { id:"4.1.6", task:"Review and restrict administrative (admin) privileges — no standard users should have local admin rights unless documented", responsible:"IT", timeframe:"Week 7", output:"Admin Rights Audit Report", priority:"High" },
+        ]
+      },
+      {
+        title: "4.2 Endpoint Protection",
+        description: "Every device that touches company data must be protected, encrypted, and managed.",
+        tasks: [
+          { id:"4.2.1", task:"Deploy enterprise-grade Endpoint Detection & Response (EDR) / antivirus on ALL devices (Windows, Mac, mobile) — confirm 100% coverage", responsible:"IT", timeframe:"Week 6–8", output:"EDR Deployment Report (device list + confirmation)", priority:"Critical" },
+          { id:"4.2.2", task:"Enable and enforce automatic OS updates and security patches on all endpoints within defined patch policy windows", responsible:"IT", timeframe:"Week 7", output:"Auto-update enabled — patch compliance report", priority:"Critical" },
+          { id:"4.2.3", task:"Enable Full Disk Encryption on all laptops and mobile devices (BitLocker for Windows; FileVault for Mac; MDM-enforced for mobiles)", responsible:"IT", timeframe:"Week 8–10", output:"Encryption confirmation list per device", priority:"High" },
+          { id:"4.2.4", task:"Implement Mobile Device Management (MDM) for all company-owned and BYOD devices (Tier 2 & 3: mandatory; Tier 1: strongly recommended)", responsible:"IT", timeframe:"Week 9–12", output:"MDM enrolled — all applicable devices", priority:"High" },
+          { id:"4.2.5", task:"Disable USB/removable storage ports via Group Policy or MDM unless business-critical use is approved and logged", responsible:"IT", timeframe:"Week 8", output:"USB policy enforced — GPO/MDM configuration saved", priority:"Medium" },
+          { id:"4.2.6", task:"Enable device screen lock (maximum 5 minute timeout) on all devices via policy enforcement", responsible:"IT", timeframe:"Week 7", output:"Screen lock GPO/MDM policy active", priority:"High" },
+        ]
+      },
+      {
+        title: "4.3 Network Security",
+        description: "Secure the perimeter, segment internal traffic, and protect email — the most common attack vector.",
+        tasks: [
+          { id:"4.3.1", task:"Install and configure a Next-Generation Firewall (NGFW) between internet and internal network — enable logging", responsible:"IT", timeframe:"Week 6–8", output:"Firewall installed, configured, and log retention set", priority:"Critical" },
+          { id:"4.3.2", task:"Segment the network: separate guest Wi-Fi (completely isolated), staff network, and server/finance VLAN", responsible:"IT", timeframe:"Week 8–10", output:"Network segmentation diagram + VLAN config", priority:"High" },
+          { id:"4.3.3", task:"Change all default router/switch/firewall credentials. Disable UPnP, unused ports, and remote management unless needed", responsible:"IT", timeframe:"Week 6", output:"Network device hardening checklist completed", priority:"Critical" },
+          { id:"4.3.4", task:"Implement DNS filtering (e.g. Cisco Umbrella, Cloudflare Gateway, NextDNS) to block malicious domains", responsible:"IT", timeframe:"Week 8", output:"DNS filtering active — block list report", priority:"High" },
+          { id:"4.3.5", task:"Deploy a VPN solution for all remote access — prohibit direct RDP/SSH exposure to the internet", responsible:"IT", timeframe:"Week 8–10", output:"VPN deployed — remote access audit confirms no direct exposure", priority:"Critical" },
+          { id:"4.3.6", task:"Enable email security: SPF, DKIM, and DMARC records on all company email domains to prevent spoofing", responsible:"IT", timeframe:"Week 7", output:"SPF/DKIM/DMARC DNS records verified (use MXToolbox)", priority:"Critical" },
+          { id:"4.3.7", task:"Implement anti-phishing and email filtering at the gateway level (Microsoft Defender for M365; Google Workspace security; or Proofpoint)", responsible:"IT", timeframe:"Week 7–9", output:"Email filter configuration report + test results", priority:"Critical" },
+        ]
+      },
+      {
+        title: "4.4 Data Protection & Backup",
+        description: "Ensure business continuity and data integrity with proven backup strategies and data loss prevention.",
+        tasks: [
+          { id:"4.4.1", task:"Implement the 3-2-1 backup rule: 3 copies of data, on 2 different media types, with 1 offsite (cloud or physical offsite)", responsible:"IT", timeframe:"Week 7–9", output:"Backup configuration documentation + test restore log", priority:"Critical" },
+          { id:"4.4.2", task:"Test backup restore monthly — document test date, data restored, time taken, and result. Never assume backups work without testing.", responsible:"IT", timeframe:"Ongoing (monthly)", output:"Monthly Backup Restore Test Log", priority:"Critical" },
+          { id:"4.4.3", task:"Encrypt all backups at rest and in transit — confirm encryption keys are stored separately from backup data", responsible:"IT", timeframe:"Week 8", output:"Backup encryption confirmation", priority:"High" },
+          { id:"4.4.4", task:"Implement DLP controls — block emailing bulk personal data externally; block uploading to personal cloud storage (Tier 2 & 3)", responsible:"IT", timeframe:"Week 10–12", output:"DLP policy configured in M365/Google Workspace", priority:"Medium" },
+          { id:"4.4.5", task:"Apply retention controls — configure systems to automatically flag or delete data per the Retention Schedule from Phase 2", responsible:"IT / IO", timeframe:"Week 10–12", output:"Retention automation configured or manual process confirmed", priority:"Medium" },
+        ]
+      },
+      {
+        title: "4.5 Logging, Monitoring & Vulnerability Management",
+        description: "Establish visibility across your environment and actively hunt for vulnerabilities.",
+        tasks: [
+          { id:"4.5.1", task:"Enable centralised logging for: firewall, email gateway, authentication events, and file access on servers (minimum 90-day retention)", responsible:"IT", timeframe:"Week 8–10", output:"Logging configuration — minimum 90-day retention", priority:"High" },
+          { id:"4.5.2", task:"Set up alerts for: multiple failed logins, after-hours access, admin account changes, large data transfers", responsible:"IT", timeframe:"Week 9–10", output:"Alert rules configured — test each alert fires correctly", priority:"High" },
+          { id:"4.5.3", task:"Conduct a vulnerability scan on all internet-facing systems and internal servers (e.g. Tenable Nessus Essentials, OpenVAS)", responsible:"IT", timeframe:"Week 8–9", output:"Vulnerability Scan Report", priority:"High" },
+          { id:"4.5.4", task:"Remediate all Critical vulnerabilities within 72 hours and High vulnerabilities within 30 days — document all actions taken", responsible:"IT", timeframe:"Per scan cadence", output:"Vulnerability Remediation Tracker", priority:"Critical" },
+          { id:"4.5.5", task:"Schedule quarterly vulnerability scans as a recurring task — add to IT calendar", responsible:"IT", timeframe:"Ongoing (quarterly)", output:"Quarterly scan reports filed", priority:"High" },
+          { id:"4.5.6", task:"Conduct an annual penetration test for Tier 3 (101–250 users) and any company processing large volumes of payment card or health data", responsible:"IT / External vendor", timeframe:"Month 5–6", output:"Penetration Test Report + Remediation Plan", priority:"Medium" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 5, title: "Training, Awareness & Third-Party Mgmt", subtitle: "Staff training, supplier contracts & data subject rights",
+    weeks: "Weeks 10–16", icon: "🎓", color: "#3a0751", accent: "#7030a0", light: "#ead8f5",
+    sections: [
+      {
+        title: "5.1 Staff Privacy & Security Training",
+        description: "Human error is the leading cause of data breaches in South African SMEs. Formal training programmes are mandatory under POPIA.",
+        tasks: [
+          { id:"5.1.1", task:"Develop or procure a Privacy Awareness Training Programme covering: what is personal information, staff obligations under POPIA, recognising a privacy breach, and how to report", responsible:"IO / HR", timeframe:"Week 8–10", output:"Training materials or LMS course ready", priority:"Critical" },
+          { id:"5.1.2", task:"Develop or procure a Cybersecurity Awareness Training Programme covering: phishing recognition, password hygiene, safe browsing, social engineering, and device security", responsible:"IT / HR", timeframe:"Week 8–10", output:"Training materials or LMS course ready", priority:"Critical" },
+          { id:"5.1.3", task:"Deliver mandatory induction training to ALL staff (existing and new hires) — track completion with sign-off sheets or LMS certificates", responsible:"HR / IO", timeframe:"Week 10–12", output:"100% staff training completion log", priority:"Critical" },
+          { id:"5.1.4", task:"Conduct a simulated phishing test (e.g. GoPhish, Microsoft Attack Simulator, KnowBe4 free tier) to assess actual staff susceptibility", responsible:"IT", timeframe:"Week 12–14", output:"Phishing simulation report — click rate and remediation actions", priority:"High" },
+          { id:"5.1.5", task:"Provide targeted follow-up training for staff who failed phishing simulations or reported policy violations", responsible:"IT / HR", timeframe:"Within 1 week of test", output:"Individual training completion confirmation", priority:"High" },
+          { id:"5.1.6", task:"Schedule annual refresher training and quarterly security awareness communications (newsletters, screen savers, reminders)", responsible:"IO / HR", timeframe:"Ongoing (annual + quarterly)", output:"Training calendar + communications schedule", priority:"Medium" },
+          { id:"5.1.7", task:"Deliver specialised training for IT staff covering incident response, vulnerability management, and technical security controls", responsible:"IT Manager", timeframe:"Month 3–4", output:"IT team training records", priority:"High" },
+          { id:"5.1.8", task:"Train the IO on POPIA obligations, Information Regulator interaction, data subject rights handling, and breach notification procedures", responsible:"External trainer / IO self-study", timeframe:"Month 2–3", output:"IO Training Completion Certificate", priority:"High" },
+        ]
+      },
+      {
+        title: "5.2 Third-Party & Supplier Management",
+        description: "Any operator that processes personal information on your behalf is bound by POPIA. You must have written contracts and conduct due diligence on all such suppliers.",
+        tasks: [
+          { id:"5.2.1", task:"Compile a Supplier / Operator Register listing all third parties with access to your personal information or systems (cloud providers, payroll processors, accountants, IT support, marketing platforms)", responsible:"IO / Procurement", timeframe:"Week 8–10", output:"Supplier Register (name, data accessed, contract status)", priority:"Critical" },
+          { id:"5.2.2", task:"Review all existing supplier contracts — identify those lacking data protection / operator clauses required by POPIA Section 20 & 21", responsible:"IO / Legal", timeframe:"Week 9–11", output:"Contract Gap Analysis", priority:"Critical" },
+          { id:"5.2.3", task:"Issue Data Processing Agreements (DPAs) / Operator Agreements to all suppliers processing personal information — obtain signed copies", responsible:"IO / Legal", timeframe:"Week 10–14", output:"Signed DPAs on file for every operator", priority:"Critical" },
+          { id:"5.2.4", task:"Conduct a security questionnaire or review for all critical suppliers (those processing sensitive PI, financial data, or with system access)", responsible:"IO / IT", timeframe:"Week 12–16", output:"Supplier security assessment completed and filed", priority:"High" },
+          { id:"5.2.5", task:"Establish a process to review new suppliers before onboarding — include data protection assessment as a procurement gate", responsible:"IO / Procurement", timeframe:"Week 12", output:"Supplier Onboarding Checklist (privacy & security gate)", priority:"High" },
+          { id:"5.2.6", task:"Review cross-border data transfers to suppliers outside South Africa — ensure adequate protections per POPIA Section 72 are in place", responsible:"IO", timeframe:"Week 12–14", output:"Cross-Border Transfer Assessment per supplier", priority:"High" },
+        ]
+      },
+      {
+        title: "5.3 Data Subject Rights Implementation",
+        description: "POPIA grants data subjects rights to access, correct, and delete their personal information. You must respond within 30 days.",
+        tasks: [
+          { id:"5.3.1", task:"Create and publish a Data Subject Request (DSR) intake form covering: access, correction, deletion, objection, and withdrawal of consent requests", responsible:"IO", timeframe:"Week 10", output:"DSR Form published and operational", priority:"High" },
+          { id:"5.3.2", task:"Implement a DSR tracking log to record: request received date, requester identity, request type, action taken, and response date (must respond within 30 days)", responsible:"IO", timeframe:"Week 10", output:"DSR Tracking Log (spreadsheet or ticketing system)", priority:"High" },
+          { id:"5.3.3", task:"Define identity verification procedure for DSRs — verify requester identity before disclosing or deleting data", responsible:"IO", timeframe:"Week 10", output:"Identity Verification SOP for DSRs", priority:"High" },
+          { id:"5.3.4", task:"Test the end-to-end DSR process with a mock request before going live — ensure response within 30-day window is feasible", responsible:"IO", timeframe:"Week 12", output:"DSR Process Test Report", priority:"Medium" },
+        ]
+      }
+    ]
+  },
+  {
+    id: 6, title: "Ongoing Monitoring, Testing & Review", subtitle: "Sustain, test and continuously improve",
+    weeks: "Month 4 onward", icon: "🔄", color: "#1a4a2e", accent: "#2e9952", light: "#e2efda",
+    sections: [
+      {
+        title: "6.1 Incident Response Readiness",
+        description: "Test your incident response capability before you need it. POPIA mandates breach notification to the Information Regulator within 72 hours.",
+        tasks: [
+          { id:"6.1.1", task:"Conduct a tabletop incident response exercise — simulate a ransomware attack or data breach scenario and test the IR playbook", responsible:"IO / IT", timeframe:"Month 4–5", output:"Tabletop Exercise Report + Lessons Learned", priority:"High" },
+          { id:"6.1.2", task:"Maintain the IR playbook and update after each exercise or real incident — ensure all staff know their roles", responsible:"IO / IT", timeframe:"Ongoing (annual)", output:"Updated IR Playbook (version controlled)", priority:"High" },
+          { id:"6.1.3", task:"Establish a breach notification workflow: within 72 hours notify the Information Regulator; where risk of harm, notify affected data subjects", responsible:"IO", timeframe:"Month 3 (implement); Ongoing use", output:"Breach Notification Procedure + template letters", priority:"Critical" },
+          { id:"6.1.4", task:"Maintain a breach register recording all actual and suspected breaches, their assessment, and actions taken", responsible:"IO", timeframe:"Ongoing", output:"Breach Register (updated after each incident)", priority:"Critical" },
+        ]
+      },
+      {
+        title: "6.2 Audit, Review & Compliance Monitoring",
+        description: "Regular internal audits and reviews ensure your controls remain effective as your business and the threat landscape evolve.",
+        tasks: [
+          { id:"6.2.1", task:"Conduct an internal privacy compliance audit annually — review all eight POPIA conditions of lawful processing and identify gaps", responsible:"IO", timeframe:"Annual (month 12 + every 12 months)", output:"Annual Privacy Audit Report", priority:"High" },
+          { id:"6.2.2", task:"Conduct an internal cybersecurity controls review quarterly — check patch status, access rights, backup test results, alert configurations", responsible:"IT", timeframe:"Quarterly", output:"Quarterly Security Review Report", priority:"High" },
+          { id:"6.2.3", task:"Review the Risk Register quarterly — reassess risk ratings, close resolved risks, add new threats, and update treatment plans", responsible:"IO / IT", timeframe:"Quarterly", output:"Updated Risk Register", priority:"High" },
+          { id:"6.2.4", task:"Review the Information Asset Register annually — update for new systems, decommissioned systems, and changed data flows", responsible:"IT / IO", timeframe:"Annual", output:"Updated Information Asset Register", priority:"Medium" },
+          { id:"6.2.5", task:"Monitor Information Regulator website and guidance for regulatory updates, new directives, and enforcement notices", responsible:"IO", timeframe:"Monthly (check)", output:"Regulatory update log", priority:"Medium" },
+          { id:"6.2.6", task:"Complete and submit annual PAIA report to Information Regulator if required (currently mandatory if requested)", responsible:"IO", timeframe:"Annual (June 30)", output:"Submitted PAIA Annual Report", priority:"High" },
+        ]
+      },
+      {
+        title: "6.3 Continuous Improvement",
+        description: "Use every incident, audit finding, and exercise outcome as an opportunity to strengthen your framework.",
+        tasks: [
+          { id:"6.3.1", task:"After any security incident, conduct a post-incident review within 5 business days — identify root cause, control failures, and corrective actions", responsible:"IO / IT", timeframe:"Within 5 days of incident", output:"Post-Incident Review Report", priority:"Critical" },
+          { id:"6.3.2", task:"Implement corrective actions from audits, incidents, and exercise reviews within agreed timeframes — track in the Risk Register", responsible:"IO / IT", timeframe:"Ongoing", output:"Corrective Action Tracker (closed-loop)", priority:"High" },
+          { id:"6.3.3", task:"Reassess the Privacy Impact Assessment (PIA) for any new project, system, or process that involves significant personal information processing", responsible:"IO", timeframe:"Before launching new projects", output:"Completed PIA for each applicable project", priority:"High" },
+          { id:"6.3.4", task:"Benchmark your controls annually against the NIST Cybersecurity Framework or CIS Controls to identify maturity improvements", responsible:"IO / IT", timeframe:"Annual", output:"Annual Maturity Assessment Report", priority:"Medium" },
+        ]
+      }
+    ]
+  }
+];
+
+const PC = {
+  Critical: { bg:"#2a0a0a", text:"#ff6b6b", border:"#c00000", dot:"#ff6b6b" },
+  High:     { bg:"#2a1500", text:"#ffaa55", border:"#c75000", dot:"#ffaa55" },
+  Medium:   { bg:"#1e1a00", text:"#ffd055", border:"#d4a800", dot:"#ffd055" },
+  Low:      { bg:"#0a1a0a", text:"#55cc88", border:"#2e7d52", dot:"#55cc88" },
+};
+
+const { useState, useCallback, useRef } = React;
+
+function App() {
+  const [activePhase, setActivePhase] = useState(1);
+  const [completed, setCompleted] = useState({});
+  const [expanded, setExpanded] = useState({});
+  const [filterPriority, setFilterPriority] = useState("All");
+  const [view, setView] = useState("tasks");
+  const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [companyName, setCompanyName] = useState("");
+  const [companyTier, setCompanyTier] = useState("Tier 1 (5–50 users)");
+  const [reportNotes, setReportNotes] = useState("");
+  const [reportType, setReportType] = useState("executive");
+  const [showReportSettings, setShowReportSettings] = useState(false);
+
+  const allIds = PHASES.flatMap(p => p.sections.flatMap(s => s.tasks.map(t => t.id)));
+  const totalTasks = allIds.length;
+  const completedCount = Object.values(completed).filter(Boolean).length;
+  const overallPct = Math.round((completedCount / totalTasks) * 100);
+
+  const phase = PHASES.find(p => p.id === activePhase);
+
+  const toggleTask = id => setCompleted(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleSection = key => setExpanded(prev => ({ ...prev, [key]: prev[key] === false ? true : false }));
+
+  const getPhasePct = p => {
+    const ids = p.sections.flatMap(s => s.tasks.map(t => t.id));
+    const done = ids.filter(id => completed[id]).length;
+    return ids.length > 0 ? Math.round((done / ids.length) * 100) : 0;
+  };
+
+  const getPhaseStats = p => {
+    const c = { Critical:0, High:0, Medium:0, Low:0 };
+    p.sections.forEach(s => s.tasks.forEach(t => c[t.priority]++));
+    return c;
+  };
+
+  const filteredSections = phase.sections.map(s => ({
+    ...s,
+    tasks: s.tasks.filter(t => {
+      const mp = filterPriority === "All" || t.priority === filterPriority;
+      const ms = !search || [t.task, t.responsible, t.output].some(x => x.toLowerCase().includes(search.toLowerCase()));
+      return mp && ms;
+    })
+  })).filter(s => s.tasks.length > 0);
+
+  return (
+    <div style={{ display:"flex", height:"100vh", background:"#0f1923", color:"#e8edf2", overflow:"hidden" }}>
+
+      {/* SIDEBAR */}
+      <div style={{ width: sidebarOpen ? 272 : 58, minWidth: sidebarOpen ? 272 : 58, background:"#0a1220", borderRight:"1px solid #1e3050", display:"flex", flexDirection:"column", transition:"all 0.3s ease", overflow:"hidden" }}>
+        
+        {/* Logo */}
+        <div style={{ padding:"16px 12px", borderBottom:"1px solid #1e3050", display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:34, height:34, minWidth:34, background:"linear-gradient(135deg,#1a6faf,#0d4a7a)", borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17 }}>🛡️</div>
+          {sidebarOpen && (
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#e8edf2" }}>SA Privacy & Cyber</div>
+              <div style={{ fontSize:11, color:"#4da3e8" }}>Framework Tracker</div>
+            </div>
+          )}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background:"none", border:"none", color:"#4a6a8a", cursor:"pointer", fontSize:14, padding:"4px", lineHeight:1, minWidth:20 }}>
+            {sidebarOpen ? "◀" : "▶"}
+          </button>
+        </div>
+
+        {/* View toggle */}
+        {sidebarOpen && (
+          <div style={{ padding:"10px 12px", borderBottom:"1px solid #1e3050" }}>
+            <div style={{ display:"flex", background:"#1a2840", borderRadius:8, padding:3, gap:3 }}>
+              {[["tasks","📋 Tasks"],["dashboard","📊 Dash"],["reports","🖨️ Reports"]].map(([v,label]) => (
+                <button key={v} onClick={() => setView(v)} style={{
+                  flex:1, padding:"5px 0", borderRadius:6, border:"none", cursor:"pointer",
+                  background: view===v ? "#1a6faf" : "transparent",
+                  color: view===v ? "#fff" : "#6a8aaa",
+                  fontSize:10, fontWeight:600
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Overall progress */}
+        {sidebarOpen && (
+          <div style={{ padding:"12px 14px", borderBottom:"1px solid #1e3050" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+              <span style={{ fontSize:10, color:"#4a6a8a", textTransform:"uppercase", letterSpacing:"0.5px" }}>Overall Progress</span>
+              <span style={{ fontSize:12, fontWeight:700, color:"#4da3e8" }}>{overallPct}%</span>
+            </div>
+            <div style={{ height:5, background:"#1a2840", borderRadius:3, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${overallPct}%`, background:"linear-gradient(90deg,#1a6faf,#4da3e8)", borderRadius:3, transition:"width 0.5s" }} />
+            </div>
+            <div style={{ fontSize:10, color:"#4a6a8a", marginTop:5 }}>{completedCount} of {totalTasks} tasks done</div>
+          </div>
+        )}
+
+        {/* Phases */}
+        <div style={{ flex:1, overflowY:"auto", padding:"8px 8px" }}>
+          {PHASES.map(p => {
+            const pct = getPhasePct(p);
+            const isActive = p.id === activePhase;
+            return (
+              <button key={p.id} onClick={() => { setActivePhase(p.id); setView("tasks"); }}
+                title={!sidebarOpen ? `Phase ${p.id}: ${p.title}` : ""}
+                style={{
+                  width:"100%", textAlign:"left", padding: sidebarOpen ? "9px 10px" : "9px 0",
+                  marginBottom:3, borderRadius:9, border:"none", cursor:"pointer",
+                  background: isActive ? "linear-gradient(135deg,#1a3a5c,#1a4f7a)" : "transparent",
+                  display:"flex", alignItems:"center", gap: sidebarOpen ? 9 : 0,
+                  justifyContent: sidebarOpen ? "flex-start" : "center",
+                  transition:"all 0.2s"
+                }}>
+                <div style={{ width:32, height:32, minWidth:32, borderRadius:7, fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", background: isActive ? "rgba(77,163,232,0.2)" : "rgba(255,255,255,0.04)" }}>{p.icon}</div>
+                {sidebarOpen && (
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:10, color: isActive ? "#4da3e8" : "#4a6a8a", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.4px" }}>Phase {p.id}</div>
+                    <div style={{ fontSize:11, color: isActive ? "#e8edf2" : "#7a9ab0", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.title}</div>
+                    <div style={{ marginTop:4, height:3, background:"#1a2840", borderRadius:2, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${pct}%`, background: pct===100 ? "#2e9952" : p.accent, borderRadius:2, transition:"width 0.3s" }} />
+                    </div>
+                  </div>
+                )}
+                {sidebarOpen && <span style={{ fontSize:11, color: pct===100 ? "#4ecf82" : "#6a8aaa", fontWeight:700, minWidth:30, textAlign:"right" }}>{pct}%</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {sidebarOpen && (
+          <div style={{ padding:"10px 12px", borderTop:"1px solid #1e3050" }}>
+            <div style={{ display:"flex", gap:6, marginBottom:8 }}>
+              <button onClick={() => {
+                const data = { completed, companyName, companyTier, reportNotes, savedAt: new Date().toISOString() };
+                const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'privacy-progress-' + new Date().toISOString().slice(0,10) + '.json';
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(a.href);
+              }} style={{ flex:1, padding:"7px 4px", borderRadius:7, border:"1px solid #1e3050", background:"#1a2840", color:"#7a9ab0", fontSize:11, fontWeight:600, cursor:"pointer" }}>💾 Save</button>
+              <label style={{ flex:1, padding:"7px 4px", borderRadius:7, border:"1px solid #1e3050", background:"#1a2840", color:"#7a9ab0", fontSize:11, fontWeight:600, cursor:"pointer", textAlign:"center", display:"block" }}>
+                📂 Load
+                <input type="file" accept=".json" style={{ display:"none" }} onChange={e => {
+                  const file = e.target.files[0]; if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => {
+                    try {
+                      const d = JSON.parse(ev.target.result);
+                      if (d.completed) setCompleted(d.completed);
+                      if (d.companyName !== undefined) setCompanyName(d.companyName);
+                      if (d.companyTier !== undefined) setCompanyTier(d.companyTier);
+                      if (d.reportNotes !== undefined) setReportNotes(d.reportNotes);
+                    } catch(err) { alert('Could not read file. Make sure it is a valid progress file.'); }
+                  };
+                  reader.readAsText(file); e.target.value='';
+                }} />
+              </label>
+            </div>
+            <div style={{ fontSize:10, color:"#2a4060", lineHeight:1.6 }}>POPIA · Cybercrimes Act<br/>South African SMEs · 5–250 Users</div>
+          </div>
+        )}
+      </div>
+
+      {/* MAIN */}
+      <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+        {view === "dashboard"
+          ? <Dashboard phases={PHASES} completed={completed} getPhasePct={getPhasePct} overallPct={overallPct} completedCount={completedCount} totalTasks={totalTasks} />
+          : view === "reports"
+          ? <ReportView phases={PHASES} completed={completed} getPhasePct={getPhasePct} overallPct={overallPct} completedCount={completedCount} totalTasks={totalTasks} companyName={companyName} setCompanyName={setCompanyName} companyTier={companyTier} setCompanyTier={setCompanyTier} reportNotes={reportNotes} setReportNotes={setReportNotes} reportType={reportType} setReportType={setReportType} />
+          : <>
+              {/* Phase Header */}
+              <div style={{ padding:"20px 28px 16px", background:`linear-gradient(135deg,${phase.color}cc,#0f1923)`, borderBottom:"1px solid #1e3050", position:"relative", overflow:"hidden" }}>
+                <div style={{ position:"absolute", top:-30, right:-30, width:160, height:160, borderRadius:"50%", background:`${phase.accent}12`, pointerEvents:"none" }} />
+                <div style={{ display:"flex", alignItems:"flex-start", gap:16, position:"relative" }}>
+                  <div style={{ fontSize:38 }}>{phase.icon}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:5 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:phase.accent, textTransform:"uppercase", letterSpacing:"1px", background:`${phase.accent}20`, padding:"2px 9px", borderRadius:20 }}>Phase {phase.id}</span>
+                      <span style={{ fontSize:11, color:"#4a6a8a" }}>{phase.weeks}</span>
+                    </div>
+                    <h1 style={{ margin:0, fontSize:20, fontWeight:800, color:"#e8edf2" }}>{phase.title}</h1>
+                    <p style={{ margin:"3px 0 0", fontSize:12, color:"#7a9ab0" }}>{phase.subtitle}</p>
+                  </div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    {Object.entries(getPhaseStats(phase)).map(([pr,cnt]) => (
+                      <div key={pr} style={{ textAlign:"center", padding:"6px 12px", background:`${PC[pr].bg}`, border:`1px solid ${PC[pr].border}55`, borderRadius:8 }}>
+                        <div style={{ fontSize:16, fontWeight:800, color:PC[pr].dot }}>{cnt}</div>
+                        <div style={{ fontSize:9, color:"#4a6a8a", textTransform:"uppercase", letterSpacing:"0.3px" }}>{pr}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginTop:14, display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ flex:1, height:5, background:"#1a2840", borderRadius:3, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${getPhasePct(phase)}%`, background:`linear-gradient(90deg,${phase.color},${phase.accent})`, borderRadius:3, transition:"width 0.5s" }} />
+                  </div>
+                  <span style={{ fontSize:12, fontWeight:700, color:phase.accent, minWidth:50 }}>{getPhasePct(phase)}% done</span>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div style={{ padding:"10px 28px", background:"#0d1928", borderBottom:"1px solid #1e3050", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                <input type="text" placeholder="🔍  Search tasks..." value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ background:"#1a2840", border:"1px solid #1e3050", color:"#e8edf2", padding:"6px 13px", borderRadius:8, fontSize:12, width:200, fontFamily:"inherit" }} />
+                <span style={{ fontSize:11, color:"#3a5570" }}>Filter:</span>
+                {["All","Critical","High","Medium","Low"].map(p => (
+                  <button key={p} onClick={() => setFilterPriority(p)} style={{
+                    padding:"5px 13px", borderRadius:20, border:"1px solid",
+                    borderColor: filterPriority===p ? (p==="All" ? "#1a6faf" : PC[p]?.border) : "#1e3050",
+                    background: filterPriority===p ? (p==="All" ? "#1a6faf22" : PC[p]?.bg) : "transparent",
+                    color: filterPriority===p ? (p==="All" ? "#4da3e8" : PC[p]?.text) : "#4a6a8a",
+                    fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit"
+                  }}>{p}</button>
+                ))}
+              </div>
+
+              {/* Tasks */}
+              <div style={{ flex:1, overflowY:"auto", padding:"16px 28px 40px" }}>
+                {filteredSections.length === 0
+                  ? <div style={{ textAlign:"center", padding:"60px 0", color:"#3a5570" }}>
+                      <div style={{ fontSize:36, marginBottom:10 }}>🔍</div>
+                      <div>No tasks match your filter</div>
+                    </div>
+                  : filteredSections.map((section, si) => {
+                      const key = `${activePhase}-${si}`;
+                      const isExpanded = expanded[key] !== false;
+                      const done = section.tasks.filter(t => completed[t.id]).length;
+                      const pct = Math.round((done / section.tasks.length) * 100);
+
+                      return (
+                        <div key={si} style={{ marginBottom:16, background:"#0d1928", border:"1px solid #1e3050", borderRadius:13, overflow:"hidden" }}>
+                          {/* Section header */}
+                          <button onClick={() => toggleSection(key)} style={{
+                            width:"100%", textAlign:"left", padding:"14px 18px", background:"none", border:"none",
+                            cursor:"pointer", display:"flex", alignItems:"center", gap:10, color:"#e8edf2",
+                            borderBottom: isExpanded ? "1px solid #1e3050" : "none", fontFamily:"inherit"
+                          }}>
+                            <span style={{ fontSize:14, color:"#4da3e8", transform: isExpanded ? "rotate(90deg)" : "none", transition:"transform 0.2s", display:"inline-block", minWidth:14 }}>▶</span>
+                            <div style={{ flex:1 }}>
+                              <div style={{ fontSize:13, fontWeight:700 }}>{section.title}</div>
+                              <div style={{ fontSize:11, color:"#4a6a8a", marginTop:2, lineHeight:1.4 }}>{section.description}</div>
+                            </div>
+                            <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:120 }}>
+                              <div style={{ height:4, width:70, background:"#1a2840", borderRadius:2, overflow:"hidden" }}>
+                                <div style={{ height:"100%", width:`${pct}%`, background: pct===100 ? "#2e9952" : phase.accent, borderRadius:2 }} />
+                              </div>
+                              <span style={{ fontSize:10, color:"#4a6a8a", whiteSpace:"nowrap" }}>{done}/{section.tasks.length}</span>
+                            </div>
+                          </button>
+
+                          {isExpanded && (
+                            <div>
+                              {/* Column headers */}
+                              <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 120px 105px 185px 85px", padding:"7px 18px", background:"#0a1220", borderBottom:"1px solid #131f30" }}>
+                                <div />
+                                {["Task","Responsible","Timeframe","Output / Deliverable","Priority"].map((h,i) => (
+                                  <div key={i} style={{ fontSize:9, fontWeight:700, color:"#2a4060", textTransform:"uppercase", letterSpacing:"0.5px" }}>{h}</div>
+                                ))}
+                              </div>
+
+                              {section.tasks.map((task, ti) => {
+                                const isDone = !!completed[task.id];
+                                const pc = PC[task.priority];
+                                return (
+                                  <div key={ti} style={{
+                                    display:"grid", gridTemplateColumns:"34px 1fr 120px 105px 185px 85px",
+                                    padding:"11px 18px", alignItems:"start",
+                                    background: isDone ? "#090f09" : ti%2===0 ? "#0d1928" : "#0b1520",
+                                    borderBottom:"1px solid #111c2a",
+                                    opacity: isDone ? 0.55 : 1, transition:"all 0.2s"
+                                  }}>
+                                    <div style={{ paddingTop:1 }}>
+                                      <button onClick={() => toggleTask(task.id)} style={{
+                                        width:21, height:21, borderRadius:6, border:`2px solid ${isDone ? "#2e9952" : "#1e3050"}`,
+                                        background: isDone ? "#2e9952" : "transparent", cursor:"pointer",
+                                        display:"flex", alignItems:"center", justifyContent:"center",
+                                        color:"#fff", fontSize:11, transition:"all 0.2s"
+                                      }}>{isDone ? "✓" : ""}</button>
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize:9, color:"#2a4060", marginBottom:2 }}>{task.id}</div>
+                                      <div style={{ fontSize:12, color: isDone ? "#3a6a3a" : "#c8dce8", lineHeight:1.5, textDecoration: isDone ? "line-through" : "none" }}>{task.task}</div>
+                                    </div>
+                                    <div style={{ fontSize:11, color:"#5a7a90", paddingRight:8 }}>{task.responsible}</div>
+                                    <div style={{ fontSize:11, color:"#5a7a90" }}>{task.timeframe}</div>
+                                    <div style={{ fontSize:11, color:"#5a7a90", fontStyle:"italic", paddingRight:10, lineHeight:1.4 }}>{task.output}</div>
+                                    <div>
+                                      <span style={{
+                                        fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:20,
+                                        background: pc.bg, color: pc.text, border:`1px solid ${pc.border}66`,
+                                        whiteSpace:"nowrap"
+                                      }}>{task.priority}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                }
+              </div>
+            </>
+        }
+      </div>
+    </div>
+  );
+}
+function Dashboard({ phases, completed, getPhasePct, overallPct, completedCount, totalTasks }) {
+  const pc = { Critical:0, High:0, Medium:0, Low:0 };
+  const pd = { Critical:0, High:0, Medium:0, Low:0 };
+  phases.forEach(p => p.sections.forEach(s => s.tasks.forEach(t => {
+    pc[t.priority]++;
+    if (completed[t.id]) pd[t.priority]++;
+  })));
+
+  const phasesComplete = phases.filter(p => getPhasePct(p) === 100).length;
+
+  return (
+    <div style={{ flex:1, overflowY:"auto", padding:"24px 32px" }}>
+      <div style={{ marginBottom:22 }}>
+        <h1 style={{ fontSize:22, fontWeight:800, color:"#e8edf2", margin:0 }}>Implementation Dashboard</h1>
+        <p style={{ fontSize:12, color:"#4a6a8a", marginTop:4 }}>Track your progress — POPIA & Cybersecurity Framework · South African SMEs</p>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:24 }}>
+        {[
+          { label:"Overall Progress", value:`${overallPct}%`, sub:`${completedCount} of ${totalTasks} tasks`, color:"#4da3e8", icon:"📈" },
+          { label:"Critical Tasks Done", value:`${pd.Critical}/${pc.Critical}`, sub:`${Math.round((pd.Critical/pc.Critical)*100)||0}% complete`, color:"#ff6b6b", icon:"🚨" },
+          { label:"High Priority Done", value:`${pd.High}/${pc.High}`, sub:`${Math.round((pd.High/pc.High)*100)||0}% complete`, color:"#ffaa55", icon:"⚠️" },
+          { label:"Phases Completed", value:phasesComplete, sub:`of ${phases.length} total phases`, color:"#4ecf82", icon:"✅" },
+        ].map((k,i) => (
+          <div key={i} style={{ background:"#0d1928", border:"1px solid #1e3050", borderRadius:13, padding:"18px" }}>
+            <div style={{ fontSize:22, marginBottom:7 }}>{k.icon}</div>
+            <div style={{ fontSize:26, fontWeight:800, color:k.color }}>{k.value}</div>
+            <div style={{ fontSize:12, fontWeight:600, color:"#c8dce8", marginTop:2 }}>{k.label}</div>
+            <div style={{ fontSize:10, color:"#3a5570", marginTop:2 }}>{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Phase grid */}
+      <div style={{ marginBottom:24 }}>
+        <h2 style={{ fontSize:13, fontWeight:700, color:"#5a7a90", marginBottom:12, textTransform:"uppercase", letterSpacing:"0.5px" }}>Phase Progress</h2>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+          {phases.map(p => {
+            const pct = getPhasePct(p);
+            const total = p.sections.reduce((a,s) => a + s.tasks.length, 0);
+            const done = p.sections.reduce((a,s) => a + s.tasks.filter(t => completed[t.id]).length, 0);
+            const stats = {};
+            p.sections.forEach(s => s.tasks.forEach(t => { stats[t.priority] = (stats[t.priority]||0)+1; }));
+            return (
+              <div key={p.id} style={{ background:"#0d1928", border:`1px solid ${pct===100 ? "#2e995255" : "#1e3050"}`, borderRadius:13, padding:"16px", position:"relative", overflow:"hidden" }}>
+                {pct===100 && <div style={{ position:"absolute", top:10, right:12, fontSize:16 }}>✅</div>}
+                <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:10 }}>
+                  <span style={{ fontSize:20 }}>{p.icon}</span>
+                  <div>
+                    <div style={{ fontSize:9, color:p.accent, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px" }}>Phase {p.id}</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#c8dce8" }}>{p.title}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                  <span style={{ fontSize:10, color:"#4a6a8a" }}>{done}/{total} tasks</span>
+                  <span style={{ fontSize:13, fontWeight:800, color: pct===100 ? "#4ecf82" : p.accent }}>{pct}%</span>
+                </div>
+                <div style={{ height:7, background:"#1a2840", borderRadius:3, overflow:"hidden", marginBottom:10 }}>
+                  <div style={{ height:"100%", width:`${pct}%`, background: pct===100 ? "#2e9952" : `linear-gradient(90deg,${p.color},${p.accent})`, borderRadius:3, transition:"width 0.5s" }} />
+                </div>
+                <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+                  {Object.entries(stats).map(([pr,cnt]) => (
+                    <span key={pr} style={{ fontSize:9, padding:"2px 7px", borderRadius:10, background:PC[pr].bg, color:PC[pr].text, border:`1px solid ${PC[pr].border}44` }}>
+                      {cnt} {pr.slice(0,4)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Priority breakdown */}
+      <div style={{ marginBottom:24 }}>
+        <h2 style={{ fontSize:13, fontWeight:700, color:"#5a7a90", marginBottom:12, textTransform:"uppercase", letterSpacing:"0.5px" }}>Priority Breakdown</h2>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
+          {Object.entries(pc).map(([priority, total]) => {
+            const done = pd[priority];
+            const pct = Math.round((done/total)*100)||0;
+            const p = PC[priority];
+            return (
+              <div key={priority} style={{ background:"#0d1928", border:`1px solid ${p.border}33`, borderRadius:13, padding:"16px" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                  <span style={{ fontSize:13, fontWeight:700, color:p.dot }}>{priority}</span>
+                  <span style={{ fontSize:20, fontWeight:800, color:p.dot }}>{pct}%</span>
+                </div>
+                <div style={{ height:7, background:"#1a2840", borderRadius:3, overflow:"hidden", marginBottom:8 }}>
+                  <div style={{ height:"100%", width:`${pct}%`, background:p.dot, borderRadius:3, transition:"width 0.5s" }} />
+                </div>
+                <div style={{ fontSize:11, color:"#4a6a8a" }}>{done} of {total} completed</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* POPIA 8 Conditions */}
+      <div>
+        <h2 style={{ fontSize:13, fontWeight:700, color:"#5a7a90", marginBottom:12, textTransform:"uppercase", letterSpacing:"0.5px" }}>POPIA — 8 Conditions of Lawful Processing</h2>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+          {[
+            { n:1, title:"Accountability", desc:"IO must be appointed. Responsible party ensures all conditions are met.", phase:"Phase 1" },
+            { n:2, title:"Processing Limitation", desc:"Only process PI with consent or another lawful basis; only what is necessary.", phase:"Phase 2 & 3" },
+            { n:3, title:"Purpose Specification", desc:"Collect PI for a specific, explicitly defined, and lawful purpose.", phase:"Phase 2 & 3" },
+            { n:4, title:"Further Processing", desc:"Further processing must be compatible with the original purpose.", phase:"Phase 2 & 3" },
+            { n:5, title:"Information Quality", desc:"PI must be complete, accurate, not misleading, and up to date.", phase:"Phase 4 & 6" },
+            { n:6, title:"Openness", desc:"Notify data subjects before or when collecting their information.", phase:"Phase 3" },
+            { n:7, title:"Security Safeguards", desc:"Implement appropriate technical and organisational security measures.", phase:"Phase 4" },
+            { n:8, title:"Data Subject Rights", desc:"Allow data subjects to access, correct, and delete their information.", phase:"Phase 5" },
+          ].map(c => (
+            <div key={c.n} style={{ background:"#0d1928", border:"1px solid #1a3050", borderRadius:11, padding:"13px" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:7 }}>
+                <div style={{ width:22, height:22, borderRadius:6, background:"#1a6faf", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#fff", minWidth:22 }}>{c.n}</div>
+                <span style={{ fontSize:11, fontWeight:700, color:"#4da3e8" }}>{c.title}</span>
+              </div>
+              <p style={{ margin:"0 0 7px", fontSize:10, color:"#5a7a90", lineHeight:1.5 }}>{c.desc}</p>
+              <span style={{ fontSize:9, color:"#2a4060", background:"#1a2840", padding:"2px 8px", borderRadius:10 }}>{c.phase}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ height:30 }} />
+    </div>
+  );
+}
+
+
+function ReportView({ phases, completed, getPhasePct, overallPct, completedCount, totalTasks, companyName, setCompanyName, companyTier, setCompanyTier, reportNotes, setReportNotes, reportType, setReportType }) {
+  const pc = { Critical:0, High:0, Medium:0, Low:0 };
+  const pd = { Critical:0, High:0, Medium:0, Low:0 };
+  phases.forEach(p => p.sections.forEach(s => s.tasks.forEach(t => {
+    pc[t.priority]++;
+    if (completed[t.id]) pd[t.priority]++;
+  })));
+
+  const phasesComplete = phases.filter(p => getPhasePct(p) === 100).length;
+  const today = new Date().toLocaleDateString('en-ZA', { year:'numeric', month:'long', day:'numeric' });
+  const pendingCritical = pc.Critical - pd.Critical;
+  const pendingHigh = pc.High - pd.High;
+
+  // Compliance score: weight Critical x3, High x2, Medium x1
+  const weightedTotal = pc.Critical*3 + pc.High*2 + pc.Medium*1;
+  const weightedDone = pd.Critical*3 + pd.High*2 + pd.Medium*1;
+  const complianceScore = Math.round((weightedDone / weightedTotal) * 100);
+
+  function getRating(score) {
+    if (score >= 80) return { label:"Substantially Compliant", color:"#166534", bg:"#dcfce7" };
+    if (score >= 50) return { label:"Partially Compliant", color:"#854d0e", bg:"#fef9c3" };
+    if (score >= 25) return { label:"Developing", color:"#9a3412", bg:"#ffedd5" };
+    return { label:"Non-Compliant", color:"#991b1b", bg:"#fee2e2" };
+  }
+  const rating = getRating(complianceScore);
+
+  function buildPrintHTML() {
+    const allTasks = phases.flatMap(p => p.sections.flatMap(s => s.tasks.map(t => ({ ...t, phaseId: p.id, phaseTitle: p.title, sectionTitle: s.title }))));
+    const incompleteCritical = allTasks.filter(t => t.priority === "Critical" && !completed[t.id]);
+    const incompleteHigh = allTasks.filter(t => t.priority === "High" && !completed[t.id]);
+    const completedAll = allTasks.filter(t => completed[t.id]);
+
+    const co = companyName || "Your Organisation";
+    const now = today;
+
+    let html = `<div class="pr-page">`;
+
+    // Cover
+    html += `<div class="pr-cover">
+      <div style="font-size:11px;opacity:0.5;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px">SA Privacy & Cybersecurity Framework</div>
+      <h1>${reportType === "executive" ? "Executive Compliance Report" : reportType === "gap" ? "Gap Analysis Report" : reportType === "full" ? "Full Implementation Status Report" : "Board Compliance Report"}</h1>
+      <div class="sub">${co} &nbsp;·&nbsp; ${companyTier}</div>
+      <div class="meta">Report generated: ${now} &nbsp;·&nbsp; POPIA Act No. 4 of 2013 &nbsp;·&nbsp; Cybercrimes Act No. 19 of 2020</div>
+    </div>`;
+
+    if (reportType === "executive" || reportType === "board") {
+      // Executive summary KPIs
+      html += `<div class="pr-section">
+        <h2>Executive Summary</h2>
+        <div class="pr-kpi-grid">
+          <div class="pr-kpi"><div class="val">${overallPct}%</div><div class="lbl">Overall Progress</div></div>
+          <div class="pr-kpi"><div class="val" style="color:${rating.color}">${complianceScore}%</div><div class="lbl">Weighted Compliance Score</div></div>
+          <div class="pr-kpi"><div class="val">${phasesComplete}/${phases.length}</div><div class="lbl">Phases Complete</div></div>
+          <div class="pr-kpi"><div class="val" style="color:${pendingCritical > 0 ? '#991b1b' : '#166534'}">${pendingCritical}</div><div class="lbl">Critical Tasks Remaining</div></div>
+        </div>
+        <div class="pr-info-box">
+          <strong>Compliance Rating: </strong><span style="background:${rating.bg};color:${rating.color};padding:2px 8px;border-radius:10px;font-weight:700">${rating.label}</span>
+          &nbsp; The weighted compliance score prioritises completion of Critical (×3) and High (×2) priority tasks over Medium (×1) tasks. Low priority tasks are excluded from the score.
+        </div>`;
+
+      if (reportNotes) {
+        html += `<h3>Information Officer Notes</h3><div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px;font-size:11px;color:#374151;white-space:pre-wrap;margin-top:6px">${reportNotes}</div>`;
+      }
+      html += `</div>`;
+
+      // Phase summary table
+      html += `<div class="pr-section"><h2>Phase Progress Summary</h2>
+        <table class="pr-table">
+          <tr><th>Phase</th><th>Title</th><th>Period</th><th>Tasks Done</th><th>% Complete</th><th>Status</th></tr>`;
+      phases.forEach(p => {
+        const total = p.sections.reduce((a,s) => a + s.tasks.length, 0);
+        const done = p.sections.reduce((a,s) => a + s.tasks.filter(t => completed[t.id]).length, 0);
+        const pct = Math.round((done/total)*100);
+        const status = pct === 100 ? "Complete" : pct > 0 ? "In Progress" : "Not Started";
+        const statusColor = pct === 100 ? "#166534" : pct > 0 ? "#854d0e" : "#991b1b";
+        const statusBg = pct === 100 ? "#dcfce7" : pct > 0 ? "#fef9c3" : "#fee2e2";
+        html += `<tr>
+          <td><strong>Phase ${p.id}</strong></td>
+          <td>${p.title}</td>
+          <td style="white-space:nowrap">${p.weeks}</td>
+          <td>${done} / ${total}</td>
+          <td>
+            <div class="pr-prog-bar"><div class="fill" style="width:${pct}%"></div></div>
+            <span style="font-size:10px;font-weight:700">${pct}%</span>
+          </td>
+          <td><span class="pr-badge" style="background:${statusBg};color:${statusColor}">${status}</span></td>
+        </tr>`;
+      });
+      html += `</table></div>`;
+
+      // Priority breakdown
+      html += `<div class="pr-section"><h2>Priority Task Breakdown</h2>
+        <table class="pr-table">
+          <tr><th>Priority</th><th>Total Tasks</th><th>Completed</th><th>Remaining</th><th>% Done</th></tr>`;
+      ["Critical","High","Medium","Low"].forEach(pr => {
+        const tot = pc[pr]; const dn = pd[pr]; const rem = tot - dn; const pct = Math.round((dn/tot)*100)||0;
+        html += `<tr>
+          <td><span class="pr-badge ${pr}">${pr}</span></td>
+          <td>${tot}</td><td>${dn}</td>
+          <td style="color:${rem>0&&pr==="Critical"?"#991b1b":"inherit"};font-weight:${rem>0&&pr==="Critical"?"700":"400"}">${rem}</td>
+          <td><div class="pr-prog-bar"><div class="fill" style="width:${pct}%"></div></div><span style="font-size:10px;font-weight:700">${pct}%</span></td>
+        </tr>`;
+      });
+      html += `</table></div>`;
+
+      if (pendingCritical > 0) {
+        html += `<div class="pr-section"><h2>⚠️ Outstanding Critical Tasks</h2>
+          <div class="pr-info-box">These ${pendingCritical} Critical tasks must be completed as a priority. Non-completion of these items represents the highest compliance and operational risk.</div>
+          <table class="pr-table">
+            <tr><th>#</th><th>Task</th><th>Phase</th><th>Responsible</th><th>Expected Output</th></tr>`;
+        incompleteCritical.forEach((t,i) => {
+          html += `<tr><td>${i+1}</td><td>${t.task}</td><td>Phase ${t.phaseId}</td><td>${t.responsible}</td><td style="font-style:italic">${t.output}</td></tr>`;
+        });
+        html += `</table></div>`;
+      }
+
+    } else if (reportType === "gap") {
+      // Gap Analysis
+      html += `<div class="pr-section"><h2>Gap Analysis Overview</h2>
+        <div class="pr-kpi-grid">
+          <div class="pr-kpi"><div class="val" style="color:#991b1b">${pc.Critical - pd.Critical}</div><div class="lbl">Critical Gaps</div></div>
+          <div class="pr-kpi"><div class="val" style="color:#9a3412">${pc.High - pd.High}</div><div class="lbl">High Priority Gaps</div></div>
+          <div class="pr-kpi"><div class="val" style="color:#854d0e">${pc.Medium - pd.Medium}</div><div class="lbl">Medium Priority Gaps</div></div>
+          <div class="pr-kpi"><div class="val" style="color:#166534">${completedAll.length}</div><div class="lbl">Tasks Completed</div></div>
+        </div>`;
+      if (reportNotes) html += `<h3>Notes</h3><div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px;font-size:11px;color:#374151;white-space:pre-wrap;margin-top:6px">${reportNotes}</div>`;
+      html += `</div>`;
+
+      phases.forEach(p => {
+        const incompleteTasks = p.sections.flatMap(s => s.tasks.filter(t => !completed[t.id]).map(t => ({ ...t, sectionTitle: s.title })));
+        if (incompleteTasks.length === 0) return;
+        html += `<div class="pr-section"><h2>Phase ${p.id}: ${p.title} — Outstanding Tasks</h2>
+          <table class="pr-table">
+            <tr><th>ID</th><th>Task</th><th>Section</th><th>Priority</th><th>Responsible</th><th>Output</th></tr>`;
+        incompleteTasks.sort((a,b) => { const o=["Critical","High","Medium","Low"]; return o.indexOf(a.priority)-o.indexOf(b.priority); })
+          .forEach(t => {
+            html += `<tr><td style="font-family:monospace;font-size:9px">${t.id}</td><td>${t.task}</td><td style="font-size:9px;color:#6b7280">${t.sectionTitle}</td><td><span class="pr-badge ${t.priority}">${t.priority}</span></td><td>${t.responsible}</td><td style="font-style:italic;font-size:9px">${t.output}</td></tr>`;
+          });
+        html += `</table></div>`;
+      });
+
+    } else if (reportType === "full") {
+      // Full status
+      html += `<div class="pr-section"><h2>Implementation Status Overview</h2>
+        <div class="pr-kpi-grid">
+          <div class="pr-kpi"><div class="val">${overallPct}%</div><div class="lbl">Overall Progress</div></div>
+          <div class="pr-kpi"><div class="val">${completedCount}</div><div class="lbl">Tasks Completed</div></div>
+          <div class="pr-kpi"><div class="val">${totalTasks - completedCount}</div><div class="lbl">Tasks Remaining</div></div>
+          <div class="pr-kpi"><div class="val">${phasesComplete}</div><div class="lbl">Phases Complete</div></div>
+        </div></div>`;
+
+      phases.forEach((p, pi) => {
+        html += `${pi > 0 ? '<div class="page-break"></div>' : ''}<div class="pr-section"><h2>${p.icon} Phase ${p.id}: ${p.title}</h2>`;
+        p.sections.forEach(s => {
+          html += `<h3>${s.title}</h3>
+            <table class="pr-table">
+              <tr><th>ID</th><th>Task</th><th>Priority</th><th>Responsible</th><th>Timeframe</th><th>Output</th><th>Status</th></tr>`;
+          s.tasks.forEach(t => {
+            const isDone = !!completed[t.id];
+            html += `<tr>
+              <td style="font-family:monospace;font-size:9px">${t.id}</td>
+              <td style="${isDone ? "text-decoration:line-through;color:#9ca3af" : ""}">${t.task}</td>
+              <td><span class="pr-badge ${t.priority}">${t.priority}</span></td>
+              <td>${t.responsible}</td>
+              <td style="white-space:nowrap;font-size:9px">${t.timeframe}</td>
+              <td style="font-style:italic;font-size:9px">${t.output}</td>
+              <td><span class="pr-badge ${isDone ? "Done" : "Pending"}">${isDone ? "✓ Done" : "Pending"}</span></td>
+            </tr>`;
+          });
+          html += `</table>`;
+        });
+        html += `</div>`;
+      });
+    }
+
+    // POPIA conditions
+    html += `<div class="${reportType==="full" ? "page-break" : ""} pr-section"><h2>POPIA — 8 Conditions of Lawful Processing</h2>
+      <div class="pr-popia-grid">`;
+    [
+      { n:1, t:"Accountability", d:"IO appointed; responsible party ensures all conditions are met.", ph:"Phase 1" },
+      { n:2, t:"Processing Limitation", d:"Only process PI with consent or lawful basis; only what is necessary.", ph:"Phase 2 & 3" },
+      { n:3, t:"Purpose Specification", d:"Collect PI for specific, explicitly defined, and lawful purposes.", ph:"Phase 2 & 3" },
+      { n:4, t:"Further Processing", d:"Further processing must be compatible with original purpose.", ph:"Phase 2 & 3" },
+      { n:5, t:"Information Quality", d:"PI must be complete, accurate, not misleading, up to date.", ph:"Phase 4 & 6" },
+      { n:6, t:"Openness", d:"Notify data subjects before or when collecting their information.", ph:"Phase 3" },
+      { n:7, t:"Security Safeguards", d:"Implement appropriate technical and organisational measures.", ph:"Phase 4" },
+      { n:8, t:"Data Subject Rights", d:"Allow data subjects to access, correct, and delete their information.", ph:"Phase 5" },
+    ].forEach(c => {
+      html += `<div class="pr-popia-card">
+        <div class="pr-popia-num">${c.n}</div>
+        <div class="pr-popia-title">${c.t}</div>
+        <div style="font-size:9px;color:#6b7280;margin-top:3px;line-height:1.4">${c.d}</div>
+        <div class="pr-popia-phase">${c.ph}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+
+    // Footer
+    html += `<div class="pr-footer">
+      <span>${co} &nbsp;·&nbsp; ${companyTier} &nbsp;·&nbsp; POPIA & Cybersecurity Framework Implementation Report</span>
+      <span>Generated: ${now} &nbsp;·&nbsp; Information Regulator SA: www.justice.gov.za/inforeg</span>
+    </div>`;
+
+    html += `</div>`;
+    return html;
+  }
+
+  function handlePrint() {
+    const html = buildPrintHTML();
+    const printArea = document.getElementById("print-area");
+    printArea.innerHTML = html;
+    window.print();
+    setTimeout(() => { printArea.innerHTML = ""; }, 1000);
+  }
+
+  const reportTypes = [
+    { id:"executive", label:"Executive Summary", icon:"📊", desc:"High-level compliance status, phase progress, and outstanding critical tasks. Ideal for management review." },
+    { id:"board", label:"Board Report", icon:"🏛️", desc:"Same as executive but with formal framing, weighted compliance score, and regulatory context suitable for board presentation." },
+    { id:"gap", label:"Gap Analysis", icon:"🔍", desc:"Detailed listing of all incomplete tasks by phase and priority. Shows exactly what still needs to be done." },
+    { id:"full", label:"Full Status Report", icon:"📋", desc:"Complete task-by-task status across all phases with Done/Pending status. Full audit trail for the IO." },
+  ];
+
+  const inputStyle = { background:"#1a2840", border:"1px solid #1e3050", color:"#e8edf2", padding:"9px 13px", borderRadius:8, fontSize:13, width:"100%", fontFamily:"inherit" };
+  const labelStyle = { fontSize:11, color:"#6a8aaa", marginBottom:5, display:"block", textTransform:"uppercase", letterSpacing:"0.4px" };
+
+  return (
+    <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+      {/* Header */}
+      <div style={{ padding:"20px 28px 16px", background:"linear-gradient(135deg,#1a2a1a,#0f1923)", borderBottom:"1px solid #1e3050" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ fontSize:28 }}>🖨️</div>
+          <div>
+            <h1 style={{ fontSize:20, fontWeight:800, color:"#e8edf2", margin:0 }}>Reports & Export</h1>
+            <p style={{ fontSize:12, color:"#4a6a8a", marginTop:3 }}>Generate printable compliance reports for management, boards, and audit purposes</p>
+          </div>
+          <button onClick={handlePrint} style={{
+            marginLeft:"auto", padding:"10px 22px", background:"linear-gradient(135deg,#1a6faf,#0d4a7a)",
+            border:"none", borderRadius:9, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer",
+            display:"flex", alignItems:"center", gap:8, boxShadow:"0 4px 15px rgba(26,111,175,0.4)"
+          }}>
+            🖨️ Print / Save as PDF
+          </button>
+        </div>
+      </div>
+
+      <div style={{ flex:1, overflowY:"auto", padding:"22px 28px 40px", display:"grid", gridTemplateColumns:"1fr 340px", gap:22, alignItems:"start" }}>
+
+        {/* LEFT: Report settings */}
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+
+          {/* Company details */}
+          <div style={{ background:"#0d1928", border:"1px solid #1e3050", borderRadius:13, padding:"20px" }}>
+            <h3 style={{ fontSize:13, fontWeight:700, color:"#8aabb0", marginBottom:16, textTransform:"uppercase", letterSpacing:"0.5px" }}>Company Details</h3>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+              <div>
+                <label style={labelStyle}>Company / Organisation Name</label>
+                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g. Acme (Pty) Ltd" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Company Tier</label>
+                <select value={companyTier} onChange={e => setCompanyTier(e.target.value)} style={{ ...inputStyle, cursor:"pointer" }}>
+                  <option>Tier 1 (5–50 users)</option>
+                  <option>Tier 2 (51–100 users)</option>
+                  <option>Tier 3 (101–250 users)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Report type selection */}
+          <div style={{ background:"#0d1928", border:"1px solid #1e3050", borderRadius:13, padding:"20px" }}>
+            <h3 style={{ fontSize:13, fontWeight:700, color:"#8aabb0", marginBottom:16, textTransform:"uppercase", letterSpacing:"0.5px" }}>Report Type</h3>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {reportTypes.map(rt => (
+                <button key={rt.id} onClick={() => setReportType(rt.id)} style={{
+                  textAlign:"left", padding:"14px", borderRadius:10,
+                  border:`2px solid ${reportType===rt.id ? "#1a6faf" : "#1e3050"}`,
+                  background: reportType===rt.id ? "#1a3a5c" : "#0a1220",
+                  cursor:"pointer", transition:"all 0.2s"
+                }}>
+                  <div style={{ fontSize:20, marginBottom:6 }}>{rt.icon}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color: reportType===rt.id ? "#4da3e8" : "#c8dce8" }}>{rt.label}</div>
+                  <div style={{ fontSize:10, color:"#4a6a8a", marginTop:4, lineHeight:1.5 }}>{rt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div style={{ background:"#0d1928", border:"1px solid #1e3050", borderRadius:13, padding:"20px" }}>
+            <h3 style={{ fontSize:13, fontWeight:700, color:"#8aabb0", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.5px" }}>Information Officer Notes</h3>
+            <p style={{ fontSize:11, color:"#4a6a8a", marginBottom:12 }}>Optional notes, observations, or context to include in the report body.</p>
+            <textarea
+              value={reportNotes} onChange={e => setReportNotes(e.target.value)}
+              placeholder="e.g. Assessment completed on [date]. Outstanding Critical tasks are being actioned by [name] with target completion of [date]. External IT partner engaged for Phase 4 technical controls..."
+              rows={5}
+              style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }}
+            />
+          </div>
+        </div>
+
+        {/* RIGHT: Live preview card */}
+        <div style={{ position:"sticky", top:0 }}>
+          <div style={{ background:"#0d1928", border:"1px solid #1e3050", borderRadius:13, overflow:"hidden" }}>
+            {/* Preview header */}
+            <div style={{ background:"#1F3864", padding:"16px 18px" }}>
+              <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>Report Preview</div>
+              <div style={{ fontSize:15, fontWeight:800, color:"#fff" }}>
+                {reportTypes.find(r => r.id === reportType)?.label}
+              </div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.55)", marginTop:3 }}>
+                {companyName || "Your Organisation"} · {companyTier}
+              </div>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{today}</div>
+            </div>
+
+            <div style={{ padding:"16px 18px" }}>
+              {/* Compliance score */}
+              <div style={{ marginBottom:14 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                  <span style={{ fontSize:11, color:"#6a8aaa" }}>Weighted Compliance Score</span>
+                  <span style={{ fontSize:13, fontWeight:800, color: complianceScore >= 80 ? "#4ecf82" : complianceScore >= 50 ? "#ffd055" : "#ff6b6b" }}>{complianceScore}%</span>
+                </div>
+                <div style={{ height:6, background:"#1a2840", borderRadius:3, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${complianceScore}%`, background: complianceScore >= 80 ? "#2e9952" : complianceScore >= 50 ? "#d4a800" : "#c00000", borderRadius:3 }} />
+                </div>
+                <div style={{ marginTop:6, fontSize:11, fontWeight:700, color: complianceScore >= 80 ? "#4ecf82" : complianceScore >= 50 ? "#ffd055" : "#ff6b6b" }}>
+                  {getRating(complianceScore).label}
+                </div>
+              </div>
+
+              {/* Mini stats */}
+              {[
+                { label:"Overall Progress", value:`${overallPct}%`, color:"#4da3e8" },
+                { label:"Critical Remaining", value:pendingCritical, color: pendingCritical===0 ? "#4ecf82" : "#ff6b6b" },
+                { label:"High Remaining", value:pendingHigh, color: pendingHigh===0 ? "#4ecf82" : "#ffaa55" },
+                { label:"Phases Complete", value:`${phasesComplete}/${phases.length}`, color:"#4da3e8" },
+              ].map((s,i) => (
+                <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:"1px solid #131f30" }}>
+                  <span style={{ fontSize:11, color:"#5a7a90" }}>{s.label}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:s.color }}>{s.value}</span>
+                </div>
+              ))}
+
+              {/* Phase mini bars */}
+              <div style={{ marginTop:12 }}>
+                <div style={{ fontSize:10, color:"#3a5570", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>Phases</div>
+                {phases.map(p => {
+                  const pct = getPhasePct(p);
+                  return (
+                    <div key={p.id} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                      <span style={{ fontSize:12, minWidth:18 }}>{p.icon}</span>
+                      <div style={{ flex:1, height:4, background:"#1a2840", borderRadius:2, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background: pct===100 ? "#2e9952" : p.accent, borderRadius:2 }} />
+                      </div>
+                      <span style={{ fontSize:10, color: pct===100 ? "#4ecf82" : "#5a7a90", minWidth:28, textAlign:"right" }}>{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button onClick={handlePrint} style={{
+                marginTop:16, width:"100%", padding:"11px", background:"linear-gradient(135deg,#1a6faf,#0d4a7a)",
+                border:"none", borderRadius:9, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer",
+                boxShadow:"0 4px 15px rgba(26,111,175,0.35)"
+              }}>
+                🖨️ Print / Save PDF
+              </button>
+              <p style={{ fontSize:10, color:"#2a4060", textAlign:"center", marginTop:8, lineHeight:1.5 }}>
+                Use browser Print → Save as PDF<br/>to save a permanent copy
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

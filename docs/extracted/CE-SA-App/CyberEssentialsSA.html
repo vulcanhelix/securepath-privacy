@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Essentials SA — Self-Assessment</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:        #0b0f1a;
+  --surface:   #111827;
+  --card:      #161e2e;
+  --border:    #1f2d47;
+  --accent:    #00c2a8;
+  --accent2:   #3b82f6;
+  --warn:      #f59e0b;
+  --danger:    #ef4444;
+  --success:   #22c55e;
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --dim:       #94a3b8;
+  --radius:    10px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1f2d47;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#2d3f5c}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{width:260px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:all .3s}
+#sidebar.collapsed{width:56px;min-width:56px}
+
+.sid-logo{padding:18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sid-logo .mark{width:32px;height:32px;min-width:32px;background:linear-gradient(135deg,var(--accent),#0097a7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.sid-logo .name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent);line-height:1.2;white-space:nowrap;overflow:hidden}
+.sid-logo .sub{font-size:10px;color:var(--muted)}
+.collapse-btn{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:4px;min-width:20px}
+
+.sid-progress{padding:12px 14px;border-bottom:1px solid var(--border)}
+.sid-progress .prog-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;justify-content:space-between}
+.sid-progress .prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.sid-progress .prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s}
+
+.sid-nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav-section{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:10px 14px 4px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;position:relative}
+.nav-item:hover{background:rgba(0,194,168,.06);color:var(--accent)}
+.nav-item.active{background:rgba(0,194,168,.1);border-left-color:var(--accent);color:var(--accent)}
+.nav-item .ni-icon{font-size:16px;min-width:20px;text-align:center}
+.nav-item .ni-text{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden}
+.nav-item .ni-pct{margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
+.nav-item.active .ni-pct{color:var(--accent)}
+.nav-mini-bar{height:2px;background:var(--border);border-radius:1px;margin:1px 14px 0;overflow:hidden}
+.nav-mini-fill{height:100%;background:var(--accent);border-radius:1px;transition:width .3s}
+
+.sid-foot{padding:10px 12px;border-top:1px solid var(--border)}
+.sid-save-row{display:flex;gap:6px;margin-bottom:8px}
+.sid-btn{flex:1;padding:7px 4px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center}
+.sid-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sid-reg{font-size:9px;color:#253040;line-height:1.5;text-align:center}
+
+/* ── MAIN ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+.topbar{padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.topbar h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+.topbar .tb-badge{font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(0,194,168,.15);color:var(--accent);border:1px solid rgba(0,194,168,.3);font-weight:600;letter-spacing:.3px}
+.topbar .tb-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.topbar .tb-tier{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.topbar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;font-family:inherit;cursor:pointer;outline:none}
+
+.content{flex:1;overflow-y:auto;padding:24px 28px 40px}
+
+/* ── VIEW TABS ── */
+.view-tabs{display:flex;gap:0;background:var(--card);border-radius:9px;padding:3px;width:fit-content;margin-bottom:22px;border:1px solid var(--border)}
+.vtab{padding:7px 18px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:6px}
+.vtab.active{background:var(--accent2);color:#fff}
+.vtab:hover:not(.active){color:var(--text)}
+
+/* ── SECTION CARDS ── */
+.section-intro{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;border-left:3px solid var(--accent)}
+.section-intro h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.section-intro p{font-size:12px;color:var(--muted);line-height:1.6}
+.sa-note{display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:5px;padding:3px 10px;font-size:10px;color:var(--warn);margin-top:8px;font-weight:600}
+
+/* ── QUESTIONS ── */
+.q-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;transition:border-color .2s;overflow:hidden}
+.q-block.answered{border-color:rgba(34,197,94,.3)}
+.q-block.flagged{border-color:rgba(245,158,11,.4)}
+
+.q-header{padding:14px 18px;display:flex;align-items:flex-start;gap:12px;cursor:default}
+.q-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);background:rgba(0,194,168,.1);border:1px solid rgba(0,194,168,.2);border-radius:5px;padding:2px 8px;white-space:nowrap;margin-top:1px;min-width:48px;text-align:center}
+.q-text{flex:1;font-size:13px;color:var(--text);line-height:1.55;font-weight:500}
+.q-req{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;white-space:nowrap;margin-top:2px}
+.q-req.req-core{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.q-req.req-high{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+.q-req.req-std{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.2)}
+
+.q-body{padding:0 18px 16px 18px}
+.q-guidance{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:6px;border-left:2px solid var(--border)}
+.q-sa-context{font-size:11px;color:rgba(245,158,11,.9);background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.15);border-radius:6px;padding:8px 12px;margin-bottom:12px;line-height:1.5}
+.q-sa-context::before{content:'🇿🇦 SA Context: ';font-weight:700}
+
+/* Answer types */
+.ans-yesno{display:flex;gap:10px}
+.yn-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.yn-btn:hover{border-color:var(--muted);color:var(--text)}
+.yn-btn.sel-yes{background:rgba(34,197,94,.15);border-color:var(--success);color:var(--success)}
+.yn-btn.sel-no{background:rgba(239,68,68,.12);border-color:var(--danger);color:#f87171}
+.yn-btn.sel-na{background:rgba(100,116,139,.15);border-color:var(--muted);color:var(--muted)}
+
+textarea.ans-notes{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;padding:10px 13px;resize:vertical;min-height:72px;line-height:1.6;outline:none;transition:border-color .2s}
+textarea.ans-notes:focus{border-color:var(--accent2)}
+textarea.ans-notes::placeholder{color:var(--muted)}
+
+.ans-multi{display:flex;flex-direction:column;gap:7px}
+.mc-opt{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:7px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.mc-opt:hover{border-color:var(--muted);background:rgba(255,255,255,.02)}
+.mc-opt.selected{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.4)}
+.mc-opt input{accent-color:var(--accent2);width:14px;height:14px;cursor:pointer}
+.mc-opt label{font-size:12px;color:var(--dim);cursor:pointer;flex:1}
+.mc-opt.selected label{color:var(--text)}
+
+.ans-options{display:flex;flex-direction:column;gap:7px}
+.opt-btn{padding:9px 13px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--dim);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;text-align:left;transition:all .2s;line-height:1.4}
+.opt-btn:hover{border-color:var(--muted);color:var(--text)}
+.opt-btn.selected{background:rgba(0,194,168,.1);border-color:rgba(0,194,168,.4);color:var(--accent)}
+
+.q-flag{margin-top:12px;display:flex;align-items:center;gap:6px}
+.flag-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:5px;transition:color .2s}
+.flag-btn:hover{color:var(--warn)}
+.flag-btn.flagged{color:var(--warn)}
+.q-comment{margin-top:8px}
+.q-comment textarea{width:100%;background:var(--surface);border:1px solid rgba(245,158,11,.25);border-radius:6px;color:var(--warn);font-size:11px;font-family:inherit;padding:8px 11px;resize:vertical;min-height:50px;outline:none}
+.q-comment textarea::placeholder{color:rgba(245,158,11,.35)}
+
+/* ── DASHBOARD ── */
+.dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.c1::before{background:linear-gradient(90deg,var(--accent),#0097a7)}
+.kpi-card.c2::before{background:linear-gradient(90deg,var(--accent2),#6366f1)}
+.kpi-card.c3::before{background:linear-gradient(90deg,var(--success),#16a34a)}
+.kpi-card.c4::before{background:linear-gradient(90deg,var(--danger),#dc2626)}
+.kpi-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:4px}
+.kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.kpi-sub{font-size:11px;color:var(--dim);margin-top:4px}
+
+.dash-section{margin-bottom:24px}
+.dash-section h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+.ctrl-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.ctrl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+.ctrl-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.ctrl-card .cc-icon{font-size:26px;margin-bottom:8px}
+.ctrl-card .cc-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.3}
+.ctrl-card .cc-pct{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
+.ctrl-card .cc-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.ctrl-card .cc-fill{height:100%;border-radius:2px;transition:width .4s}
+
+.detail-table{width:100%;border-collapse:collapse}
+.detail-table th{background:rgba(31,45,71,.8);padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
+.detail-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
+.detail-table tr:hover td{background:rgba(255,255,255,.02)}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+
+/* ── REPORTS ── */
+.report-panel{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+.rp-settings{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.rp-settings h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.rp-field{margin-bottom:14px}
+.rp-field label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;font-weight:600}
+.rp-field input,.rp-field select,.rp-field textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 13px;border-radius:7px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s}
+.rp-field input:focus,.rp-field select:focus,.rp-field textarea:focus{border-color:var(--accent2)}
+.rp-field textarea{resize:vertical;min-height:70px}
+
+.rtype-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rtype-btn{padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);cursor:pointer;text-align:left;transition:all .2s}
+.rtype-btn.active{border-color:var(--accent2);background:rgba(59,130,246,.08)}
+.rtype-btn .rt-icon{font-size:18px;margin-bottom:5px}
+.rtype-btn .rt-name{font-size:11px;font-weight:700;color:var(--text)}
+.rtype-btn .rt-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+.rp-preview{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:sticky;top:0}
+.rpv-cover{background:linear-gradient(135deg,#0f2444,#1a3a6c);padding:20px}
+.rpv-cover .rpc-tag{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.rpv-cover .rpc-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#fff;margin-bottom:4px}
+.rpv-cover .rpc-org{font-size:12px;color:rgba(255,255,255,.6)}
+.rpv-body{padding:16px}
+.rpv-stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.rpv-stat:last-child{border-bottom:none}
+.rpv-stat .rs-lbl{color:var(--muted)}
+.rpv-stat .rs-val{font-weight:700}
+.print-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),#0097a7);border:none;border-radius:8px;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;transition:opacity .2s}
+.print-btn:hover{opacity:.9}
+.print-hint{font-size:10px;color:var(--muted);text-align:center;margin-top:7px;line-height:1.5}
+
+/* ── PRINT STYLES ── */
+@media print {
+  body{background:#fff!important;color:#111!important;overflow:visible!important;height:auto!important;font-family:'Segoe UI',Arial,sans-serif}
+  #app{display:none!important}
+  #print-area{display:block!important}
+}
+#print-area{display:none}
+
+.pr{font-family:'Segoe UI',Arial,sans-serif;color:#111;background:#fff;max-width:210mm;margin:0 auto}
+.pr-cover{background:linear-gradient(135deg,#0f2444,#1a3a6c);color:#fff;padding:48px 40px 36px;page-break-after:avoid}
+.pr-cover .prc-flag{font-size:28px;margin-bottom:8px}
+.pr-cover h1{font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px}
+.pr-cover .prc-sub{font-size:14px;opacity:.7;margin-bottom:4px}
+.pr-cover .prc-meta{font-size:11px;opacity:.45;margin-top:8px}
+.pr-cover .prc-badges{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.pr-cover .prc-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25)}
+.pr-section{padding:22px 40px;border-bottom:1px solid #e5e7eb}
+.pr-section h2{font-size:15px;font-weight:700;color:#0f2444;margin-bottom:14px;padding-bottom:7px;border-bottom:2px solid #00c2a8}
+.pr-section h3{font-size:12px;font-weight:700;color:#374151;margin:14px 0 8px}
+.pr-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.pr-kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}
+.pr-kpi .pkv{font-size:22px;font-weight:800;color:#0f2444}
+.pr-kpi .pkl{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.pr-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:8px}
+.pr-table th{background:#0f2444;color:#fff;padding:7px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
+.pr-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;line-height:1.4}
+.pr-table tr:nth-child(even) td{background:#f8fafc}
+.pr-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700}
+.pr-badge.yes{background:#dcfce7;color:#166534}
+.pr-badge.no{background:#fee2e2;color:#991b1b}
+.pr-badge.partial{background:#fef9c3;color:#854d0e}
+.pr-badge.na{background:#f1f5f9;color:#6b7280}
+.pr-badge.pending{background:#ffedd5;color:#9a3412}
+.pr-ctrl-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+.pr-ctrl-row:last-child{border:none}
+.pr-ctrl-icon{font-size:20px;min-width:26px}
+.pr-ctrl-name{font-size:12px;font-weight:600;color:#0f2444;min-width:180px}
+.pr-prog{flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}
+.pr-prog .pf{height:100%;background:#00c2a8;border-radius:3px}
+.pr-prog-pct{font-size:11px;font-weight:700;min-width:36px;text-align:right}
+.pr-finding{padding:9px 13px;border-radius:6px;margin:5px 0;font-size:11px;line-height:1.5}
+.pr-finding.critical{background:#fff1f2;border-left:4px solid #e11d48;color:#4c0519}
+.pr-finding.high{background:#fff7ed;border-left:4px solid #ea580c;color:#431407}
+.pr-finding.pass{background:#f0fdf4;border-left:4px solid #22c55e;color:#14532d}
+.pr-footer{background:#f8fafc;padding:14px 40px;font-size:9px;color:#9ca3af;display:flex;justify-content:space-between;border-top:2px solid #00c2a8}
+.pr-ref-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.pr-ref-card{border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px}
+.pr-ref-card .prc-title{font-size:11px;font-weight:700;color:#0f2444;margin-bottom:3px}
+.pr-ref-card .prc-body{font-size:10px;color:#6b7280;line-height:1.5}
+.page-break{page-break-before:always;padding-top:16px}
+@page{margin:12mm 10mm;size:A4}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sid-logo">
+      <div class="mark">🛡️</div>
+      <div class="name-wrap">
+        <div class="name">CE SA Framework</div>
+        <div class="sub">v3.2 · April 2025</div>
+      </div>
+      <button class="collapse-btn" id="collapseBtn" onclick="toggleSidebar()">◀</button>
+    </div>
+    <div class="sid-progress" id="sidProgress">
+      <div class="prog-label"><span>Overall Progress</span><span id="progPct">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <div class="sid-nav" id="sidNav"></div>
+    <div class="sid-foot" id="sidFoot">
+      <div class="sid-save-row">
+        <button class="sid-btn" onclick="saveProgress()">💾 Save</button>
+        <label class="sid-btn">📂 Load<input type="file" accept=".json" style="display:none" onchange="loadProgress(event)"></label>
+      </div>
+      <div class="sid-reg">CE v3.2 · POPIA · Cybercrimes Act<br>South Africa · 5–250 Users</div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="topbar">
+      <div id="topTitle" style="display:flex;align-items:center;gap:10px">
+        <h1 id="topH1">Organisation & Scope</h1>
+        <span class="tb-badge" id="topBadge">CE Control A</span>
+      </div>
+      <div class="tb-right">
+        <div class="tb-tier">
+          <span>🏢 Size:</span>
+          <select id="tierSelect" onchange="setTier(this.value)">
+            <option value="micro">Micro (5–20 users)</option>
+            <option value="small" selected>Small (21–50 users)</option>
+            <option value="medium">Medium (51–100 users)</option>
+            <option value="large">Large (101–250 users)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+<div id="print-area"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA — 5 CE Controls + Organisation, mapped to SA context
+// CE v3.2 (April 2025) — Willow Question Set
+// ═══════════════════════════════════════════════════════════════
+const CONTROLS = [
+  {
+    id:'org', icon:'🏢', label:'Organisation & Scope', badge:'Setup',
+    color:'#00c2a8', accentRgb:'0,194,168',
+    ceRef: 'Organisation — Your Organisation & Scope of Assessment',
+    saNote: 'SA businesses must also consider their obligations under POPIA (Act 4 of 2013) and the Cybercrimes Act (Act 19 of 2020) when defining scope.',
+    intro: 'Provide details about your organisation and define the scope of this Cyber Essentials assessment. The scope must include all devices, networks and cloud services that access organisational data. A scope that does not include end-user devices is not acceptable.',
+    questions: [
+      { id:'A1.1', text:"What is your organisation's name?", type:'notes', req:'std', placeholder:'e.g. Acme (Pty) Ltd',
+        saContext:'For SA: Use the full registered name as it appears with the CIPC (Companies and Intellectual Property Commission).',
+        guidance:'Provide the legal trading name of your organisation.' },
+      { id:'A1.2', text:"What type of organisation are you?", type:'select', req:'std',
+        saContext:'SA organisation types include (Pty) Ltd, CC (Close Corporation), NPO, Public Entity, or Sole Proprietor.',
+        options:['(Pty) Ltd – Private Company','CC – Close Corporation','NPO – Non-Profit Organisation','Public Entity / SOE','Sole Proprietor / Partnership','Other'],
+        guidance:'Select the legal structure that best describes your organisation.' },
+      { id:'A1.3', text:"What is your organisation's registration number?", type:'notes', req:'std',
+        saContext:'SA companies: CIPC registration number. NPOs: NPO registration number from DSD. CCs: CC registration number.',
+        guidance:'Provide your official registration number as issued by CIPC or relevant authority.' },
+      { id:'A1.4', text:"What is your organisation's physical address?", type:'notes', req:'std',
+        saContext:'Provide your registered business address in South Africa including province and postal code.',
+        guidance:'Include all office locations that fall within scope of this assessment.' },
+      { id:'A1.5', text:"What is your main business activity?", type:'select', req:'std',
+        saContext:'South African industry classifications follow the SIC codes used by Stats SA. Select the category that best matches your CIPC primary business activity.',
+        options:['Financial Services / Fintech','Healthcare / Medical','Retail / E-commerce','Professional Services / Consulting','Manufacturing / Engineering','ICT / Technology','Education / Training','Government / Public Sector','Construction / Property','Agriculture / Mining','Non-Profit / NGO','Other'],
+        guidance:'Select the primary industry sector of your organisation.' },
+      { id:'A1.6', text:"What is your website address (if applicable)?", type:'notes', req:'std',
+        placeholder:'e.g. https://www.yourcompany.co.za',
+        saContext:'Include your primary .co.za or .org.za domain. If you use multiple domains, list all that are in scope.',
+        guidance:'Provide your website address. A social media page is acceptable if no website exists.' },
+      { id:'A1.7', text:"Is this a first-time application or a renewal of an existing certification?", type:'select', req:'std',
+        options:['First Time Application','Renewal of Existing Certification'],
+        guidance:'Select whether this is your first CE assessment or a renewal.' },
+      { id:'A1.8', text:"What are your primary reasons for applying for Cyber Essentials certification?", type:'multi',
+        options:['Required for a commercial contract','Required for a government / public sector contract','Required by our insurer','Required by a regulator (e.g. FSCA, HPCSA)','To give confidence to our customers / clients','To improve our overall security posture','Required for a grant or funding','Required for supply-chain / tender compliance','Other'],
+        req:'std', guidance:'Select up to two primary reasons. SA regulators include the FSCA (financial sector), HPCSA (health), and various sector-specific bodies.',
+        saContext:'South African regulatory drivers: FSCA GUIDANCE NOTE 3 of 2021 (cybersecurity for FSPs), SARB Prudential Standard CPS 234, NHI Act cybersecurity requirements, SITA requirements for government suppliers.' },
+      { id:'A1.9', text:"Have you read the Cyber Essentials Requirements for IT Infrastructure v3.2 document (April 2025)?", type:'yesno', req:'core',
+        guidance:'This document is mandatory reading. It defines all technical requirements for certification. Available at ncsc.gov.uk/cyberessentials.',
+        saContext:'The CE framework is the international baseline. Combined with POPIA Section 19 (security safeguards) and the Cybercrimes Act, this forms your complete SA cybersecurity compliance baseline.' },
+      { id:'A1.10', text:"Can the certification body contact you if you experience a cyber breach, to assist with incident analysis?", type:'yesno', req:'std',
+        guidance:'This helps improve the overall effectiveness of the certification scheme.',
+        saContext:'Under the Cybercrimes Act (Act 19 of 2020), cybercrime incidents must be reported to the South African Police Service (SAPS). Under POPIA, security breaches involving personal information must be reported to the Information Regulator and affected data subjects.' },
+      { id:'A2.1', text:"Does the scope of this assessment cover your whole organisation?", type:'yesno', req:'core',
+        guidance:'Whole organisation includes all networks, people and devices which access your organisational data and services. If yes, this is the recommended approach.',
+        saContext:'For POPIA compliance, whole-organisation scope is strongly recommended — POPIA Section 19 applies to all processing of personal information regardless of system or department.' },
+      { id:'A2.2', text:"If not whole organisation, provide your scope description (including clear exclusion statements).", type:'notes', req:'std',
+        placeholder:'e.g. Whole organisation excluding the development test network at Cape Town office.',
+        guidance:'Maximum 300 characters for certificate. Must include clear exclusion statements. Any network with internet access that is excluded must be clearly documented.',
+        saContext:'Any excluded scope must still comply with POPIA requirements independently.' },
+      { id:'A2.3', text:"Please describe the geographical locations of your business in scope.", type:'notes', req:'std',
+        placeholder:'e.g. Head office Johannesburg (Gauteng), Branch Cape Town (Western Cape), Remote workers nationally.',
+        guidance:'List all business locations included in this assessment.',
+        saContext:'For cross-border data transfers (e.g. to servers outside SA), POPIA Section 72 requires adequate data protection in the receiving country. List any international locations.' },
+      { id:'A2.4', text:"List the quantities and operating systems for all laptops, desktops and virtual desktops in scope. Include make and OS version.", type:'notes', req:'core',
+        placeholder:'e.g. 15x Dell laptops running Windows 11 Pro 23H2; 5x Apple MacBook running macOS Sonoma 14.4; 3x HP desktops running Windows 10 Pro 22H2 (ESU enrolled).',
+        guidance:'Include BYOD devices that access organisational data. Windows 10 users must be enrolled in Microsoft ESU (Extended Security Updates) post October 2025.',
+        saContext:'Common SA deployment: Microsoft 365 (M365) or Google Workspace. Confirm all devices are running supported OS versions. Unlicensed software violates both CE requirements and SA copyright law.' },
+      { id:'A2.5', text:"List servers, virtual servers and hypervisors in scope. Include OS version.", type:'notes', req:'core',
+        placeholder:'e.g. 2x VMware ESXi 8.0 hosting 6x Windows Server 2022; 1x Ubuntu 22.04 LTS web server; Microsoft Azure (IaaS).',
+        guidance:'Include on-premise and cloud-hosted servers. Include hypervisors.',
+        saContext:'SA common cloud providers: Microsoft Azure, AWS (Cape Town region), Google Cloud, or local providers (Liquid Intelligent Technologies, MTN BusinessConnect, Vodacom Cloud). Include all.' },
+      { id:'A2.6', text:"List tablets and mobile devices in scope. Include make and OS version.", type:'notes', req:'core',
+        placeholder:'e.g. 20x Samsung Galaxy running Android 14; 10x Apple iPad running iPadOS 17.4; 8x iPhone running iOS 17.4.',
+        guidance:'Include all BYOD mobile devices used to access organisational data or cloud services.',
+        saContext:'For BYOD devices: POPIA requires that personal information accessed on personal devices remains protected. Consider an MDM (Mobile Device Management) solution — popular SA options include Microsoft Intune or Jamf.' },
+      { id:'A2.7', text:"List all networks in scope (name, location, purpose).", type:'notes', req:'core',
+        placeholder:'e.g. Main LAN – Johannesburg HQ – general business use; Guest WiFi – Cape Town branch – visitor internet only; Azure VNet – cloud services.',
+        guidance:'Include name, location and purpose of each network. Do not include IP addresses.',
+        saContext:'Common SA network providers: Fibre (Vumatel, OpenServe, Frogfoot), Fixed LTE (MTN, Vodacom, Telkom), Satellite (Starlink now available in SA). Include all connection types.' },
+      { id:'A2.7.1', text:"How many staff are home workers or remote workers?", type:'notes', req:'core',
+        placeholder:'e.g. 12 full-time remote workers using VPN; 5 hybrid workers (3 days office / 2 days remote).',
+        guidance:'Any employee permitted to work remotely at time of assessment must be counted as a remote worker. CE v3.2 expanded this to include all remote/mobile working, not just home working.',
+        saContext:'Post-2020, remote working is widespread in SA. Remote workers using home or mobile internet connections must have software firewalls enabled on their devices. Consider load-shedding contingencies — remote workers on generator/UPS should still meet CE controls.' },
+      { id:'A2.8', text:"List all network equipment in scope: firewalls, routers. Include make AND model.", type:'notes', req:'core',
+        placeholder:'e.g. Fortinet FortiGate 60F (boundary firewall); Mikrotik hEX RB750Gr3 (office router); Cisco Meraki MX64 (remote site); Draytek Vigor 2866 (ADSL backup).',
+        guidance:'Include make and model for all firewall and routing devices. Note: CE v3.2 requires both make AND model for network devices (unlike end-user devices).',
+        saContext:'Popular SA network equipment: Fortinet, Draytek, Mikrotik, Cisco Meraki, Sophos. Ensure all firmware is current — vendors release updates regularly to address SA-specific threat intelligence.' },
+      { id:'A2.9', text:"List all cloud services used by your organisation.", type:'notes', req:'core',
+        placeholder:'e.g. Microsoft 365 (SaaS – email, Office apps); Azure AD / Entra ID (SaaS – identity); AWS S3 (IaaS – file storage); Xero (SaaS – accounting); Salesforce (SaaS – CRM); Pastel/Sage (SaaS – accounting).',
+        guidance:'Cloud services cannot be excluded from CE scope. Include all IaaS, PaaS and SaaS. Include any third-party hosted applications.',
+        saContext:'Common SA cloud services: Microsoft 365, Google Workspace, Xero, Sage/Pastel, PaySpace/Payroll, VIP Payroll, DocuSign, Zoom, Teams. All must be included in scope.' },
+      { id:'A2.10', text:"Provide name and role of the person responsible for managing your IT systems in scope.", type:'notes', req:'core',
+        placeholder:'e.g. John Smith, IT Manager (internal). Or: Jane Doe, Director – ICT Outsourced to TechCo MSP.',
+        guidance:'Must be a member of your organisation. Cannot be exclusively your outsourced IT provider.',
+        saContext:'Under POPIA, an Information Officer must be designated and registered with the Information Regulator (www.justice.gov.za/inforeg). This person often also oversees IT security.' }
+    ]
+  },
+  {
+    id:'firewalls', icon:'🔥', label:'Firewalls', badge:'Control 1',
+    color:'#ef4444', accentRgb:'239,68,68',
+    ceRef: 'CE Technical Control 1 — Boundary Firewalls and Internet Gateways',
+    saNote: 'Firewall requirements align with POPIA Section 19 (security safeguards) and SABS ISO/IEC 27001 Annex A.13 (network security).',
+    intro: 'Firewalls protect your network from the internet. This section covers boundary firewalls, software firewalls on devices, configuration management, password policies, and access controls. All devices in scope must be protected by a correctly configured firewall at all times.',
+    questions: [
+      { id:'A4.1', text:"Do you have firewalls at the boundaries between your internal networks and the internet?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Every device in scope must be protected by a correctly configured firewall (or network device with firewall functionality).',
+        saContext:'In SA, fibre and LTE routers provided by ISPs (Openserve, Vumatel, MTN, Vodacom) typically include basic NAT firewall functionality. However, for business use, a dedicated firewall appliance or UTM (e.g. Fortinet, Sophos, Draytek) is strongly recommended.' },
+      { id:'A4.1.1', text:"Do you have software firewalls enabled on ALL computers, laptops and servers?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Software firewalls must be enabled even when behind a hardware firewall. This is especially critical for remote/mobile workers on untrusted networks.',
+        saContext:'Windows Defender Firewall (built-in), macOS Firewall (built-in), UFW/iptables for Linux. All must be enabled. Remote workers at coffee shops, airports or using Telkom/Vodacom hotspots are at elevated risk — software firewalls are the last line of defence.' },
+      { id:'A4.1.2', text:"If no software firewalls: is this only because the OS does not include one by default? List those operating systems.", type:'notes', req:'std',
+        placeholder:'e.g. Embedded Linux on control systems (isolated from internet); custom IoT OS on CCTV server.',
+        guidance:'Only very few OS do not include software firewalls. Windows, macOS and common Linux distributions all have built-in firewalls.' },
+      { id:'A4.2', text:"Have you changed ALL default passwords on your boundary firewall and router devices?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Change default administrative passwords to a strong and unique password, or disable remote administrative access entirely.',
+        saContext:'Default credentials on SA-common routers (DrayTek, MikroTik, Huawei B618) are widely published online. Credential stuffing attacks using default passwords are a leading cause of breaches in SA SMEs. Change immediately on deployment.' },
+      { id:'A4.2.1', text:"Describe your process for changing firewall passwords (including for home routers supplied by your organisation).", type:'notes', req:'core',
+        placeholder:'e.g. On deployment, IT team logs into admin portal and changes password to unique 16+ character passphrase stored in Bitwarden. Documented in asset register.',
+        guidance:'Describe how you manage firewall password changes. Include who does it, how, and where passwords are stored.',
+        saContext:'Password managers recommended for SA businesses: Bitwarden (free tier available), 1Password, LastPass. Avoid sticky notes or shared spreadsheets for password storage.' },
+      { id:'A4.3', text:"Which method is used to configure your firewall administrative passwords?\n\nA. Multi-factor authentication (MFA) with minimum 8-character password\nB. Automatic blocking of common passwords with minimum 8-character password\nC. Minimum 12-character password with no maximum length\nD. Passwordless authentication (CE v3.2 new) — describe\nE. None of the above — describe", type:'options', req:'core',
+        options:['A. MFA + minimum 8-character password','B. Auto-block common passwords + minimum 8 characters','C. Minimum 12-character password (no maximum)','D. Passwordless authentication (biometric/passkey) — add detail in notes','E. None of the above — describe in notes'],
+        guidance:'CE v3.2 (2025): Passwordless authentication is now formally accepted. Options D and E require detailed notes.',
+        saContext:'MFA option (A) is strongly recommended for SA businesses — the FSCA and SARB both recommend MFA as a baseline control. Microsoft Authenticator, Google Authenticator, and Duo are free/low-cost options widely used in SA.' },
+      { id:'A4.3.notes', text:"If Option D or E selected above: provide details of your authentication method.", type:'notes', req:'std',
+        placeholder:'e.g. D: Hardware YubiKey tokens used for all firewall admin access. / E: Explain why none of the above applies and compensating controls used.',
+        guidance:'Required if Option D (passwordless) or E (none) is selected.' },
+      { id:'A4.4', text:"Do you change firewall passwords promptly when you know or suspect a compromise?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Establish a process to change passwords promptly when a password or account is known or suspected to be compromised.',
+        saContext:'Under POPIA Section 22, a security compromise involving personal information must be reported to the Information Regulator and affected parties. A firewall breach likely constitutes such a compromise. Document your incident response process.' },
+      { id:'A4.5', text:"Do you have a formal process to manage changes to your firewall rules?", type:'yesno', req:'core',
+        guidance:'Any decision to allow external internet traffic into your network (opening a port) must have a documented business justification.',
+        saContext:'Firewall rule changes should be tracked in a change log. For regulated SA businesses (FSPs, healthcare), this change log is often a regulatory audit requirement.' },
+      { id:'A4.6', text:"Have you reviewed your firewall rules in the last 12 months? Describe the review process.", type:'notes', req:'core',
+        placeholder:'e.g. Annual firewall audit conducted by IT Manager in January each year. Rules reviewed against business requirements, unused ports closed. Documented in firewall policy v2.1.',
+        guidance:'CE Requirement: Remove or disable inbound firewall rules quickly when they are no longer needed. You must have a documented review process.',
+        saContext:'Annual review minimum. For businesses processing financial data or health records, quarterly review recommended per FSCA and HPCSA guidance.' },
+      { id:'A4.7', text:"Is your firewall configured to BLOCK unauthenticated inbound connections by default?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Block unauthenticated inbound connections by default. Most correctly configured firewalls do this. Answer Yes if your default posture is to deny inbound.',
+        saContext:'A "deny all inbound" default policy is the correct answer here. If your ISP-supplied router is the only firewall and it uses NAT only, verify it blocks unsolicited inbound connections.' },
+      { id:'A4.8', text:"Describe how you approve and document any permitted inbound connections.", type:'notes', req:'core',
+        placeholder:'e.g. Any inbound rule requires written approval from the Director (signed form). Business justification documented in our firewall change log. Reviewed quarterly.',
+        guidance:'CE Requirement: Inbound firewall rules must be approved by an authorised person and include documented business justification. Board-level sign-off required.',
+        saContext:'For SA businesses: document using email approval chain or a change management form. For ISO 27001 alignment (increasingly required by large SA corporates and government), formal change management is mandatory.' },
+      { id:'A4.9', text:"Are your boundary firewalls configured to allow internet access to their configuration/admin settings?", type:'yesno', req:'core',
+        guidance:'Answer Yes if your firewall admin portal is accessible directly from the internet (not via VPN). Answer No if admin access is only possible from inside the network or via VPN.',
+        saContext:'Remote admin of firewalls over the open internet is a high-risk configuration. SA MSPs (Managed Service Providers) often configure this for convenience — ensure it is protected by MFA and IP allowlisting if used.' },
+      { id:'A4.10', text:"If yes to A4.9: Is there a documented business requirement for internet-accessible firewall administration?", type:'yesno', req:'core',
+        guidance:'CE Requirement: If remote admin access is permitted, it must be documented with a clear business justification approved at board level.',
+        saContext:'If your IT support company requires remote admin access, document this in a written agreement. Ensure this access is MFA-protected — POPIA requires appropriate safeguards for any access to systems holding personal information.' },
+      { id:'A4.11', text:"If yes to A4.9: Is remote firewall admin access protected by MFA, or restricted to a trusted IP allowlist with managed authentication?", type:'notes', req:'core',
+        placeholder:'e.g. Remote admin only permitted via VPN with MFA (Cisco AnyConnect + Microsoft Authenticator). Admin panel blocked from internet directly.',
+        guidance:'CE Requirement: Remote admin interface must be protected by MFA OR an IP allowlist combined with managed authentication.',
+        saContext:'For SA MSPs: IP allowlisting alone (using your MSP office IP) is acceptable only when combined with strong password management. MFA is the gold standard.' }
+    ]
+  },
+  {
+    id:'secureconfig', icon:'⚙️', label:'Secure Configuration', badge:'Control 2',
+    color:'#8b5cf6', accentRgb:'139,92,246',
+    ceRef: 'CE Technical Control 2 — Secure Configuration',
+    saNote: 'Secure configuration aligns with POPIA Section 19 (technical safeguards) and ISO/IEC 27001 Annex A.12 (operations security).',
+    intro: 'Computers and cloud services are often not secure on default installation. This section ensures unnecessary software, accounts and services are removed, default passwords are changed, and devices are properly locked. Applies to all in-scope devices including servers, laptops, desktops, tablets, mobile phones, and cloud services.',
+    questions: [
+      { id:'A5.1', text:"Have you removed or disabled software and services you don't use on all in-scope devices and cloud services? Describe how.", type:'notes', req:'core',
+        placeholder:'e.g. On Windows devices: unused apps removed via Apps & Features. On M365: unused features (Viva, Power Platform) disabled in admin centre. Review done on device provisioning and annually.',
+        guidance:'CE Requirement: Regularly remove or disable unnecessary software including applications, system utilities and network services.',
+        saContext:'Common unnecessary software found on SA business devices: McAfee/Norton trials, HP/Dell bloatware, telemetry tools. On Microsoft 365: disable OneDrive sync if not used, disable Teams calling if using another platform. Document your removal process.' },
+      { id:'A5.2', text:"Do all in-scope devices and cloud services only contain necessary, actively-used user accounts?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Regularly remove and disable unnecessary user accounts including guest accounts and unused administrative accounts.',
+        saContext:'Pay particular attention to: ex-employee accounts (critical when staff leave), generic "admin" accounts, supplier or contractor accounts. For M365, use the Azure AD/Entra ID access reviews feature. For SA payroll staff, ensure accounts are disabled same-day on termination — POPIA requires this.' },
+      { id:'A5.3', text:"Have you changed all default passwords for user and administrator accounts on all in-scope devices?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Regularly change any default or guessable account passwords. Use technical controls to manage password quality (MFA, 12+ character minimum, or auto-blocking of common passwords).',
+        saContext:'Default credentials are the #1 attack vector in SA SME breaches per SABRIC (South African Banking Risk Information Centre) annual reports. Change all defaults immediately on provisioning any new device or service.' },
+      { id:'A5.4', text:"Do you run or host external services that provide internet-accessible access to organisational data? (e.g. VPN, web portal, hosted app, mail server)", type:'yesno', req:'core',
+        guidance:'CE Requirement: Ensure users are authenticated before allowing access to organisational data or services. This includes any internet-facing application.',
+        saContext:'Common SA examples: Hosted accounting systems (Pastel/Sage Online), payroll portals (PaySpace, SARS eFiling integration), remote desktop / VPN, customer-facing web applications. All must require authentication.' },
+      { id:'A5.5', text:"For external services (if A5.4 Yes): which authentication method is used?\n\nA. MFA + minimum 8-character password\nB. Auto-block common passwords + minimum 8-character password\nC. Minimum 12-character password (no maximum)\nD. Passwordless (CE v3.2 new) — describe\nE. None of the above — describe", type:'options', req:'core',
+        options:['A. MFA + minimum 8-character password','B. Auto-block common passwords + minimum 8 characters','C. Minimum 12-character password (no maximum length)','D. Passwordless authentication (passkey/biometric) — add detail below','E. None of the above — describe below'],
+        guidance:'CE v3.2 (2025): Passwordless authentication formally accepted. Options D and E require detailed description.',
+        saContext:'FSCA GUIDANCE NOTE 3 of 2021 requires MFA for all internet-facing systems for SA financial services providers. Option A (MFA) is strongly recommended across all SA regulated sectors.' },
+      { id:'A5.5.notes', text:"If D or E selected above: describe your authentication approach.", type:'notes', req:'std',
+        placeholder:'e.g. D: FIDO2 passkeys implemented on customer portal via Azure Entra. / E: Legacy system — describe compensating controls.' },
+      { id:'A5.6', text:"Describe your process for changing passwords on external services when you suspect a compromise.", type:'notes', req:'core',
+        placeholder:'e.g. IT Manager alerted via monitoring alert or staff report. Password reset within 1 hour. Account locked pending investigation. All sessions terminated. Incident logged.',
+        guidance:'CE Requirement: Have an established process to change passwords promptly when an account is suspected to be compromised.',
+        saContext:'Under POPIA Section 22: if the compromise involves personal information, notify the Information Regulator (inforeg@justice.gov.za) and affected data subjects as soon as reasonably possible. Under the Cybercrimes Act: report cybercrime to SAPS (www.saps.gov.za/cybercrime).' },
+      { id:'A5.7', text:"When not using MFA, which brute-force protection is used for external services?\n\nA. Rate throttling (max 10 attempts per 5 minutes)\nB. Account lockout after 10 failed attempts\nC. None of the above — describe", type:'options', req:'core',
+        options:['A. Rate throttling (max 10 guesses in 5 minutes)','B. Account lockout after 10 failed attempts','C. None of the above — describe below'],
+        guidance:'CE Requirement: Protect authentication against brute-force attacks using throttling or lockout. When vendor does not allow configuration, use vendor default.',
+        saContext:'If using a cloud service (e.g. M365, Google Workspace, Xero) that enforces its own brute-force protection, this is acceptable. Document the vendor\'s policy.' },
+      { id:'A5.8', text:"Have you disabled auto-run / auto-execute features that run files automatically when downloaded or inserted (e.g. USB auto-play)?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Disable any auto-run feature that allows file execution without user authorisation.',
+        saContext:'USB auto-run is a common malware vector in SA offices. Disable via Group Policy on Windows (Computer Config > Admin Templates > Windows Components > AutoPlay Policies). For home users, Windows 11 has this disabled by default.' },
+      { id:'A5.9', text:"Do you enforce a locking mechanism (password, PIN, or biometric) on all devices that require physical presence to access?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Ensure appropriate device locking controls for users physically present. CE v3.2: PIN must be minimum 6 characters if used as device lock only.',
+        saContext:'Screen lock is especially important in SA open-plan offices and for laptops used at client sites. Recommended: 5-minute auto-lock timeout. For mobile devices, enforce via MDM policy.' },
+      { id:'A5.10', text:"Which methods do you use to unlock devices? Describe for each device type.", type:'notes', req:'core',
+        placeholder:'e.g. Laptops: Windows Hello PIN (8 digits) or fingerprint. Mobile phones: 6-digit PIN or biometric (Face ID / fingerprint). Servers: Complex password (16+ chars). Tablets: 6-digit PIN.',
+        guidance:'CE v3.2: Device unlock credentials (PIN min 6 chars, password, or biometric). Must be protected against brute-force. Use throttling or lockout after 10 failed attempts.',
+        saContext:'For SA businesses with field workers (mining, agriculture, construction), biometric unlock is preferred as workers may wear gloves. Consider remote wipe capability via MDM for lost/stolen devices — critical for POPIA compliance.' }
+    ]
+  },
+  {
+    id:'updates', icon:'🔄', label:'Security Updates', badge:'Control 3',
+    color:'#f59e0b', accentRgb:'245,158,11',
+    ceRef: 'CE Technical Control 3 — Security Update Management',
+    saNote: 'Patch management within 14 days aligns with POPIA Section 19 and is recommended by SABS ISO/IEC 27002:2022 Section 8.8.',
+    intro: 'All software must be kept up to date with the latest security patches. High-risk or critical updates (CVSSv3 ≥ 7.0) must be applied within 14 days of release. This section applies to: operating systems, firmware, applications, browsers, email clients, office suites, anti-malware, and all cloud services.',
+    questions: [
+      { id:'A6.1', text:"Are ALL operating systems on in-scope devices supported by a vendor that produces regular security updates? (Includes firewall/router firmware)", type:'yesno', req:'core',
+        guidance:'CE Requirement: All software must be licensed and supported. Out-of-support OS = automatic certification failure. Windows 10 users must be enrolled in Microsoft ESU post-October 2025.',
+        saContext:'Common unsupported OS found in SA businesses: Windows 7, Windows XP (found in POS systems), Android 8/9 on older phones, iOS 12 on older iPhones. Devices running unsupported OS must be replaced, isolated, or upgraded BEFORE certification.' },
+      { id:'A6.2', text:"Is ALL software on in-scope devices supported by a supplier providing regular security updates?", type:'yesno', req:'core',
+        guidance:'CE Requirement: All software must be licensed and supported. Includes all applications, extensions, scripts and libraries.',
+        saContext:'Check for SA-specific software that may not receive regular updates: older versions of Pastel/Sage, VIP Payroll versions below v7, or local line-of-business applications. Contact the vendor to confirm update policy.' },
+      { id:'A6.2.1', text:"List all internet browsers used, including version numbers.", type:'notes', req:'core',
+        placeholder:'e.g. Google Chrome 124.0 (auto-update enabled); Microsoft Edge 124.0 (auto-update enabled); Safari 17.4 on macOS.',
+        guidance:'List all browsers across all in-scope devices. Version required. Must be current supported versions.',
+        saContext:'Recommend disabling old browser versions. Internet Explorer is end-of-life — if still used (common in SA legacy systems), this must be addressed. Chrome and Edge auto-update by default.' },
+      { id:'A6.2.2', text:"List all anti-malware / endpoint protection software and version numbers.", type:'notes', req:'core',
+        placeholder:'e.g. Microsoft Defender (built-in, auto-updated, Windows 11); Sophos Intercept X v2.0.20 (auto-update enabled); Malwarebytes Premium v5.1.',
+        guidance:'List all malware protection software. Version required. Must be current.',
+        saContext:'Cost-effective SA options: Microsoft Defender (free, built into Windows — adequate for CE), Sophos Home, ESET NOD32. For SMEs, avoid expired or perpetual-licence AV software — it will not be receiving updates.' },
+      { id:'A6.2.3', text:"List all email applications on end-user devices and servers, including version numbers.", type:'notes', req:'core',
+        placeholder:'e.g. Microsoft Outlook (M365 Apps, auto-updated); Gmail via browser (no local client); Apple Mail on macOS Sonoma (auto-updated).',
+        guidance:'List all email clients. Version required.',
+        saContext:'Common SA email platforms: Microsoft 365 (Outlook), Google Workspace (Gmail), or on-premise Exchange. Ensure Exchange Server is current — Exchange 2013 and 2016 are end-of-life. Consider migrating to M365 if still on legacy Exchange.' },
+      { id:'A6.2.4', text:"List all office/productivity applications used to create organisational data, including version numbers.", type:'notes', req:'core',
+        placeholder:'e.g. Microsoft 365 Apps v2404 (auto-update via M365 admin centre); Google Workspace (browser-based, always current); LibreOffice 24.2 (auto-update enabled).',
+        guidance:'List all office applications. Version required.',
+        saContext:'Common SA options: Microsoft 365 (most common), Google Workspace, Sage/Pastel. Perpetual licences (Office 2016, Office 2019) are approaching or past end-of-support. Migrate to Microsoft 365 subscription for automatic updates.' },
+      { id:'A6.3', text:"Are any in-scope software or cloud services unlicensed or unsupported?", type:'yesno', req:'core',
+        guidance:'CE Requirement: All software must be licensed and supported. Answer No if all is licensed and supported (this is the desired answer).',
+        saContext:'Pirated software is common in SA SMEs — this is a CE certification failure AND a violation of the Copyright Act (Act 98 of 1978). It also creates severe security risks as pirated software often contains malware. Audit and remediate before certification.' },
+      { id:'A6.3.1', text:"If yes to A6.3: list all unlicensed or unsupported software.", type:'notes', req:'std',
+        placeholder:'e.g. Old version of Pastel v14 (end-of-support) — migrating to Sage Business Cloud in Q3. No licence for Adobe Acrobat — replacing with PDF24 (free).',
+        guidance:'List all unlicensed or unsupported software and your remediation plan.' },
+      { id:'A6.4', text:"Are ALL high-risk/critical OS and firmware security updates installed within 14 days of release?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Critical and high-risk updates (CVSSv3 ≥ 7.0 or vendor-rated "critical/high") must be installed within 14 days. This includes router and firewall firmware.',
+        saContext:'14-day patching applies to ALL in-scope devices. For SA businesses managing load-shedding: ensure patching is not delayed due to power interruptions. Configure updates to install during scheduled windows when power is available (e.g. during generator running hours).' },
+      { id:'A6.4.1', text:"Are OS updates applied via auto-update on all devices where possible?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Auto-updates must be enabled where possible. For any device where auto-updates cannot be enabled, a manual process must be documented.',
+        saContext:'Enable Windows Update automatic installation. For M365 devices, use Microsoft Endpoint Manager / Intune to enforce update policies. For Android devices, enable auto-update in Google Play settings.' },
+      { id:'A6.4.2', text:"Where auto-updates are NOT used: describe how you ensure critical OS and firmware updates are applied within 14 days.", type:'notes', req:'core',
+        placeholder:'e.g. Servers: WSUS (Windows Server Update Services) managed by IT Manager, weekly check and approval. Firewall firmware: IT Manager subscribes to Fortinet security alerts, applies patches within 7 days. Documented in change log.',
+        guidance:'If only auto-updates are used, confirm this here. Otherwise describe your manual update management process.',
+        saContext:'For SA MSPs managing client devices: use RMM (Remote Monitoring and Management) tools (e.g. NinjaRMM, ConnectWise, N-central) to automate patching. Document your SLA for patching timescales.' },
+      { id:'A6.5', text:"Are ALL high-risk/critical application security updates installed within 14 days of release?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Application updates with CVSSv3 ≥ 7.0 or vendor-rated "critical/high" must be applied within 14 days.',
+        saContext:'This includes browser extensions, plugins, PDF readers, and line-of-business applications. Ensure your software inventory is complete so no applications are missed during patching cycles.' },
+      { id:'A6.5.1', text:"Are application updates applied via auto-update on all devices where possible?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Auto-updates must be enabled for applications where possible.',
+        saContext:'Enable auto-update in: Chrome, Edge (browser settings), M365 Apps (M365 admin centre), Adobe Reader (Help > Check for updates), Zoom (auto-update in settings).' },
+      { id:'A6.5.2', text:"Where app auto-updates are NOT used: describe how you ensure critical updates are applied within 14 days.", type:'notes', req:'core',
+        placeholder:'e.g. Bespoke CRM application: vendor sends security alerts by email. IT Manager applies updates within 5 working days and documents in change log. Verified by Director quarterly.',
+        guidance:'Describe your manual process if auto-update is not used. Confirm update frequency and who is responsible.' },
+      { id:'A6.6', text:"Have you removed all software that is no longer supported and receives no further security updates?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Remove unsupported software from devices, or place devices in an air-gapped sub-set with no internet access.',
+        saContext:'Unsupported software found in SA: Internet Explorer, Office 2010/2013, Windows XP/7 (found in POS, ATM, industrial control systems). Must be removed from scope or isolated before CE certification is possible.' },
+      { id:'A6.7', text:"Where unsupported software must be retained (business-critical): have you moved those devices out of scope by isolating them from the internet? Explain.", type:'notes', req:'core',
+        placeholder:'e.g. Legacy CNC machine controller running Windows XP — isolated on dedicated VLAN with no internet access, no access to other networks. Excluded from CE scope with clear statement in A2.2.',
+        guidance:'CE Requirement: Unsupported software must be on an isolated sub-set (firewall or VLAN separation) with no internet traffic. This prevents whole-organisation certification.',
+        saContext:'Common in SA manufacturing/industrial sector: legacy SCADA/ICS systems running old Windows. Isolate on dedicated OT (Operational Technology) network with hardware firewall separation.' }
+    ]
+  },
+  {
+    id:'access', icon:'🔑', label:'User Access Control', badge:'Control 4',
+    color:'#3b82f6', accentRgb:'59,130,246',
+    ceRef: 'CE Technical Control 4 — User Access Control & Administrative Accounts',
+    saNote: 'Access control requirements align directly with POPIA Section 19 (safeguards for personal information) and SABS ISO/IEC 27001 Annex A.9.',
+    intro: 'This section covers user account management, privilege control, administrative account separation, and password authentication for all in-scope devices, servers, cloud services, and applications. Only authorised users should have accounts. Administrative accounts must be separate from standard user accounts.',
+    questions: [
+      { id:'A7.1', text:"Are user accounts only created after a formal approval process? Describe the process.", type:'notes', req:'core',
+        placeholder:'e.g. New user accounts: Line manager submits IT request form (Teams message) to IT Manager. IT Manager creates account with standard user privileges only. Director approval required for admin access. New starter checklist completed.',
+        guidance:'CE Requirement: Have a documented process to create and approve user accounts.',
+        saContext:'For POPIA compliance: your user account creation process should be part of your onboarding documentation. Ensure new employee agreements include consent for processing their personal information on company systems.' },
+      { id:'A7.2', text:"Are ALL user and administrative accounts accessed using unique credentials (not shared)?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Authenticate users with unique credentials. No shared accounts. No generic logins.',
+        saContext:'Shared accounts are a significant POPIA risk — if a breach occurs, you cannot identify which individual accessed data. Ensure even small SA businesses assign unique credentials per person, including external IT support staff.' },
+      { id:'A7.3', text:"Describe how you ensure accounts are deleted or disabled when staff leave your organisation.", type:'notes', req:'core',
+        placeholder:'e.g. HR notifies IT Manager on day of departure. IT Manager disables AD account, revokes M365 licence, removes from all groups and cloud services within same day. Leaver checklist signed off by HR and IT.',
+        guidance:'CE Requirement: Remove or disable user accounts when no longer required. Prompt revocation is essential.',
+        saContext:'POPIA requires limiting access to personal information to authorised personnel only. Failure to revoke access for leavers is a common POPIA breach scenario. Same-day revocation is the recommended SA practice. Include in your HR offboarding process.' },
+      { id:'A7.4', text:"Do staff only have the access privileges needed for their current job role? How do you enforce this?", type:'notes', req:'core',
+        placeholder:'e.g. Principle of least privilege applied. Standard users have no admin rights. Finance team has read-only access to HR data. Access rights reviewed when roles change. Documented in access matrix spreadsheet.',
+        guidance:'CE Requirement: Apply principle of least privilege. Control user accounts and access to organisational data and services.',
+        saContext:'For SA POPIA compliance: maintain a data access register showing which roles can access which categories of personal information. This is required under POPIA\'s accountability principle (Section 8).' },
+      { id:'A7.5', text:"Do you have a formal process for granting administrator-level access? Describe it.", type:'notes', req:'core',
+        placeholder:'e.g. Admin access request submitted in writing to Director. Business justification required. Director approval documented. Admin account created separately from standard account. Quarterly review of all admin accounts.',
+        guidance:'CE Requirement: Have a documented process to create and approve elevated privilege accounts.',
+        saContext:'For SA regulated businesses: admin account provisioning should be logged and auditable. FSCA and SARB cybersecurity guidance requires segregation of duties for privileged access in financial services.' },
+      { id:'A7.6', text:"How do you ensure separate accounts are used for administrative tasks (installing software, config changes) vs. everyday tasks?", type:'notes', req:'core',
+        placeholder:'e.g. All IT staff have two accounts: standard user account (email, web browsing, office work) and a separate admin account (used only for system admin tasks). Admin accounts not linked to email.',
+        guidance:'CE Requirement: Use separate accounts for administrative activities only. No emailing, web browsing, or other standard activities should be performed with admin accounts.',
+        saContext:'This is critical: using admin accounts for email opens the entire organisation to credential theft and malware. Common SA MSP guidance is to use the standard account for 99% of work and elevate only when necessary (Windows UAC prompt is acceptable).' },
+      { id:'A7.7', text:"How does your organisation prevent administrator accounts from being used for everyday activities like email or web browsing?", type:'notes', req:'core',
+        placeholder:'e.g. Admin accounts have no mailbox configured. Web browsing disabled by policy on admin accounts via Group Policy. Staff trained to use only standard accounts for daily work. Monitored via SIEM alerts.',
+        guidance:'CE Requirement: Administrative accounts must be used for admin activities only.',
+        saContext:'Technical control options: no email licence assigned to admin accounts, Group Policy blocking browser access, privileged access workstations (PAWs). Policy + training is acceptable for smaller SA businesses.' },
+      { id:'A7.8', text:"Do you formally track all users with administrator accounts in your organisation?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Maintain a tracked list of all users with administrative privileges.',
+        saContext:'Maintain a privileged user register — a simple spreadsheet listing name, role, systems they have admin access to, and date granted. Review regularly. This register is valuable evidence during a POPIA compliance audit.' },
+      { id:'A7.9', text:"Do you regularly review who should have administrative access, removing it when no longer needed?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Regularly remove or disable special access privileges when no longer required.',
+        saContext:'Review frequency: monthly or quarterly recommended for SA SMEs. Include in your IT governance calendar. Annual review is the minimum acceptable. Role changes (promotions, department moves) should trigger an immediate access review.' },
+      { id:'A7.10', text:"How are your password-based systems protected from brute-force attacks?", type:'notes', req:'core',
+        placeholder:'e.g. Windows accounts: locked after 10 failed attempts (Group Policy). M365: Smart lockout + MFA enabled for all users. VPN: Locked after 5 failed attempts. Documented in security policy.',
+        guidance:'CE Requirement: Protect passwords against brute-force using MFA, throttling (max 10 guesses in 5 minutes), or lockout after max 10 attempts.',
+        saContext:'Microsoft 365 includes Smart Lockout by default. Enable Entra ID Identity Protection for enhanced brute-force detection. For on-premise AD: configure Account Lockout Policy via Group Policy.' },
+      { id:'A7.11', text:"Which technical controls manage password quality across your organisation?", type:'notes', req:'core',
+        placeholder:'e.g. M365: minimum 8-char password + MFA required (Conditional Access policy). Windows domain: minimum 12-char, complexity disabled (three random words approach). Password manager (Bitwarden) encouraged for all staff.',
+        guidance:'CE Requirement: Use one of: MFA, minimum 12-char passwords (no max), or minimum 8-char with auto-blocking of common passwords.',
+        saContext:'CE v3.2 aligns with NCSC guidance: avoid password complexity rules and forced expiry (they make passwords weaker, not stronger). Use the "three random words" method. Password managers are strongly encouraged.' },
+      { id:'A7.12', text:"How do you encourage staff to use unique and strong passwords for work accounts?", type:'notes', req:'core',
+        placeholder:'e.g. Annual security awareness training includes password hygiene session. Bitwarden password manager provided to all staff (Teams-integrated). Three random words method communicated in new starter pack. Password sharing between work and personal accounts prohibited by policy.',
+        guidance:'CE Requirement: Support users to choose unique passwords. Promote password managers, three-random-words approach, avoid forced expiry and complexity rules.',
+        saContext:'Recommended SA approach: provide a free password manager (Bitwarden free tier), include in onboarding, brief at annual security awareness session. Phishing simulation training (e.g. KnowBe4, GoPhish) reinforces good password habits.' },
+      { id:'A7.13', text:"Do you have a documented process for when passwords or accounts are suspected to be compromised?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Establish a process to change passwords promptly when compromise is known or suspected.',
+        saContext:'Your compromise response process should include: immediate password reset, session termination, incident log, notification to the Information Regulator if personal data was exposed (POPIA Section 22), and SAPS report if criminal activity suspected (Cybercrimes Act).' },
+      { id:'A7.14', text:"Do all your cloud services offer multi-factor authentication (MFA) as part of the service?", type:'yesno', req:'core',
+        guidance:'CE Requirement: MFA must be implemented for all cloud services where available. If a cloud service does not support MFA, it must be listed.',
+        saContext:'If your cloud service does not offer MFA, consider replacing it. FSCA requires MFA for all internet-facing financial services systems. Most SA-used cloud services (M365, Google Workspace, Xero, Sage Cloud) support MFA.' },
+      { id:'A7.15', text:"If No to A7.14: list all cloud services that do NOT offer any MFA option.", type:'notes', req:'std',
+        placeholder:'e.g. Legacy ERP system v4.2 (vendor end-of-life, no MFA support) — migrating to cloud ERP in H2. Legacy payroll portal (MFA not available — raising with vendor).',
+        guidance:'List any cloud services where MFA is genuinely unavailable. This is informational — it does not automatically cause certification failure if compensating controls exist.' },
+      { id:'A7.16', text:"Has MFA been applied to ALL administrator accounts on all cloud services?", type:'yesno', req:'core',
+        guidance:'CE Requirement: MFA must be applied to all administrator accounts on cloud services.',
+        saContext:'Critical for SA businesses: M365 Global Admins MUST have MFA. Configure Conditional Access policy in Entra ID requiring MFA for all admin roles. This is also required by Microsoft for access to M365 admin centre.' },
+      { id:'A7.17', text:"Has MFA been applied to ALL standard users on all cloud services?", type:'yesno', req:'core',
+        guidance:'CE Requirement: All users of cloud services must use MFA.',
+        saContext:'Enable MFA for all M365/Google Workspace users. Use Conditional Access policies (M365) or Context-Aware Access (Google) to enforce MFA. In SA, mobile-based MFA apps (Microsoft Authenticator, Google Authenticator) are widely accessible at no cost.' }
+    ]
+  },
+  {
+    id:'malware', icon:'🦠', label:'Malware Protection', badge:'Control 5',
+    color:'#22c55e', accentRgb:'34,197,94',
+    ceRef: 'CE Technical Control 5 — Malware Protection',
+    saNote: 'Malware protection is required under POPIA Section 19 and aligns with SABS ISO/IEC 27002:2022 Section 8.7 (protection against malware).',
+    intro: 'Malware (viruses, ransomware, spyware) is the most common cyber attack method. This section covers anti-malware software, application allowlisting, and configuration of malware protection. Applies to all in-scope desktops, laptops, tablets, mobile phones, servers, and cloud services.',
+    questions: [
+      { id:'A8.1', text:"How are all desktops, laptops, tablets and mobile phones protected from malware?\n\nA. Anti-malware software installed\nB. Application allowlisting (app store / MDM / code signing)\nC. None of the above — describe", type:'multi', req:'core',
+        options:['A. Anti-malware software installed on all applicable devices','B. Application allowlisting (approved app store / MDM / code signing)','C. None of the above — describe in notes below'],
+        guidance:'CE Requirement: At least one malware protection method must be active on all in-scope devices. Most organisations will need both A and B (A for Windows/Mac, B for mobiles/tablets).',
+        saContext:'For SA Windows devices: Microsoft Defender (free, built into Windows 10/11) is CE-compliant. For Android: Google Play Protect (built-in). For iOS/iPadOS: App Store restriction (no sideloading) is sufficient for Option B. Budget options: Sophos Home Free, Malwarebytes Free (detection only — not real-time).' },
+      { id:'A8.1.notes', text:"If Option C (none of the above): explain your approach.", type:'notes', req:'std',
+        placeholder:'e.g. Only if C selected: describe your compensating controls for malware prevention.' },
+      { id:'A8.2', text:"(If Option A selected): Is anti-malware software set to auto-update per vendor guidelines AND configured to prevent malware from running on detection?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Anti-malware must be: updated per vendor guidelines, set to prevent malware from running, and prevent execution of malicious code.',
+        saContext:'Windows Defender auto-updates via Windows Update — ensure Windows Update is not disabled. For third-party AV: enable automatic signature updates and real-time protection. Do not use AV software that is past its licence expiry date (common in SA SMEs using perpetual-licence products).' },
+      { id:'A8.3', text:"(If Option A selected): Is anti-malware set to scan web pages and warn about malicious websites?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Anti-malware must prevent connections to malicious websites over the internet.',
+        saContext:'Windows Defender SmartScreen provides this on Windows 11 and in Microsoft Edge. For Chrome: use Google Safe Browsing (enabled by default). Dedicated DNS filtering (e.g. Cisco Umbrella, Cloudflare Gateway — free tier available) provides additional web protection, recommended for SA businesses.' },
+      { id:'A8.4', text:"(If Option B selected): Are users restricted from installing unsigned/unapproved applications?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Only approved applications, restricted by code signing, may execute on devices.',
+        saContext:'For iOS: App Store restrictions enforced by default (no sideloading without jailbreak). For Android: enable "Install unknown apps" restriction in device settings or via MDM. For Windows: use AppLocker or WDAC (Windows Defender Application Control) for high-security environments.' },
+      { id:'A8.5', text:"(If Option B selected): Do you maintain and enforce a list of approved applications, ensuring users can only install these?", type:'yesno', req:'core',
+        guidance:'CE Requirement: Actively approve applications before deploying. Maintain a current list. Users must not be able to install unsigned or invalid-signature applications.',
+        saContext:'MDM solutions for SA SMEs: Microsoft Intune (included in M365 Business Premium), Jamf (Apple devices), or Google Endpoint Management (Google Workspace). Maintaining an approved app list in Intune or a simple spreadsheet is acceptable for smaller SA businesses.' },
+      { id:'A8.6', text:"Additional notes on your malware protection approach, tools used, or any exceptions.", type:'notes', req:'std',
+        placeholder:'e.g. Microsoft Defender for Business deployed across all Windows 11 devices via Intune. Google Play Protect active on all Android devices. iOS App Store restriction enforced. DNS filtering via Cloudflare Gateway. Monthly security scan report reviewed by IT Manager.',
+        guidance:'Optional: provide additional context about your malware protection strategy.',
+        saContext:'Ransomware is the most significant malware threat in SA per SABRIC (South African Banking Risk Information Centre). Ensure backups are maintained offline and tested regularly (3-2-1 backup rule). Offline backups are your last line of defence against ransomware.' }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let state = {
+  view: 'org',
+  answers: {},
+  flags: {},
+  comments: {},
+  tab: 'questions',
+  tier: 'small',
+  reportType: 'executive',
+  orgName: '',
+  orgContact: '',
+  reportNotes: ''
+};
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function getControl(id){ return CONTROLS.find(c=>c.id===id); }
+function getAllQuestions(){ return CONTROLS.flatMap(c=>c.questions); }
+
+function isAnswered(qid){
+  const a = state.answers[qid];
+  if (!a) return false;
+  if (typeof a === 'string') return a.trim().length > 0;
+  if (Array.isArray(a)) return a.length > 0;
+  return false;
+}
+
+function controlPct(ctrl){
+  const qs = ctrl.questions.filter(q=>q.req==='core');
+  if (!qs.length) return 100;
+  const done = qs.filter(q=>isAnswered(q.id)).length;
+  return Math.round((done/qs.length)*100);
+}
+
+function overallPct(){
+  const allCore = CONTROLS.flatMap(c=>c.questions.filter(q=>q.req==='core'));
+  const done = allCore.filter(q=>isAnswered(q.id)).length;
+  return Math.round((done/allCore.length)*100);
+}
+
+function overallAnswered(){
+  return getAllQuestions().filter(q=>isAnswered(q.id)).length;
+}
+
+function overallTotal(){
+  return getAllQuestions().length;
+}
+
+function complianceScore(){
+  // Weighted: core=3, high=2, std=1
+  let total=0, done=0;
+  CONTROLS.flatMap(c=>c.questions).forEach(q=>{
+    const w = q.req==='core'?3:q.req==='high'?2:1;
+    total+=w;
+    if(isAnswered(q.id)){
+      const a=state.answers[q.id];
+      if(q.type==='yesno' && a==='no') done+=0;
+      else done+=w;
+    }
+  });
+  return Math.round((done/total)*100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIDEBAR RENDER
+// ═══════════════════════════════════════════════════════════════
+function renderSidebar(){
+  const nav = document.getElementById('sidNav');
+  let h = `<div class="nav-section">Assessment Sections</div>`;
+  CONTROLS.forEach(ctrl=>{
+    const pct = controlPct(ctrl);
+    const active = state.view===ctrl.id && state.tab==='questions' ? 'active' : '';
+    h += `<div class="nav-item ${active}" onclick="setView('${ctrl.id}','questions')">
+      <span class="ni-icon">${ctrl.icon}</span>
+      <span class="ni-text">${ctrl.label}</span>
+      <span class="ni-pct">${pct}%</span>
+    </div>
+    <div class="nav-mini-bar"><div class="nav-mini-fill" style="width:${pct}%"></div></div>`;
+  });
+  h += `<div class="nav-section" style="margin-top:8px">Views</div>`;
+  [['dashboard','📊','Dashboard'],['reports','🖨️','Reports & Export']].forEach(([id,icon,label])=>{
+    const active = state.tab===id ? 'active':'';
+    h += `<div class="nav-item ${active}" onclick="setView('${state.view}','${id}')">
+      <span class="ni-icon">${icon}</span>
+      <span class="ni-text">${label}</span>
+    </div>`;
+  });
+  nav.innerHTML = h;
+
+  const pct = overallPct();
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progPct').textContent = pct+'%';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUESTIONS VIEW
+// ═══════════════════════════════════════════════════════════════
+function renderQuestions(ctrl){
+  document.getElementById('topH1').textContent = ctrl.label;
+  document.getElementById('topBadge').textContent = ctrl.badge;
+  let h = '';
+
+  // Section intro
+  h += `<div class="section-intro">
+    <h2>${ctrl.icon} ${ctrl.label}</h2>
+    <p>${ctrl.intro}</p>
+    <div class="sa-note">🇿🇦 SA Mapping — ${ctrl.saNote}</div>
+  </div>`;
+
+  // Progress for this control
+  const pct = controlPct(ctrl);
+  const coreQs = ctrl.questions.filter(q=>q.req==='core');
+  const doneCoreQs = coreQs.filter(q=>isAnswered(q.id)).length;
+  h += `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Section Progress (Core Questions)</div>
+      <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${ctrl.color},${ctrl.color}99);border-radius:3px;transition:width .4s"></div></div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:${ctrl.color}">${pct}%</div>
+    <div style="font-size:11px;color:var(--muted)">${doneCoreQs}/${coreQs.length} core</div>
+  </div>`;
+
+  ctrl.questions.forEach(q => {
+    const answered = isAnswered(q.id);
+    const flagged = state.flags[q.id];
+    h += renderQuestion(q, answered, flagged);
+  });
+
+  document.getElementById('content').innerHTML = h;
+  attachAnswerListeners(ctrl);
+}
+
+function renderQuestion(q, answered, flagged){
+  const reqClass = q.req==='core'?'req-core':q.req==='high'?'req-high':'req-std';
+  const reqLabel = q.req==='core'?'CORE — Required':'High Priority';
+  const reqShowLabel = q.req!=='std';
+
+  let ansHtml = '';
+  const ans = state.answers[q.id] || '';
+  const comment = state.comments[q.id] || '';
+
+  if(q.type==='yesno'){
+    const selY = ans==='yes'?'sel-yes':'', selN=ans==='no'?'sel-no':'', selNA=ans==='na'?'sel-na':'';
+    ansHtml = `<div class="ans-yesno">
+      <button class="yn-btn ${selY}" data-qid="${q.id}" data-val="yes">✓ Yes</button>
+      <button class="yn-btn ${selN}" data-qid="${q.id}" data-val="no">✗ No</button>
+      <button class="yn-btn ${selNA}" data-qid="${q.id}" data-val="na">— N/A</button>
+    </div>`;
+  } else if(q.type==='notes'){
+    ansHtml = `<textarea class="ans-notes" data-qid="${q.id}" placeholder="${q.placeholder||'Enter your response here...'}" rows="3">${ans}</textarea>`;
+  } else if(q.type==='select'){
+    const opts = q.options.map(o=>`<option value="${o}" ${ans===o?'selected':''}>${o}</option>`).join('');
+    ansHtml = `<select class="ans-notes" style="cursor:pointer" data-qid="${q.id}"><option value="">— Select an option —</option>${opts}</select>`;
+  } else if(q.type==='options'){
+    const curSel = ans || '';
+    ansHtml = `<div class="ans-options">${q.options.map(o=>`<button class="opt-btn ${curSel===o?'selected':''}" data-qid="${q.id}" data-val="${o}">${o}</button>`).join('')}</div>`;
+  } else if(q.type==='multi'){
+    const curSel = Array.isArray(ans) ? ans : [];
+    ansHtml = `<div class="ans-multi">${q.options.map((o,i)=>{
+      const chk = curSel.includes(o)?'checked':'';
+      const sel = curSel.includes(o)?'selected':'';
+      return `<div class="mc-opt ${sel}" data-qid="${q.id}" data-val="${o}" onclick="toggleMulti('${q.id}','${o.replace(/'/g,"\\'")}',this)">
+        <input type="checkbox" ${chk} onclick="event.stopPropagation()">
+        <label>${o}</label>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  const saCtx = q.saContext ? `<div class="q-sa-context">${q.saContext}</div>` : '';
+  const guidance = q.guidance ? `<div class="q-guidance">${q.guidance}</div>` : '';
+  const flagBtnClass = flagged?'flagged':'';
+  const commentHtml = flagged ? `<div class="q-comment"><textarea data-cid="${q.id}" placeholder="Add review note / action required..." rows="2">${comment}</textarea></div>` : '';
+
+  return `<div class="q-block ${answered?'answered':''} ${flagged?'flagged':''}" id="qblock-${q.id}">
+    <div class="q-header">
+      <span class="q-num">${q.id}</span>
+      <span class="q-text">${q.text.replace(/\n/g,'<br>')}</span>
+      ${reqShowLabel?`<span class="q-req ${reqClass}">${reqLabel}</span>`:''}
+    </div>
+    <div class="q-body">
+      ${guidance}
+      ${saCtx}
+      ${ansHtml}
+      <div class="q-flag">
+        <button class="flag-btn ${flagBtnClass}" onclick="toggleFlag('${q.id}')">⚑ ${flagged?'Flagged for review':'Flag for review'}</button>
+      </div>
+      ${commentHtml}
+    </div>
+  </div>`;
+}
+
+function attachAnswerListeners(ctrl){
+  // Yes/No buttons
+  document.querySelectorAll('.yn-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const {qid,val}=btn.dataset;
+      state.answers[qid]=val;
+      refreshBlock(qid, ctrl);
+    });
+  });
+  // Text areas / selects
+  document.querySelectorAll('.ans-notes').forEach(el=>{
+    el.addEventListener('input',()=>{ state.answers[el.dataset.qid]=el.value; updateProgress(); });
+    el.addEventListener('change',()=>{ state.answers[el.dataset.qid]=el.value; updateProgress(); });
+  });
+  // Option buttons
+  document.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const {qid,val}=btn.dataset;
+      state.answers[qid]=val;
+      refreshBlock(qid, ctrl);
+    });
+  });
+  // Comment textareas
+  document.querySelectorAll('[data-cid]').forEach(el=>{
+    el.addEventListener('input',()=>{ state.comments[el.dataset.cid]=el.value; });
+  });
+}
+
+function toggleMulti(qid, val, el){
+  if(!Array.isArray(state.answers[qid])) state.answers[qid]=[];
+  const arr = state.answers[qid];
+  const idx = arr.indexOf(val);
+  if(idx>=0){ arr.splice(idx,1); el.classList.remove('selected'); el.querySelector('input').checked=false; }
+  else { arr.push(val); el.classList.add('selected'); el.querySelector('input').checked=true; }
+  updateProgress();
+}
+
+function refreshBlock(qid, ctrl){
+  updateProgress();
+  const block = document.getElementById('qblock-'+qid);
+  if(!block) return;
+  block.classList.toggle('answered', isAnswered(qid));
+  // Re-render just the answer portion
+  const q = ctrl.questions.find(q=>q.id===qid);
+  if(!q) return;
+  const ans = state.answers[qid]||'';
+  if(q.type==='yesno'){
+    block.querySelectorAll('.yn-btn').forEach(b=>{
+      b.className='yn-btn'+(ans===b.dataset.val?' sel-'+ans:'');
+    });
+  } else if(q.type==='options'){
+    block.querySelectorAll('.opt-btn').forEach(b=>{
+      b.className='opt-btn'+(ans===b.dataset.val?' selected':'');
+    });
+  }
+}
+
+function toggleFlag(qid){
+  state.flags[qid] = !state.flags[qid];
+  const ctrl = CONTROLS.find(c=>c.questions.some(q=>q.id===qid));
+  if(ctrl) renderQuestions(ctrl);
+}
+
+function updateProgress(){
+  renderSidebar();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD VIEW
+// ═══════════════════════════════════════════════════════════════
+function renderDashboard(){
+  document.getElementById('topH1').textContent = 'Assessment Dashboard';
+  document.getElementById('topBadge').textContent = 'Overview';
+  const pct = overallPct();
+  const score = complianceScore();
+  const answered = overallAnswered();
+  const total = overallTotal();
+  const flagCount = Object.values(state.flags).filter(Boolean).length;
+
+  const scoreRating = score>=80?{l:'Ready for Certification',c:'var(--success)'}:score>=50?{l:'In Progress',c:'var(--warn)'}:{l:'Needs Attention',c:'var(--danger)'};
+
+  let h = `<div class="view-tabs">
+    <button class="vtab active">📊 Dashboard</button>
+  </div>`;
+
+  h += `<div class="dash-kpis">
+    <div class="kpi-card c1"><div class="kpi-val" style="color:var(--accent)">${pct}%</div><div class="kpi-lbl">Overall Progress</div><div class="kpi-sub">${answered} of ${total} questions answered</div></div>
+    <div class="kpi-card c2"><div class="kpi-val" style="color:${scoreRating.c}">${score}%</div><div class="kpi-lbl">Compliance Score</div><div class="kpi-sub">${scoreRating.l}</div></div>
+    <div class="kpi-card c3"><div class="kpi-val" style="color:var(--success)">${CONTROLS.filter(c=>controlPct(c)===100).length}/${CONTROLS.length}</div><div class="kpi-lbl">Controls Complete</div><div class="kpi-sub">All core questions answered</div></div>
+    <div class="kpi-card c4"><div class="kpi-val" style="color:${flagCount>0?'var(--warn)':'var(--muted)'}">${flagCount}</div><div class="kpi-lbl">Flagged Items</div><div class="kpi-sub">Require review or action</div></div>
+  </div>`;
+
+  // Control cards
+  h += `<div class="dash-section"><h3>Controls Summary</h3><div class="ctrl-grid">`;
+  CONTROLS.forEach(ctrl=>{
+    const p = controlPct(ctrl);
+    h += `<div class="ctrl-card" onclick="setView('${ctrl.id}','questions')">
+      <div class="cc-icon">${ctrl.icon}</div>
+      <div class="cc-name">${ctrl.label}</div>
+      <div class="cc-pct" style="color:${ctrl.color}">${p}%</div>
+      <div class="cc-bar"><div class="cc-fill" style="width:${p}%;background:${ctrl.color}"></div></div>
+    </div>`;
+  });
+  h += `</div></div>`;
+
+  // Gaps — unanswered core
+  const gaps = CONTROLS.flatMap(c=>c.questions.filter(q=>q.req==='core'&&!isAnswered(q.id)).map(q=>({...q,ctrlLabel:c.label,ctrlColor:c.color})));
+  if(gaps.length){
+    h += `<div class="dash-section"><h3>⚠️ Outstanding Core Requirements (${gaps.length})</h3>
+    <table class="detail-table"><thead><tr><th>ID</th><th>Control</th><th>Question</th><th>Status</th></tr></thead><tbody>`;
+    gaps.slice(0,15).forEach(q=>{
+      h+=`<tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent)">${q.id}</td><td style="color:${q.ctrlColor};font-size:11px">${q.ctrlLabel}</td><td style="max-width:400px">${q.text.replace(/\n/g,' ').substring(0,100)}…</td><td><span class="pr-badge pending">Pending</span></td></tr>`;
+    });
+    if(gaps.length>15) h+=`<tr><td colspan="4" style="color:var(--muted);font-size:11px;text-align:center">…and ${gaps.length-15} more</td></tr>`;
+    h+='</tbody></table></div>';
+  }
+
+  // No answers flagged
+  const noAnswers = CONTROLS.flatMap(c=>c.questions.filter(q=>q.type==='yesno'&&state.answers[q.id]==='no'));
+  if(noAnswers.length){
+    h += `<div class="dash-section"><h3>🔴 "No" Answers — Remediation Required (${noAnswers.length})</h3>
+    <table class="detail-table"><thead><tr><th>ID</th><th>Question</th><th>SA Guidance</th></tr></thead><tbody>`;
+    noAnswers.forEach(q=>{
+      h+=`<tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--danger)">${q.id}</td><td style="max-width:300px">${q.text.replace(/\n/g,' ').substring(0,90)}…</td><td style="font-size:11px;color:var(--muted)">${(q.saContext||'').substring(0,100)}…</td></tr>`;
+    });
+    h+='</tbody></table></div>';
+  }
+
+  document.getElementById('content').innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPORTS VIEW
+// ═══════════════════════════════════════════════════════════════
+function renderReports(){
+  document.getElementById('topH1').textContent = 'Reports & Export';
+  document.getElementById('topBadge').textContent = 'Print / PDF';
+
+  const pct = overallPct();
+  const score = complianceScore();
+  const today = new Date().toLocaleDateString('en-ZA',{year:'numeric',month:'long',day:'numeric'});
+  const org = state.orgName||'Your Organisation';
+  const tier = document.getElementById('tierSelect')?.selectedOptions[0]?.text || state.tier;
+
+  let h = `<div class="report-panel">
+    <div>
+      <div class="rp-settings">
+        <h3>Report Configuration</h3>
+        <div class="rp-field"><label>Organisation Name</label><input id="rOrgName" type="text" value="${state.orgName}" placeholder="e.g. Acme (Pty) Ltd" oninput="state.orgName=this.value;updateReportPreview()"></div>
+        <div class="rp-field"><label>Contact Person / Information Officer</label><input id="rOrgContact" type="text" value="${state.orgContact}" placeholder="e.g. Jane Smith, IT Manager" oninput="state.orgContact=this.value;updateReportPreview()"></div>
+        <div class="rp-field"><label>Report Type</label>
+          <div class="rtype-grid">
+            ${[['executive','📊','Executive Summary','High-level status for management'],['gap','🔍','Gap Analysis','All outstanding items by control'],['full','📋','Full Status Report','Complete Q&A record — all questions'],['board','🏛️','Board Report','Weighted score + regulatory context']].map(([id,icon,name,desc])=>
+              `<button class="rtype-btn ${state.reportType===id?'active':''}" onclick="state.reportType='${id}';document.querySelectorAll('.rtype-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');updateReportPreview()">
+                <div class="rt-icon">${icon}</div>
+                <div class="rt-name">${name}</div>
+                <div class="rt-desc">${desc}</div>
+              </button>`).join('')}
+          </div>
+        </div>
+        <div class="rp-field"><label>Information Officer / Reviewer Notes</label><textarea id="rNotes" placeholder="Optional: add context, observations, planned remediation dates..." oninput="state.reportNotes=this.value">${state.reportNotes}</textarea></div>
+      </div>
+    </div>
+    <div>
+      <div class="rp-preview">
+        <div class="rpv-cover">
+          <div class="rpc-tag">🇿🇦 Cyber Essentials SA — Self-Assessment</div>
+          <div class="rpc-title" id="rpvTitle">Executive Summary</div>
+          <div class="rpc-org" id="rpvOrg">${org} · ${tier}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px">${today}</div>
+        </div>
+        <div class="rpv-body">
+          <div class="rpv-stat"><span class="rs-lbl">Overall Progress</span><span class="rs-val" style="color:var(--accent)">${pct}%</span></div>
+          <div class="rpv-stat"><span class="rs-lbl">Compliance Score</span><span class="rs-val" style="color:${score>=80?'var(--success)':score>=50?'var(--warn)':'var(--danger)'}">${score}%</span></div>
+          <div class="rpv-stat"><span class="rs-lbl">Questions Answered</span><span class="rs-val">${overallAnswered()} / ${overallTotal()}</span></div>
+          <div class="rpv-stat"><span class="rs-lbl">Controls Complete</span><span class="rs-val">${CONTROLS.filter(c=>controlPct(c)===100).length} / ${CONTROLS.length}</span></div>
+          <div style="margin-top:12px">
+            ${CONTROLS.map(ctrl=>{
+              const p=controlPct(ctrl);
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                <span style="font-size:12px;min-width:16px">${ctrl.icon}</span>
+                <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${p}%;background:${ctrl.color};border-radius:2px"></div></div>
+                <span style="font-size:10px;color:${p===100?'var(--success)':'var(--muted)'};min-width:28px;text-align:right">${p}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+          <button class="print-btn" onclick="triggerPrint()">🖨️ Print / Save as PDF</button>
+          <div class="print-hint">In print dialog → Destination: "Save as PDF"<br>for a permanent A4 compliance report</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('content').innerHTML = h;
+}
+
+function updateReportPreview(){
+  const el = document.getElementById('rpvOrg');
+  if(el) el.textContent = (state.orgName||'Your Organisation') + ' · ' + (document.getElementById('tierSelect')?.selectedOptions[0]?.text||'');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRINT ENGINE
+// ═══════════════════════════════════════════════════════════════
+function triggerPrint(){
+  const html = buildReport();
+  document.getElementById('print-area').innerHTML = html;
+  window.print();
+  setTimeout(()=>{ document.getElementById('print-area').innerHTML=''; }, 1500);
+}
+
+function buildReport(){
+  const today = new Date().toLocaleDateString('en-ZA',{year:'numeric',month:'long',day:'numeric'});
+  const org = state.orgName||'Your Organisation';
+  const contact = state.orgContact||'';
+  const tier = document.getElementById('tierSelect')?.selectedOptions[0]?.text || '';
+  const pct = overallPct(), score = complianceScore();
+  const scoreRating = score>=80?'Ready for Certification':score>=50?'Partially Compliant':'Remediation Required';
+  const rt = state.reportType;
+
+  const noAns = CONTROLS.flatMap(c=>c.questions.filter(q=>q.type==='yesno'&&state.answers[q.id]==='no').map(q=>({...q,ctrlLabel:c.label})));
+  const gaps = CONTROLS.flatMap(c=>c.questions.filter(q=>q.req==='core'&&!isAnswered(q.id)).map(q=>({...q,ctrlLabel:c.label})));
+
+  let html = `<div class="pr">
+  <div class="pr-cover">
+    <div class="prc-flag">🇿🇦</div>
+    <h1>Cyber Essentials SA — ${rt==='executive'?'Executive Summary':rt==='gap'?'Gap Analysis Report':rt==='full'?'Full Assessment Report':'Board Compliance Report'}</h1>
+    <div class="prc-sub">${org}${contact?' · '+contact:''}</div>
+    <div class="prc-meta">CE Framework v3.2 (April 2025) · ${tier} · Generated: ${today}</div>
+    <div class="prc-badges">
+      <span class="prc-badge">POPIA Act 4 of 2013</span>
+      <span class="prc-badge">Cybercrimes Act 19 of 2020</span>
+      <span class="prc-badge">5 CE Technical Controls</span>
+      <span class="prc-badge">${scoreRating}</span>
+    </div>
+  </div>`;
+
+  // KPI section
+  html += `<div class="pr-section"><h2>Assessment Summary</h2>
+    <div class="pr-kpi-row">
+      <div class="pr-kpi"><div class="pkv">${pct}%</div><div class="pkl">Overall Progress</div></div>
+      <div class="pr-kpi"><div class="pkv" style="color:${score>=80?'#166534':score>=50?'#854d0e':'#991b1b'}">${score}%</div><div class="pkl">Compliance Score</div></div>
+      <div class="pr-kpi"><div class="pkv">${overallAnswered()}/${overallTotal()}</div><div class="pkl">Questions Answered</div></div>
+      <div class="pr-kpi"><div class="pkv">${CONTROLS.filter(c=>controlPct(c)===100).length}/${CONTROLS.length}</div><div class="pkl">Controls Complete</div></div>
+    </div>`;
+
+  // Control progress bars
+  html += `<h3>Control-by-Control Progress</h3>`;
+  CONTROLS.forEach(ctrl=>{
+    const p = controlPct(ctrl);
+    html += `<div class="pr-ctrl-row">
+      <div class="pr-ctrl-icon">${ctrl.icon}</div>
+      <div class="pr-ctrl-name">${ctrl.label} <span style="font-size:9px;font-weight:400;color:#6b7280">(${ctrl.badge})</span></div>
+      <div class="pr-prog"><div class="pf" style="width:${p}%"></div></div>
+      <div class="pr-prog-pct" style="color:${p===100?'#166534':p>=50?'#854d0e':'#991b1b'}">${p}%</div>
+    </div>`;
+  });
+
+  if(state.reportNotes){ html += `<h3>Information Officer Notes</h3><div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px;font-size:11px;color:#374151;white-space:pre-wrap;margin-top:6px">${state.reportNotes}</div>`; }
+  html += `</div>`;
+
+  if(rt==='executive'||rt==='board'){
+    // Key findings
+    html += `<div class="pr-section"><h2>Key Findings</h2>`;
+    if(noAns.length){
+      html += `<h3>Non-Compliant Responses (${noAns.length} "No" answers)</h3>`;
+      noAns.forEach(q=>{
+        html += `<div class="pr-finding critical"><strong>${q.id} — ${q.ctrlLabel}:</strong> ${q.text.replace(/\n/g,' ').substring(0,120)}</div>`;
+      });
+    }
+    if(gaps.length){
+      html += `<h3>Unanswered Core Requirements (${gaps.length})</h3>`;
+      gaps.slice(0,10).forEach(q=>{
+        html += `<div class="pr-finding high"><strong>${q.id} — ${q.ctrlLabel}:</strong> ${q.text.replace(/\n/g,' ').substring(0,120)}</div>`;
+      });
+    }
+    const passCount = CONTROLS.flatMap(c=>c.questions.filter(q=>q.type==='yesno'&&state.answers[q.id]==='yes')).length;
+    if(passCount){ html += `<div class="pr-finding pass"><strong>✓ ${passCount} requirements confirmed compliant</strong> — positive yes/no responses recorded.</div>`; }
+    html += `</div>`;
+
+    if(rt==='board'){
+      html += `<div class="pr-section page-break"><h2>SA Regulatory Context</h2>
+        <div class="pr-ref-grid">
+          <div class="pr-ref-card"><div class="prc-title">POPIA — Act 4 of 2013</div><div class="prc-body">Section 19 requires responsible parties to secure personal information against compromise. Cyber Essentials controls directly satisfy these technical safeguard requirements. Information Regulator: inforeg@justice.gov.za</div></div>
+          <div class="pr-ref-card"><div class="prc-title">Cybercrimes Act — Act 19 of 2020</div><div class="prc-body">Criminalises cyber attacks, data breaches and system intrusions. Organisations must report cybercrime to SAPS. CE controls reduce susceptibility to the attacks covered by this Act.</div></div>
+          <div class="pr-ref-card"><div class="prc-title">FSCA Guidance Note 3 of 2021</div><div class="prc-body">Requires financial service providers to implement cybersecurity frameworks. CE provides the minimum technical baseline. MFA, patching and access control are explicitly required.</div></div>
+          <div class="pr-ref-card"><div class="prc-title">SARB Prudential Standard CPS 234</div><div class="prc-body">Applies to banks and insurers. Requires information security capabilities commensurate with the size and extent of threats. CE is an accepted baseline for smaller regulated entities.</div></div>
+        </div></div>`;
+    }
+  }
+
+  if(rt==='gap'){
+    CONTROLS.forEach((ctrl,ci)=>{
+      const gapQs = ctrl.questions.filter(q=>!isAnswered(q.id)||state.answers[q.id]==='no');
+      if(!gapQs.length) return;
+      html += `<div class="pr-section ${ci>0?'page-break':''}"><h2>${ctrl.icon} ${ctrl.label} — Gaps (${gapQs.length})</h2>
+        <table class="pr-table">
+          <tr><th>ID</th><th>Question</th><th>Status</th><th>SA Context</th></tr>`;
+      gapQs.forEach(q=>{
+        const ans = state.answers[q.id];
+        const status = !isAnswered(q.id)?'Pending':ans==='no'?'Non-Compliant':'';
+        const badgeClass = status==='Pending'?'pending':'no';
+        html += `<tr><td style="font-family:monospace;font-size:9px">${q.id}</td><td>${q.text.replace(/\n/g,' ').substring(0,100)}</td><td><span class="pr-badge ${badgeClass}">${status}</span></td><td style="font-size:9px;color:#6b7280">${(q.saContext||'').substring(0,80)}</td></tr>`;
+      });
+      html += `</table></div>`;
+    });
+  }
+
+  if(rt==='full'){
+    CONTROLS.forEach((ctrl,ci)=>{
+      html += `<div class="pr-section ${ci>0?'page-break':''}"><h2>${ctrl.icon} ${ctrl.label}</h2>
+        <table class="pr-table">
+          <tr><th>ID</th><th>Question</th><th>Answer / Response</th><th>Status</th></tr>`;
+      ctrl.questions.forEach(q=>{
+        const ans = state.answers[q.id];
+        let ansDisplay = '';
+        if(!ans||ans===''||( Array.isArray(ans)&&!ans.length)){ ansDisplay='<em style="color:#9ca3af">Not answered</em>'; }
+        else if(q.type==='yesno'){ ansDisplay=`<span class="pr-badge ${ans}">${ans.toUpperCase()}</span>`; }
+        else if(Array.isArray(ans)){ ansDisplay=ans.join(', '); }
+        else{ ansDisplay=String(ans).substring(0,120); }
+        const status = !isAnswered(q.id)?'pending':q.type==='yesno'&&ans==='no'?'no':q.type==='yesno'&&ans==='yes'?'yes':q.type==='yesno'&&ans==='na'?'na':'yes';
+        html += `<tr><td style="font-family:monospace;font-size:9px">${q.id}</td><td style="${isAnswered(q.id)?'':'color:#9ca3af'}">${q.text.replace(/\n/g,' ').substring(0,100)}</td><td style="font-size:10px">${ansDisplay}</td><td><span class="pr-badge ${status}">${status==='pending'?'Pending':status.toUpperCase()}</span></td></tr>`;
+      });
+      html += `</table></div>`;
+    });
+  }
+
+  // Footer + NCSC refs
+  html += `<div class="pr-footer">
+    <span>${org} · CE Self-Assessment v3.2 · ${tier}</span>
+    <span>Generated: ${today} · NCSC: ncsc.gov.uk/cyberessentials · Info Regulator SA: justice.gov.za/inforeg</span>
+  </div></div>`;
+
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAV & ROUTING
+// ═══════════════════════════════════════════════════════════════
+function setView(ctrlId, tab){
+  state.view = ctrlId;
+  state.tab = tab;
+  renderSidebar();
+  if(tab==='questions'){
+    const ctrl = getControl(ctrlId);
+    if(ctrl) renderQuestions(ctrl);
+  } else if(tab==='dashboard'){
+    renderDashboard();
+  } else if(tab==='reports'){
+    renderReports();
+  }
+  document.getElementById('content').scrollTop=0;
+}
+
+function setTier(v){ state.tier=v; }
+
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  const btn = document.getElementById('collapseBtn');
+  const isCollapsed = sb.classList.toggle('collapsed');
+  btn.textContent = isCollapsed ? '▶' : '◀';
+  ['sidProgress','sidFoot'].forEach(id=>{
+    document.getElementById(id).style.display = isCollapsed?'none':'';
+  });
+  document.querySelectorAll('.nav-section,.ni-text,.ni-pct,.nav-mini-bar,.name-wrap').forEach(el=>{
+    el.style.display = isCollapsed?'none':'';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAVE / LOAD
+// ═══════════════════════════════════════════════════════════════
+function saveProgress(){
+  const data = {
+    answers: state.answers, flags: state.flags, comments: state.comments,
+    orgName: state.orgName, orgContact: state.orgContact, reportNotes: state.reportNotes,
+    tier: state.tier, savedAt: new Date().toISOString(), version:'CE-SA-v3.2'
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'CE-SA-progress-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+
+function loadProgress(event){
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const d = JSON.parse(ev.target.result);
+      if(d.answers) state.answers=d.answers;
+      if(d.flags) state.flags=d.flags;
+      if(d.comments) state.comments=d.comments;
+      if(d.orgName) state.orgName=d.orgName;
+      if(d.orgContact) state.orgContact=d.orgContact;
+      if(d.reportNotes) state.reportNotes=d.reportNotes;
+      setView(state.view, state.tab);
+    } catch(e){ alert('Could not read file. Please load a valid CE-SA progress file.'); }
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderSidebar();
+  setView('org','questions');
+});
+</script>
+</body>
+</html>

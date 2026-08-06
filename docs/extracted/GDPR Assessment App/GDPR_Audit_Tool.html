@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GDPR &middot; DUAA 2025 &middot; ISO 27701 &mdash; Compliance Audit Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === RESET === */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0f1923;
+  --navy:#16304f;
+  --blue:#1d4ed8;
+  --blue-lt:#3b82f6;
+  --teal:#0d9488;
+  --teal-lt:#14b8a6;
+  --slate:#64748b;
+  --silver:#94a3b8;
+  --g05:#f8fafc;
+  --g10:#f1f5f9;
+  --g20:#e2e8f0;
+  --g30:#cbd5e1;
+  --red:#dc2626;
+  --orange:#ea580c;
+  --amber:#d97706;
+  --green:#16a34a;
+  --lred:#fef2f2;
+  --lamber:#fffbeb;
+  --lgreen:#f0fdf4;
+  --lteal:#f0fdfa;
+  --font-head:'DM Serif Display',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+html,body{height:100%;font-family:var(--font-body);background:var(--g05);color:var(--ink);overflow-x:hidden}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* === TOP BAR === */
+#topbar{
+  background:var(--navy);
+  display:flex;align-items:center;gap:14px;
+  padding:0 28px;height:56px;
+  flex-shrink:0;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 16px rgba(0,0,0,.25);
+}
+#topbar .brand{display:flex;align-items:center;gap:10px;flex:1}
+#topbar .brand-icon{font-size:22px;line-height:1}
+#topbar .brand-text h1{color:#fff;font-family:var(--font-head);font-size:15px;font-weight:400;letter-spacing:.01em;line-height:1.2}
+#topbar .brand-text p{color:#93b4d4;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+.nav-pills{display:flex;gap:4px;align-items:center}
+.npill{border:none;border-radius:6px;padding:6px 13px;font-size:11.5px;font-weight:600;cursor:pointer;color:#fff;font-family:var(--font-body);white-space:nowrap;letter-spacing:.01em;transition:all .15s}
+.npill:hover{filter:brightness(1.18);transform:translateY(-1px)}
+.npill-b{background:var(--blue)}.npill-t{background:var(--teal)}.npill-s{background:rgba(255,255,255,.12);backdrop-filter:blur(8px)}
+.npill-s:hover{background:rgba(255,255,255,.2)}
+
+/* === VIEWS === */
+.view{display:none;flex:1;flex-direction:column}
+.view.active{display:flex}
+
+/* === HOME VIEW === */
+#home{background:var(--g05)}
+
+/* Hero */
+.hero{
+  background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 50%,#0d2640 100%);
+  padding:52px 40px 48px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-inner{max-width:1200px;margin:0 auto;position:relative}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.hero-left{flex:1;min-width:280px}
+.hero-eyebrow{color:#60a5fa;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
+.hero h2{font-family:var(--font-head);font-size:38px;font-weight:400;color:#fff;line-height:1.15;margin-bottom:12px}
+.hero h2 em{font-style:italic;color:#7dd3fc}
+.hero-sub{color:#93b4d4;font-size:13px;line-height:1.6;max-width:500px}
+.score-hero{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  padding:24px 28px;
+  min-width:220px;
+  text-align:center;
+  backdrop-filter:blur(12px);
+}
+.score-hero .sh-label{color:#93b4d4;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.score-hero .sh-num{font-family:var(--font-head);font-size:58px;font-weight:400;line-height:1;color:#fff;transition:color .4s}
+.score-hero .sh-rating{font-size:11.5px;font-weight:600;margin-top:6px;transition:color .4s}
+.score-hero .sh-comp{color:#64748b;font-size:10px;margin-top:4px}
+
+/* Risk strip */
+.risk-strip{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap}
+.rs-card{
+  flex:1;min-width:100px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  padding:12px 16px;
+  text-align:center;
+  transition:background .2s;
+  cursor:default;
+}
+.rs-card .rsc-n{font-family:var(--font-head);font-size:28px;font-weight:400;color:#fff;line-height:1}
+.rs-card .rsc-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.rs-crit .rsc-l{color:#f87171}.rs-high .rsc-l{color:#fb923c}.rs-med .rsc-l{color:#fbbf24}.rs-low .rsc-l{color:#4ade80}
+
+/* Sections grid */
+.sections-wrap{max-width:1200px;margin:0 auto;padding:36px 40px}
+.sw-header{display:flex;align-items:baseline;gap:16px;margin-bottom:24px}
+.sw-header h3{font-family:var(--font-head);font-size:26px;font-weight:400;color:var(--navy)}
+.sw-header .sh-sub{color:var(--slate);font-size:12px}
+.sections-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
+.sec-card{
+  background:#fff;
+  border-radius:14px;
+  border:1.5px solid var(--g20);
+  overflow:hidden;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;flex-direction:column;
+}
+.sec-card:hover{border-color:var(--blue-lt);box-shadow:0 8px 32px rgba(29,78,216,.12);transform:translateY(-2px)}
+.sec-card-accent{height:4px;background:var(--g20);transition:background .3s}
+.sc1 .sec-card-accent{background:linear-gradient(90deg,var(--blue),var(--blue-lt))}
+.sc2 .sec-card-accent{background:linear-gradient(90deg,var(--teal),var(--teal-lt))}
+.sc3 .sec-card-accent{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+.sc4 .sec-card-accent{background:linear-gradient(90deg,var(--red),#f87171)}
+.sc5 .sec-card-accent{background:linear-gradient(90deg,var(--orange),#fb923c)}
+.sc6 .sec-card-accent{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.sec-card-body{padding:20px;flex:1;display:flex;flex-direction:column}
+.scb-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+.scb-num{font-size:11px;font-weight:700;color:var(--silver);text-transform:uppercase;letter-spacing:.08em}
+.scb-badge{font-size:10px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.scb-title{font-family:var(--font-head);font-size:17px;font-weight:400;color:var(--navy);line-height:1.3;margin-bottom:8px}
+.scb-qcount{color:var(--slate);font-size:11px;margin-bottom:14px}
+.scb-bar-wrap{margin-top:auto}
+.scb-bar-bg{background:var(--g10);border-radius:99px;height:6px;overflow:hidden;margin-bottom:6px}
+.scb-bar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.scb-score-row{display:flex;justify-content:space-between;align-items:center}
+.scb-stats{display:flex;gap:8px;font-size:10px;font-weight:600}
+.stat-fc{color:var(--green)}.stat-pc{color:var(--amber)}.stat-nc{color:var(--red)}
+.scb-pct{font-size:13px;font-weight:700}
+.sec-card-footer{padding:12px 20px;background:var(--g05);border-top:1px solid var(--g10);font-size:11px;color:var(--blue);font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.sec-card-footer span{color:var(--silver);font-size:10px}
+
+/* Unanswered callout */
+.unanswered-bar{
+  background:linear-gradient(90deg,#eff6ff,#f0fdf4);
+  border-top:1px solid var(--g20);
+  border-bottom:1px solid var(--g20);
+  padding:14px 40px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.ub-inner{max-width:1200px;margin:0 auto;width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ub-badge{background:var(--navy);color:#fff;border-radius:99px;padding:3px 12px;font-size:11px;font-weight:700;white-space:nowrap}
+.ub-text{color:var(--slate);font-size:12px;flex:1}
+.ub-btn{border:none;border-radius:6px;padding:7px 18px;background:var(--blue);color:#fff;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-body);white-space:nowrap}
+.ub-btn:hover{background:#1e40af}
+
+/* === AUDIT VIEW === */
+#audit{background:var(--g05)}
+.audit-header{
+  background:#fff;
+  border-bottom:1px solid var(--g20);
+  padding:0 28px;
+  display:flex;align-items:center;gap:16px;
+  height:52px;
+  flex-shrink:0;
+}
+.ah-back{border:none;background:transparent;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;gap:5px;padding:6px 0}
+.ah-back:hover{color:var(--navy)}
+.ah-title{font-family:var(--font-head);font-size:17px;color:var(--navy);flex:1}
+.ah-prog{color:var(--slate);font-size:11px}
+.ah-nav{display:flex;gap:6px}
+.anav{border:1px solid var(--g20);background:#fff;color:var(--navy);border-radius:6px;padding:5px 14px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:.15s}
+.anav:hover{border-color:var(--blue);color:var(--blue)}
+.anav-save{background:var(--green);color:#fff;border-color:var(--green)}
+.anav-save:hover{background:#15803d;border-color:#15803d;color:#fff}
+
+.audit-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.audit-body::-webkit-scrollbar{width:7px}
+.audit-body::-webkit-scrollbar-thumb{background:var(--g20);border-radius:99px}
+
+/* Section nav tabs in audit */
+.sec-nav{
+  background:#fff;border-bottom:1px solid var(--g20);
+  padding:0 28px;display:flex;gap:0;overflow-x:auto;flex-shrink:0;
+}
+.sec-nav::-webkit-scrollbar{height:3px}
+.sec-nav::-webkit-scrollbar-thumb{background:var(--g20)}
+.snt{border:none;background:transparent;padding:12px 16px;font-size:11px;font-weight:600;color:var(--slate);cursor:pointer;font-family:var(--font-body);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s}
+.snt:hover{color:var(--navy)}
+.snt.on{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* Question navigator strip */
+.q-strip{background:var(--g10);border-bottom:1px solid var(--g20);padding:10px 28px;display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0}
+.qb{width:28px;height:28px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.15s;background:var(--g20);color:var(--slate)}
+.qb:hover{background:var(--g30);color:var(--navy)}
+.qb.on{background:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(29,78,216,.3)}
+.qb.fc{background:var(--lgreen);color:var(--green);border:1px solid #86efac}
+.qb.pc{background:var(--lamber);color:var(--amber);border:1px solid #fcd34d}
+.qb.nc{background:var(--lred);color:var(--red);border:1px solid #fca5a5}
+.qb.na{background:var(--g10);color:var(--silver);border:1px solid var(--g30)}
+.qb.on.fc,.qb.on.pc,.qb.on.nc,.qb.on.na{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* Question content */
+.q-content{max-width:900px;margin:28px auto;padding:0 28px;width:100%}
+
+.q-card{background:#fff;border-radius:16px;border:1.5px solid var(--g20);overflow:hidden;margin-bottom:16px}
+.qc-stripe{height:4px}
+.qc-head{padding:22px 26px 18px;border-bottom:1px solid var(--g10)}
+.qc-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.qc-sec{font-size:10px;font-weight:700;color:var(--silver);text-transform:uppercase;letter-spacing:.07em}
+.qc-risk{font-size:10px;font-weight:700;padding:2px 9px;border-radius:99px;color:#fff}
+.rc{background:var(--red)}.rh{background:var(--orange)}.rm{background:var(--amber);color:#000}.rl{background:var(--green)}
+.qc-q{font-family:var(--font-head);font-size:20px;font-weight:400;color:var(--navy);line-height:1.4}
+
+.qc-why{background:#eff6ff;padding:13px 26px;border-bottom:1px solid #dbeafe}
+.qc-why .wl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue-lt);margin-bottom:4px}
+.qc-why .wt{font-size:11.5px;color:#1e3a5f;line-height:1.55}
+
+.qc-refs{display:flex;background:var(--g05);border-bottom:1px solid var(--g10)}
+.ref-col{flex:1;padding:11px 18px;border-right:1px solid var(--g10)}
+.ref-col:last-child{border-right:none}
+.ref-col .rl{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.rlg{color:var(--blue)}.rli{color:var(--teal)}
+.ref-col .rv{font-size:10.5px;color:var(--slate);line-height:1.45}
+
+/* Response options */
+.qc-response{padding:20px 26px;border-bottom:1px solid var(--g10)}
+.qc-response h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate);margin-bottom:12px}
+.ropts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ropt{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;cursor:pointer;border:2px solid transparent;user-select:none;transition:all .15s;position:relative}
+.ropt:hover{filter:brightness(.97);transform:translateY(-1px)}
+.ropt.sel{border-color:var(--navy) !important;box-shadow:0 3px 10px rgba(0,0,0,.1)}
+.ropt input[type=radio]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);flex-shrink:0}
+.ropt span{font-size:11.5px;font-weight:600;line-height:1.3}
+.rFC{background:var(--lgreen)}.rFC span{color:#15803d}
+.rPC{background:var(--lamber)}.rPC span{color:#92400e}
+.rNC{background:var(--lred)}.rNC span{color:#991b1b}
+.rNA{background:var(--g10)}.rNA span{color:var(--slate)}
+
+/* Findings + tracking */
+.qc-lower{padding:20px 26px;display:flex;flex-direction:column;gap:16px}
+.ql-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate);margin-bottom:6px}
+textarea{width:100%;padding:10px 13px;border:1.5px solid var(--g20);border-radius:9px;font-size:12px;font-family:var(--font-body);resize:vertical;min-height:80px;background:var(--g05);color:var(--ink);line-height:1.5}
+textarea:focus{outline:none;border-color:var(--blue);background:#fff}
+.track-row{display:flex;gap:12px;flex-wrap:wrap}
+.track-field{flex:1;min-width:150px}
+.track-field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate);margin-bottom:5px}
+.track-field input,.track-field select{width:100%;padding:8px 11px;border:1.5px solid var(--g20);border-radius:8px;font-size:12px;font-family:var(--font-body);background:var(--g05);color:var(--ink)}
+.track-field input:focus,.track-field select:focus{outline:none;border-color:var(--blue);background:#fff}
+
+/* Evidence / Remedy */
+.qc-ev-rem{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--g10)}
+.er-col{padding:16px 26px}
+.er-col:first-child{border-right:1px solid var(--g10)}
+.er-col h4{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate);margin-bottom:6px}
+.er-col p{font-size:11px;color:var(--slate);line-height:1.5}
+.er-col.rem-col p{color:#134e4a;background:var(--lteal);padding:8px 11px;border-radius:7px;font-size:11px}
+
+/* Save bar */
+.save-bar{
+  position:sticky;bottom:0;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(10px);
+  border-top:1px solid var(--g20);
+  padding:10px 28px;
+  display:flex;align-items:center;gap:10px;
+  max-width:900px;margin:0 auto;width:100%;
+}
+.sb-save{background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 24px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);transition:.15s}
+.sb-save:hover{background:#15803d}
+.sb-clear{background:transparent;color:var(--slate);border:1.5px solid var(--g20);border-radius:8px;padding:9px 16px;font-size:12px;cursor:pointer;font-family:var(--font-body)}
+.sb-clear:hover{border-color:var(--g30);color:var(--navy)}
+#smsg{color:var(--green);font-size:12px;font-weight:600;opacity:0;transition:.3s}
+.sb-prog{margin-left:auto;color:var(--silver);font-size:11px}
+
+/* === DASHBOARD VIEW === */
+#dashboard{background:var(--g05)}
+.dash-wrap{max-width:1200px;margin:0 auto;padding:32px 40px}
+.dash-hero{background:linear-gradient(135deg,var(--navy),#1e3a5f);border-radius:20px;padding:32px 36px;display:flex;align-items:center;gap:36px;margin-bottom:28px;flex-wrap:wrap}
+.dh-score{font-family:var(--font-head);font-size:72px;font-weight:400;color:#fff;line-height:1;flex-shrink:0}
+.dh-right{flex:1}
+.dh-right .dhr-rating{font-size:18px;font-weight:600;margin-bottom:6px}
+.dh-right .dhr-detail{color:#93b4d4;font-size:12px;line-height:1.6}
+.dh-risk{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.dhr-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 18px;text-align:center;flex:1;min-width:80px}
+.dhr-card .dc-n{font-family:var(--font-head);font-size:30px;font-weight:400;color:#fff;line-height:1}
+.dhr-card .dc-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.dc-C .dc-l{color:#f87171}.dc-H .dc-l{color:#fb923c}.dc-M .dc-l{color:#fbbf24}.dc-L .dc-l{color:#4ade80}
+.dash-h{font-family:var(--font-head);font-size:22px;font-weight:400;color:var(--navy);margin:28px 0 16px}
+.sec-scores{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+.ss-card{background:#fff;border-radius:12px;border:1.5px solid var(--g20);padding:16px 18px}
+.ss-card .ssc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.ssc-title{font-size:12px;font-weight:600;color:var(--navy)}
+.ssc-pct{font-size:18px;font-weight:700}
+.ssc-bar{background:var(--g10);border-radius:99px;height:7px;overflow:hidden;margin-bottom:8px}
+.ssc-fill{height:100%;border-radius:99px}
+.ssc-stats{display:flex;gap:10px;font-size:10px;font-weight:600}
+.crit-list{background:#fff;border-radius:12px;border:1.5px solid var(--g20);overflow:hidden}
+.cl-header{padding:14px 18px;border-bottom:1px solid var(--g10);font-size:12px;font-weight:600;color:var(--navy)}
+.cl-item{padding:12px 18px;border-bottom:1px solid var(--g10);display:flex;gap:12px;align-items:flex-start}
+.cl-item:last-child{border:none}
+.cl-ref{font-size:10px;font-weight:700;color:var(--red);white-space:nowrap;margin-top:1px}
+.cl-q{font-size:11.5px;color:var(--slate);line-height:1.4}
+.cl-empty{padding:20px 18px;color:var(--silver);font-size:12px;font-style:italic}
+
+/* === MODAL === */
+.ov{position:fixed;inset:0;background:rgba(15,25,35,.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
+.ov.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:30px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h2{font-family:var(--font-head);font-size:22px;font-weight:400;color:var(--navy);margin-bottom:20px}
+.mf{margin-bottom:13px}
+.mf label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate);margin-bottom:5px}
+.mf input{width:100%;padding:9px 12px;border:1.5px solid var(--g20);border-radius:8px;font-size:13px;font-family:var(--font-body);color:var(--ink)}
+.mf input:focus{outline:none;border-color:var(--blue)}
+.mr{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.mc{background:var(--g10);color:var(--slate);border:none;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.mp{background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.sec-card,.ss-card{animation:fadeUp .35s both}
+.sec-card:nth-child(1){animation-delay:.05s}.sec-card:nth-child(2){animation-delay:.1s}
+.sec-card:nth-child(3){animation-delay:.15s}.sec-card:nth-child(4){animation-delay:.2s}
+.sec-card:nth-child(5){animation-delay:.25s}.sec-card:nth-child(6){animation-delay:.3s}
+
+@media(max-width:900px){
+  .sections-grid{grid-template-columns:repeat(2,1fr)}
+  .ropts{grid-template-columns:1fr}
+  .qc-ev-rem{grid-template-columns:1fr}
+  .er-col:first-child{border-right:none;border-bottom:1px solid var(--g10)}
+  .sec-scores{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .sections-grid{grid-template-columns:1fr}
+  .hero h2{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="brand">
+    <span class="brand-icon">&#9878;</span>
+    <div class="brand-text">
+      <h1>Data Protection Compliance Audit</h1>
+      <p>GDPR (EU &amp; UK) &middot; Data (Use &amp; Access) Act 2025 &middot; ISO/IEC 27701:2019</p>
+    </div>
+  </div>
+  <div class="nav-pills">
+    <button class="npill npill-s" onclick="showView('home')">&#8962; Home</button>
+    <button class="npill npill-s" onclick="showView('dashboard')">&#9783; Dashboard</button>
+    <button class="npill npill-b" onclick="doSave()">&#8659; Save</button>
+    <button class="npill npill-s" onclick="doLoad()">&#8679; Load</button>
+    <button class="npill npill-t" onclick="doReport('exec')">Executive Report</button>
+    <button class="npill npill-t" onclick="doReport('full')">Detailed Report</button>
+    <button class="npill npill-s" onclick="openSettings()">&#9881;</button>
+  </div>
+</div>
+
+<!-- HOME VIEW -->
+<div id="home" class="view active">
+
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-top">
+        <div class="hero-left">
+          <div class="hero-eyebrow">Compliance Audit Tool</div>
+          <h2>Data Protection<br><em>Audit &amp; Assessment</em></h2>
+          <p class="hero-sub">A structured audit framework covering 77 controls across 6 domains. Assess compliance, record findings, track remediation, and generate board-ready reports.</p>
+        </div>
+        <div class="score-hero">
+          <div class="sh-label">Overall Score</div>
+          <div class="sh-num" id="h-score">&#8212;</div>
+          <div class="sh-rating" id="h-rating">Not started</div>
+          <div class="sh-comp" id="h-comp">0 of 77 answered</div>
+        </div>
+      </div>
+      <div class="risk-strip">
+        <div class="rs-card rs-crit"><div class="rsc-n" id="rs-C">0</div><div class="rsc-l">Critical</div></div>
+        <div class="rs-card rs-high"><div class="rsc-n" id="rs-H">0</div><div class="rsc-l">High Risk</div></div>
+        <div class="rs-card rs-med"><div class="rsc-n" id="rs-M">0</div><div class="rsc-l">Medium Risk</div></div>
+        <div class="rs-card rs-low"><div class="rsc-n" id="rs-L">0</div><div class="rsc-l">Low Risk</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="unanswered-bar" id="ub">
+    <div class="ub-inner">
+      <span class="ub-badge" id="ub-badge">77 remaining</span>
+      <span class="ub-text" id="ub-text">Begin your audit by selecting a section below. Progress is saved locally.</span>
+      <button class="ub-btn" onclick="continueAudit()">Continue Audit &rarr;</button>
+    </div>
+  </div>
+
+  <div class="sections-wrap">
+    <div class="sw-header">
+      <h3>Audit Sections</h3>
+      <span class="sh-sub">Click any section to begin or continue assessment</span>
+    </div>
+    <div class="sections-grid" id="sec-grid"></div>
+  </div>
+</div>
+
+<!-- AUDIT VIEW -->
+<div id="audit" class="view">
+  <div class="audit-header">
+    <button class="ah-back" onclick="showView('home')">&#8592; Back to Overview</button>
+    <div class="ah-title" id="ah-title">Section</div>
+    <span class="ah-prog" id="ah-prog"></span>
+    <div class="ah-nav">
+      <button class="anav" onclick="goQ(-1)">&#8592; Prev</button>
+      <button class="anav" onclick="goQ(1)">Next &#8594;</button>
+      <button class="anav anav-save" onclick="saveAndNext()">&#10003; Save &amp; Next</button>
+    </div>
+  </div>
+
+  <div class="sec-nav" id="sec-nav"></div>
+  <div class="q-strip" id="q-strip"></div>
+
+  <div class="audit-body">
+    <div class="q-content">
+
+      <div class="q-card" id="q-card">
+        <div class="qc-stripe" id="qc-stripe"></div>
+        <div class="qc-head">
+          <div class="qc-meta">
+            <span class="qc-sec" id="qc-sec"></span>
+            <span class="qc-risk" id="qc-risk"></span>
+          </div>
+          <div class="qc-q" id="qc-q"></div>
+        </div>
+        <div class="qc-why" id="qc-why">
+          <div class="wl">Why This Matters</div>
+          <div class="wt" id="qc-wt"></div>
+        </div>
+        <div class="qc-refs">
+          <div class="ref-col"><div class="rl rlg">GDPR / DUAA 2025</div><div class="rv" id="qc-gdpr"></div></div>
+          <div class="ref-col"><div class="rl rli">ISO 27701:2019</div><div class="rv" id="qc-iso"></div></div>
+        </div>
+        <div class="qc-response">
+          <h4>Compliance Response</h4>
+          <div class="ropts" id="ropts"></div>
+        </div>
+        <div class="qc-lower">
+          <div>
+            <div class="ql-label">Auditor Findings &amp; Notes</div>
+            <textarea id="tfind" placeholder="Document your findings, evidence reviewed, and observations..." rows="4"></textarea>
+          </div>
+          <div>
+            <div class="ql-label">Tracking</div>
+            <div class="track-row">
+              <div class="track-field"><label>Responsible Party</label><input type="text" id="town" placeholder="Name or team"></div>
+              <div class="track-field"><label>Target Date</label><input type="date" id="tdue"></div>
+              <div class="track-field"><label>Status</label>
+                <select id="tstat"><option>Not Started</option><option>In Progress</option><option>Complete</option><option>N/A</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="qc-ev-rem">
+          <div class="er-col"><h4>Evidence Required</h4><p id="qc-ev"></p></div>
+          <div class="er-col rem-col"><h4>Remediation Steps</h4><p id="qc-rem"></p></div>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <button class="sb-save" onclick="saveAndNext()">&#10003; Save &amp; Next</button>
+        <button class="sb-clear" onclick="clearQ()">Clear</button>
+        <span id="smsg">&#10003; Saved</span>
+        <span class="sb-prog" id="sb-prog"></span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div id="dashboard" class="view">
+  <div class="dash-wrap">
+    <div class="dash-hero">
+      <div class="dh-score" id="d-score" style="color:#fff">&#8212;%</div>
+      <div class="dh-right">
+        <div class="dhr-rating" id="d-rating" style="color:#93b4d4">Not started</div>
+        <div class="dhr-detail" id="d-detail"></div>
+        <div class="dh-risk">
+          <div class="dhr-card dc-C"><div class="dc-n" id="dc-C">0</div><div class="dc-l">Critical</div></div>
+          <div class="dhr-card dc-H"><div class="dc-n" id="dc-H">0</div><div class="dc-l">High</div></div>
+          <div class="dhr-card dc-M"><div class="dc-n" id="dc-M">0</div><div class="dc-l">Medium</div></div>
+          <div class="dhr-card dc-L"><div class="dc-n" id="dc-L">0</div><div class="dc-l">Low</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dash-h">Section Scores</div>
+    <div class="sec-scores" id="d-sec-scores"></div>
+    <div class="dash-h">Critical Findings</div>
+    <div class="crit-list" id="d-crit-list"></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="ov" id="smod" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h2>Audit Settings</h2>
+    <div class="mf"><label>Organisation Name</label><input id="so" placeholder="Enter organisation name"></div>
+    <div class="mf"><label>Lead Auditor</label><input id="sa" placeholder="Auditor name"></div>
+    <div class="mf"><label>Audit Date</label><input id="sd" placeholder="e.g. March 2026"></div>
+    <div class="mf"><label>Audit Reference</label><input id="sr" placeholder="e.g. AUDIT-2026-001"></div>
+    <div class="mr">
+      <button class="mc" onclick="closeSettings()">Cancel</button>
+      <button class="mp" onclick="applySettings()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === DATA ===
+var SECTIONS = JSON.parse('[{"id":1,"title":"Procedural Issues & Awareness","questions":[{"id":"S1Q1","section":1,"subsection":"","number":1,"question":"Has the organisation formally adopted a Data Protection / Privacy Management System (DPMS/PIMS) with board-level ownership, a documented scope, and accountability assigned to a named senior leader?","why":"GDPR Art. 5(2) accountability demands that the controller can demonstrate compliance. ISO 27701 cl.5.1 requires top management to demonstrate leadership and commitment to the PIMS. The DUAA 2025 reinforces this with senior responsible officer (SRO) obligations for data intermediaries.","gdpr_ref":"GDPR Art. 5(2), 24; DUAA 2025 s.84\\u201386 (SRO obligations); ICO Accountability Framework","iso_ref":"ISO 27701 cl.5.1 (Leadership & commitment), cl.5.2.1 (Context of organisation), cl.5.4 (Leadership)","risk":"Critical","evidence":"Board-approved DPMS/PIMS scope document; governance charter naming SRO; board resolution adopting the PIMS; management review schedule; ISO 27701 gap assessment or certification.","remediation":"Define and document the PIMS scope per ISO 27701 cl.5.2. Identify the SRO and obtain board endorsement. Map the PIMS to GDPR Art. 5 principles and DUAA 2025 obligations. Schedule annual management reviews (ISO 27701 cl.9.3)."},{"id":"S1Q2","section":1,"subsection":"","number":2,"question":"Has a Data Protection Officer (DPO) been appointed where required under GDPR Article 37, with documented responsibilities, adequate resources, and contact details published to the supervisory authority and data subjects?","why":"GDPR Arts. 37\\u201339 mandate a DPO for specific processing scenarios. ISO 27701 cl.5.3.2 requires roles, responsibilities, and authorities to be assigned and communicated. A conflicted or under-resourced DPO provides no real protection and is itself an enforcement risk.","gdpr_ref":"GDPR Art. 37\\u201339, 37(7); ICO DPO guidance","iso_ref":"ISO 27701 cl.5.3.2 (Organisational roles, responsibilities & authorities)","risk":"Critical","evidence":"DPO appointment letter confirming independence; DPO contact details on website and privacy notices; notification to ICO/supervisory authority; DPO job description with allocated resources; evidence of no conflicting management role.","remediation":"Conduct mandatory appointment assessment. Appoint a DPO with sufficient expertise and resources. Publish contact details and notify the ICO. Review annually. Ensure DPO has direct access to the board."},{"id":"S1Q3","section":1,"subsection":"","number":3,"question":"Has the organisation conducted and documented a formal context-of-organisation assessment identifying all internal and external stakeholders with privacy interests, including regulators, processors, joint controllers, and DUAA 2025 data intermediaries?","why":"GDPR Art. 24 requires controls calibrated to the \'nature, scope, context and purposes\' of processing. ISO 27701 cl.5.2.1\\u20135.2.2 require understanding the organisation\'s context and the needs and expectations of interested parties. DUAA 2025 introduces new stakeholder categories (data intermediaries, data trustees, access bodies).","gdpr_ref":"GDPR Art. 24; DUAA 2025 s.66\\u201383","iso_ref":"ISO 27701 cl.5.2.1 (Understanding the organisation), cl.5.2.2 (Needs & expectations of interested parties)","risk":"High","evidence":"Context assessment / stakeholder mapping document; risk register referencing privacy risks by stakeholder group; DUAA 2025 role assessment; update log (minimum annual).","remediation":"Conduct a stakeholder and context analysis per ISO 27701 cl.5.2. Identify DUAA 2025 roles. Update governance structure accordingly. Review at least annually and following material changes."},{"id":"S1Q4","section":1,"subsection":"","number":4,"question":"Is data protection compliance a standing agenda item at board and senior management meetings, with documented decisions, corrective actions, and formal annual management review outputs?","why":"GDPR Art. 5(2) accountability requires demonstrable senior oversight. ISO 27701 cl.9.3 mandates a formal annual management review of the PIMS covering audit results, performance metrics, and improvement opportunities.","gdpr_ref":"GDPR Art. 5(2), 24; DUAA 2025 s.84","iso_ref":"ISO 27701 cl.5.1 (Leadership & commitment), cl.9.3 (Management review)","risk":"High","evidence":"Board/EXCO meeting agendas and minutes showing standing DP item; annual ISO 27701 management review outputs with corrective actions tracked; DPO quarterly board reports.","remediation":"Add DP as a mandatory standing board item. Require DPO quarterly updates. Minute all decisions. Conduct a formal annual PIMS management review per ISO 27701 cl.9.3. Produce an annual DP report for the board."},{"id":"S1Q5","section":1,"subsection":"","number":5,"question":"Does the organisation maintain a current, board-approved Data Protection Policy covering all GDPR Art. 5 principles, DUAA 2025 obligations, and ISO 27701 privacy controls, with version control and an annual review cycle?","why":"A documented, current policy is the foundation of GDPR Art. 5(2) accountability. ISO 27701 cl.5.2 and cl.6.2 require PII-related objectives to be established and documented. The DUAA 2025 imposes additional obligations on intermediaries.","gdpr_ref":"GDPR Art. 5, 24; DUAA 2025 Parts 1\\u20133","iso_ref":"ISO 27701 cl.5.2 (PIMS scope & objectives), cl.6.2 (PII-related objectives)","risk":"Critical","evidence":"Board-approved Data Protection Policy with GDPR Art. 5 mapping; ISO 27701 control cross-reference; DUAA 2025 obligations mapping; version history; annual review log.","remediation":"Update the policy to address all GDPR Art. 5 principles, DUAA 2025 obligations, and ISO 27701 privacy controls. Version-control, board-approve, and review annually."},{"id":"S1Q6","section":1,"subsection":"","number":6,"question":"Does the organisation maintain a Record of Processing Activities (RoPA) per GDPR Article 30 covering all processing operations (controller and processor activities), and is it kept current with ISO 27701 data inventory requirements?","why":"GDPR Art. 30 mandates the RoPA. ISO 27701 cl.7.2.1 (controller) and cl.8.2.1 (processor) require a PII inventory and data flow mapping as the foundation for all other privacy controls. Without a current RoPA the organisation cannot demonstrate compliance with any principle.","gdpr_ref":"GDPR Art. 30; DUAA 2025 s.1\\u201325","iso_ref":"ISO 27701 cl.7.2.1 (PII inventory & mapping \\u2013 controller), cl.8.2.1 (PII inventory \\u2013 processor)","risk":"Critical","evidence":"RoPA with all Art. 30 mandatory fields; ISO 27701 data inventory including data categories, flows, owners, retention periods, recipients, security measures; last review date.","remediation":"Build/update RoPA with all Art. 30 fields and ISO 27701 inventory requirements. Assign data owners. Review and update at least annually and on any new processing activity."},{"id":"S1Q7","section":1,"subsection":"","number":7,"question":"Are all data protection policies and procedures subject to a documented review cycle (minimum annual) with version control, management sign-off, and change history retained?","why":"GDPR Art. 5(2) requires policies to remain current. ISO 27701 cl.7.5 (Documented information) and cl.10.2 (Continual improvement) require systematic management of documented information. Outdated policies undermine demonstrable compliance.","gdpr_ref":"GDPR Art. 5(2), 24","iso_ref":"ISO 27701 cl.7.5 (Documented information), cl.10.2 (Continual improvement)","risk":"High","evidence":"Policy register with version history, review dates, and approvers; document management system; evidence of ad-hoc reviews triggered by regulatory changes (DUAA 2025 commencement) or incidents.","remediation":"Establish a formal policy review calendar. Require management sign-off on each version. Retain all previous versions. Trigger ad-hoc reviews on regulatory change or material processing change."},{"id":"S1Q8","section":1,"subsection":"","number":8,"question":"Does the organisation issue lawful, transparent, and complete privacy notices to data subjects at the point of collection, covering all Art. 13/14 information and ISO 27701 transparency requirements?","why":"GDPR Arts. 13\\u201314 mandate privacy notice content. ISO 27701 cl.7.3.2 (Providing privacy notices) and cl.7.3 (Obligations to PII principals) operationalise this at a system and process level. The DUAA 2025 requires additional disclosures for recognised legitimate interests and intermediary roles.","gdpr_ref":"GDPR Art. 5(1)(a), 12\\u201314; DUAA 2025 s.68","iso_ref":"ISO 27701 cl.7.3 (Obligations to PII principals), cl.7.3.2 (Providing privacy notices)","risk":"Critical","evidence":"Privacy notices on all data collection touchpoints; Art. 13/14 content checklist; DUAA 2025 disclosure checklist; ISO 27701 cl.7.3.2 compliance review; layered notice evidence.","remediation":"Audit all collection touchpoints. Ensure notices cover all Art. 13/14 elements and ISO 27701 cl.7.3.2 requirements. Update for DUAA 2025 recognised legitimate interests where applicable. Review annually."},{"id":"S1Q9","section":1,"subsection":"","number":9,"question":"Does the organisation conduct DPIAs for all high-risk processing activities, are they embedded as a mandatory project governance gate, and do they include ISO 27701 PII risk assessment methodology?","why":"GDPR Art. 35 mandates DPIAs. ISO 27701 cl.6.1.2 requires a structured PII-related risk assessment process and cl.7.2.5 (Privacy by Design) requires risk assessment at design stage. The DUAA 2025 introduces new processing activities that may themselves trigger DPIA obligations.","gdpr_ref":"GDPR Art. 35\\u201336; DUAA 2025 (new processing activities); EDPB DPIA guidance","iso_ref":"ISO 27701 cl.6.1.2 (PII-related risk assessment), cl.7.2.5 (Privacy by design & default)","risk":"Critical","evidence":"DPIA policy; DPIA screening tool; completed DPIAs for current high-risk processing; DPIA register; DPO consultation records; project governance gate records confirming DPIA sign-off before go-live.","remediation":"Embed DPIA as a mandatory project governance gate using a risk-tiered screening tool aligned to ISO 27701 cl.6.1.2. Consult DPO on every DPIA. Maintain a DPIA register. Consult ICO/SA for residual high-risk processing."},{"id":"S1Q10","section":1,"subsection":"","number":10,"question":"Is Privacy by Design and by Default implemented per GDPR Art. 25 and ISO 27701, ensuring privacy controls are built into systems from the outset and only minimum data is processed by default?","why":"GDPR Art. 25 and ISO 27701 cl.7.2.5 both require data minimisation and privacy-protective defaults to be embedded at the design stage \\u2014 not retrofitted. The DUAA 2025 reinforces minimisation for data access bodies.","gdpr_ref":"GDPR Art. 25; DUAA 2025 s.3\\u20138; EDPB Guidelines 4/2019","iso_ref":"ISO 27701 cl.7.2.5 (Privacy by design & default)","risk":"High","evidence":"Privacy by Design checklist used in IT/product development; system design specs showing privacy controls; data minimisation justification log; default settings review; post-implementation privacy review records.","remediation":"Implement a Privacy by Design checklist per ISO 27701 cl.7.2.5 in all IT/product governance. Require DPO review of new designs. Enforce opt-in defaults. Conduct post-implementation privacy reviews."},{"id":"S1Q11","section":1,"subsection":"","number":11,"question":"Is there a documented, role-based data protection training programme covering GDPR, DUAA 2025, and ISO 27701 obligations, with completion tracked and refresher training at least annually?","why":"GDPR Art. 39(1)(b) and ISO 27701 cl.7.4 (Awareness) and cl.6.3 (PII handling training) require a structured, evidenced awareness programme. The DUAA 2025 introduces new obligations for staff handling intermediary and smart data roles.","gdpr_ref":"GDPR Art. 39(1)(b), 5(2); DUAA 2025","iso_ref":"ISO 27701 cl.7.4 (Awareness), cl.6.3 (Awareness & training for PII handling)","risk":"Critical","evidence":"Training curriculum covering GDPR, DUAA 2025, ISO 27701; LMS completion records by employee; role-differentiated modules; annual refresher schedule; non-completion escalation records.","remediation":"Develop role-differentiated training modules (general staff, IT, legal, marketing, HR, intermediary roles). Mandate completion within 30 days of onboarding and annually. Include DUAA 2025 smart data obligations. Track via LMS. Escalate non-completions."},{"id":"S1Q12","section":1,"subsection":"","number":12,"question":"Are staff who handle personal data required to sign a confidentiality agreement that includes data protection obligations and post-employment restrictions?","why":"GDPR Art. 32(4) requires that persons with access to personal data must not process it without instruction. ISO 27701 cl.6.6 (Confidentiality or non-disclosure agreements) requires formal confidentiality commitments from personnel. Post-employment restrictions protect against ongoing risk.","gdpr_ref":"GDPR Art. 32(4), 28(3)(b)","iso_ref":"ISO 27701 cl.6.6 (Confidentiality or NDA agreements)","risk":"High","evidence":"Signed confidentiality agreements referencing personal data and GDPR; employment contracts with post-termination data protection clauses; offboarding checklist confirming return/destruction of data assets.","remediation":"Include a data protection and post-termination confidentiality clause in all employment contracts. Require confidentiality agreements at onboarding. Confirm during offboarding that data assets are returned or destroyed."},{"id":"S1Q13","section":1,"subsection":"","number":13,"question":"Are staff aware of how to recognise and immediately report a personal data breach to the DPO, with the 72-hour notification obligation clearly understood?","why":"The GDPR Art. 33 72-hour clock starts when any staff member becomes aware of a breach \\u2014 not when it reaches the DPO. ISO 27701 cl.6.13.1 requires documented responsibilities and procedures for PII breach management at every organisational level. The DUAA 2025 adds notification obligations for data intermediaries.","gdpr_ref":"GDPR Art. 33\\u201334; DUAA 2025 s.84; EDPB Guidelines 01/2021","iso_ref":"ISO 27701 cl.6.13.1 (Responsibilities & procedures for PII breach management)","risk":"Critical","evidence":"Breach reporting procedure; staff training records on breach recognition; breach reporting channel details; annual tabletop exercise reports; internal breach register.","remediation":"Publish a breach reporting procedure in the staff handbook and intranet. Include breach recognition and 72-hour obligation in all GDPR/ISO 27701 training. Operate a dedicated breach reporting channel. Conduct annual tabletop exercises."}]},{"id":2,"title":"Lawful Processing of Personal Data","questions":[{"id":"S2Q1","section":2,"subsection":"","number":1,"question":"Has the organisation identified, documented, and mapped a specific GDPR Art. 6 lawful basis (and Art. 9 condition for special category data) for each processing activity in the RoPA, including DUAA 2025 recognised legitimate interests?","why":"Processing without a lawful basis is unlawful. ISO 27701 cl.7.2.2 (Determining lawful basis) and cl.7.2.3 require the lawful basis to be documented and linked to the purpose for each processing activity. The DUAA 2025 s.57\\u201365 introduce pre-approved recognised legitimate interests that must still be documented.","gdpr_ref":"GDPR Art. 6, 9; DUAA 2025 s.57\\u201365 (recognised legitimate interests)","iso_ref":"ISO 27701 cl.7.2.2 (Determining lawful basis), cl.7.2.3 (Determining when & how consent is obtained)","risk":"Critical","evidence":"RoPA with lawful basis column per processing activity; LIAs for Art. 6(1)(f) reliance; DUAA 2025 recognised LI assessments; Art. 9 conditions documented; consent records; contractual necessity justification.","remediation":"Review RoPA and document a lawful basis for every activity. Conduct LIAs for legitimate interest reliance. Assess applicability of DUAA 2025 recognised LI. Document Art. 9 conditions for special category data. Reflect basis in privacy notices."},{"id":"S2Q2","section":2,"subsection":"","number":2,"question":"Where consent is the lawful basis, is it freely given, specific, informed, unambiguous, captured per data subject and purpose, recorded with timestamp and wording version, and free of pre-ticked boxes or bundled consent?","why":"GDPR Art. 4(11) and Art. 7 set strict consent conditions. ISO 27701 cl.7.2.3 and cl.7.3.4 operationalise consent capture and recording at a technical and process level. Invalid consent renders processing unlawful.","gdpr_ref":"GDPR Art. 4(11), 7; Recital 32, 43; EDPB Guidelines 05/2020","iso_ref":"ISO 27701 cl.7.2.3 (When & how consent is obtained), cl.7.3.4 (Providing mechanisms to obtain consent)","risk":"Critical","evidence":"Consent management system records: timestamp, wording version, channel, purpose per data subject; opt-in forms with no pre-ticked boxes; consent withdrawal records; quarterly consent audit trail.","remediation":"Implement a consent management platform capturing consent per data subject, purpose, channel, with timestamp and wording version. Audit all mechanisms. Remove pre-ticked boxes and bundled consent. Conduct quarterly audits."},{"id":"S2Q3","section":2,"subsection":"","number":3,"question":"Is there a documented process for withdrawing consent that is as easy as giving it, with withdrawal actioned within 5 business days and processing ceasing immediately where consent was the sole basis?","why":"GDPR Art. 7(3) requires withdrawal to be as easy as consent. ISO 27701 cl.7.3.5 requires a mechanism to modify or withdraw consent. Failure to action withdrawals is a continuing breach. Suppression must be immediate.","gdpr_ref":"GDPR Art. 7(3); EDPB Guidelines 05/2020","iso_ref":"ISO 27701 cl.7.3.5 (Providing mechanism to modify or withdraw consent)","risk":"High","evidence":"Consent withdrawal procedure; withdrawal request log with action dates; suppression list updates; evidence of processing cessation; confirmation to data subject.","remediation":"Implement a simple withdrawal mechanism (one-click, email, telephone). Define 5 business day SLA. Cease processing immediately on withdrawal. Confirm cessation to the data subject in writing."},{"id":"S2Q4","section":2,"subsection":"","number":4,"question":"Has the organisation identified all special category (Art. 9) and criminal conviction (Art. 10) data and documented a specific condition and safeguard for each processing activity, with heightened ISO 27701 security controls applied?","why":"Processing special category data without both an Art. 6 and Art. 9 condition is unlawful. ISO 27701 cl.7.2.8 requires additional safeguards for sensitive PII. These are the highest-risk data categories under GDPR and attract enhanced regulatory scrutiny.","gdpr_ref":"GDPR Art. 9\\u201310; Schedule 1 UK GDPR; EDPB Guidelines 08/2022","iso_ref":"ISO 27701 cl.7.2.8 (Processing of sensitive PII)","risk":"Critical","evidence":"Special category data register; Art. 9 condition and safeguard documented per activity; Sch. 1 UK GDPR conditions; DPIA for high-risk special category processing; enhanced access controls; encryption evidence.","remediation":"Identify all special category and criminal conviction data. Document Art. 9 conditions and safeguards. Apply ISO 27701 cl.7.2.8 controls: explicit consent or statutory authority, restricted access, encryption, enhanced retention. Conduct DPIAs."},{"id":"S2Q5","section":2,"subsection":"","number":5,"question":"Are processing purposes defined with sufficient specificity, documented in the RoPA per ISO 27701 cl.7.2.1, and consistently communicated to data subjects in privacy notices?","why":"GDPR Art. 5(1)(b) requires purposes to be \'specified, explicit and legitimate\'. ISO 27701 cl.7.2.1 (RoPA) and cl.7.3.2 (privacy notices) require purposes to be documented and communicated. Vague or bundled purposes breach the purpose limitation principle.","gdpr_ref":"GDPR Art. 5(1)(b), 13\\u201314; DUAA 2025 s.3","iso_ref":"ISO 27701 cl.7.2.1 (RoPA & data inventory), cl.7.3.2 (Providing privacy notices)","risk":"Critical","evidence":"RoPA with granular purpose descriptions; corresponding privacy notices with consistent purpose language; internal purpose definition policy; evidence of no generic or open-ended purpose statements.","remediation":"Ensure all purposes are stated at a granular, specific level in the RoPA and privacy notices. Avoid bundled statements. Update purposes on any processing change."},{"id":"S2Q6","section":2,"subsection":"","number":6,"question":"Is personal data used strictly for the purpose for which it was collected, and is any further processing assessed for compatibility per GDPR Art. 6(4) and ISO 27701 cl.7.2.6?","why":"GDPR Art. 5(1)(b) and Art. 6(4) restrict further processing. ISO 27701 cl.7.2.6 (PII processing for specified purpose only) requires technical and organisational controls to enforce purpose limitation. Incompatible further processing is a direct breach.","gdpr_ref":"GDPR Art. 5(1)(b), 6(4); DUAA 2025 s.3\\u20138","iso_ref":"ISO 27701 cl.7.2.6 (PII processing for specified purpose only)","risk":"High","evidence":"Further processing compatibility assessment records; DPO approval for secondary use; updated privacy notices; audit logs confirming purpose adherence.","remediation":"Implement a further processing compatibility test. Require DPO approval before secondary use. Where incompatible, obtain a new lawful basis and update the privacy notice."},{"id":"S2Q7","section":2,"subsection":"","number":7,"question":"Does the organisation have a documented procedure for third-party and law enforcement disclosure requests, with a disclosure log maintained and DPO/legal review required before any disclosure?","why":"GDPR requires a legal basis for every disclosure. ISO 27701 cl.7.2.7 (Disclosures to third parties) requires documented procedures and records for all disclosures. Unreviewed disclosures breach accountability. DUAA 2025 introduces new data sharing obligations.","gdpr_ref":"GDPR Art. 5(2), 6; DUAA 2025 s.12\\u201325","iso_ref":"ISO 27701 cl.7.2.7 (Disclosures to third parties)","risk":"High","evidence":"Third-party disclosure procedure; disclosure log (date, requester, legal basis, data disclosed, DPO approval); legal hold register; law enforcement request log.","remediation":"Develop a Third-Party Disclosure Procedure requiring DPO or legal review before any disclosure. Maintain a disclosure log. Require law enforcement requests to cite statutory authority. Review disclosures monthly."},{"id":"S2Q8","section":2,"subsection":"","number":8,"question":"Are data collection forms, systems, and processes reviewed regularly to ensure only the minimum personal data necessary is collected, per GDPR Art. 5(1)(c) and ISO 27701 cl.7.2.5 Privacy by Design?","why":"GDPR Art. 5(1)(c) requires data to be \'adequate, relevant and limited to what is necessary\'. ISO 27701 cl.7.2.5 (Privacy by Design) operationalises minimisation at system and process level. Excessive collection is a common enforcement focus.","gdpr_ref":"GDPR Art. 5(1)(c); DUAA 2025 s.3","iso_ref":"ISO 27701 cl.7.2.5 (Privacy by design \\u2013 data minimisation)","risk":"High","evidence":"Form/field justification log; data minimisation review records; DPIA outputs referencing minimisation; records of fields removed following review.","remediation":"Conduct annual minimisation audits. Require field-level justification for each data item. Remove unjustified fields. Include minimisation assessment in all DPIAs."},{"id":"S2Q9","section":2,"subsection":"","number":9,"question":"Does the organisation have documented procedures to ensure the accuracy and currency of personal data, including an ISO 27701 cl.7.4.3 process for handling inaccurate or incomplete PII?","why":"GDPR Art. 5(1)(d) and Art. 16 (right to rectification) require data to be accurate and kept up to date. ISO 27701 cl.7.4.3 specifically addresses handling inaccurate or incomplete PII. Inaccurate data causes harm and generates liability, particularly for automated decision-making.","gdpr_ref":"GDPR Art. 5(1)(d), 16; DUAA 2025 s.46\\u201355","iso_ref":"ISO 27701 cl.7.4.3 (Inaccurate or incomplete PII)","risk":"Medium","evidence":"Data accuracy procedure; annual data refresh communications; CRM/system data quality reports; correction request log showing corrections within one month; notifications to third-party recipients.","remediation":"Implement annual data quality reviews. Send verification communications to data subjects. Maintain a correction request log and resolve within one month. Notify third parties of corrections."},{"id":"S2Q10","section":2,"subsection":"","number":10,"question":"Has the organisation identified all transfers of personal data to third countries, including cloud providers and SaaS platforms, and documented each in the RoPA and international transfer register per ISO 27701 cl.7.5.1?","why":"GDPR Chapter V (Arts. 44\\u201349) restricts transfers to third countries. ISO 27701 cl.7.5.1 (Basis for PII transfer between jurisdictions) requires documented transfer mechanisms for every transfer. Unidentified transfers cannot be made compliant.","gdpr_ref":"GDPR Art. 44\\u201349; DUAA 2025; UK GDPR Chapter V","iso_ref":"ISO 27701 cl.7.5.1 (Basis for PII transfer between jurisdictions)","risk":"High","evidence":"International transfer register (recipient country, data categories, transfer mechanism, adequacy status); cloud provider list with data location; data flow diagrams; RoPA transfer entries.","remediation":"Conduct a transfer mapping exercise. Document all transfers in the RoPA and transfer register. Update whenever a new vendor or group entity is onboarded."},{"id":"S2Q11","section":2,"subsection":"","number":11,"question":"For each international transfer, has a lawful transfer mechanism been implemented and documented (adequacy, SCCs/IDTA, BCRs, derogations), accompanied by a Transfer Impact Assessment where required?","why":"GDPR Art. 44 prohibits transfers without a valid mechanism. Post-Schrems II, SCC reliance requires a TIA. The UK uses its IDTA/Addendum. ISO 27701 cl.7.5.1\\u20137.5.2 require documentation of the countries and organisations to which PII may be transferred and the applicable safeguards.","gdpr_ref":"GDPR Art. 44\\u201346, 49; UK GDPR Chapter V; ICO IDTA; SCCs (2021/914); EDPB Recommendations 01/2020","iso_ref":"ISO 27701 cl.7.5.1, cl.7.5.2 (Countries & organisations to which PII may be transferred)","risk":"Critical","evidence":"TIAs per destination country; signed EU SCCs or UK IDTA/Addendum with each recipient; adequacy decision reliance documented; BCR approval (if applicable); Art. 49 derogation assessments.","remediation":"Determine adequacy status for each destination. Where no adequacy exists, implement EU SCCs or UK IDTA/Addendum with a TIA. Review TIAs annually or on material change."},{"id":"S2Q12","section":2,"subsection":"","number":12,"question":"Does the organisation maintain a processor register, and is a GDPR Art. 28 / ISO 27701 compliant written DPA in place with each processor before processing commences?","why":"GDPR Art. 28 mandates a written processor contract. ISO 27701 cl.7.2.7, cl.6.12 (Supplier relationships), and cl.8.5 (Operator/processor obligations) require documented supplier governance. Processing by a processor without a compliant contract creates direct controller liability.","gdpr_ref":"GDPR Art. 28; DUAA 2025 s.66\\u201383; EDPB Guidelines 07/2020","iso_ref":"ISO 27701 cl.7.2.7 (Disclosures to third parties), cl.6.12 (Supplier relationships), cl.8.5 (Processor obligations)","risk":"Critical","evidence":"Processor register; signed DPAs with all Art. 28(3) mandatory terms; sub-processor authorisation records; DUAA 2025 intermediary agreements; processor onboarding checklist.","remediation":"Identify all processors. Execute GDPR Art. 28 / ISO 27701-compliant DPAs before any data is shared. Obtain written authorisation for sub-processors. Review DPAs annually."},{"id":"S2Q13","section":2,"subsection":"","number":13,"question":"Are processors assessed for GDPR and ISO 27701 compliance before engagement, and monitored on an ongoing basis, with audit rights exercised for high-risk processors?","why":"GDPR Art. 28(1) requires \'sufficient guarantees\'. Art. 28(3)(h) mandates audit rights. ISO 27701 cl.6.12.1 (Supplier relationships \\u2013 information security in supplier relationships) requires pre-engagement assessment and ongoing monitoring. Signing a DPA alone is insufficient.","gdpr_ref":"GDPR Art. 28(1), 28(3)(h); DUAA 2025 s.84","iso_ref":"ISO 27701 cl.6.12.1 (Supplier relationships \\u2013 information security)","risk":"High","evidence":"Pre-engagement processor assessment questionnaire; ISO 27001/27701 or SOC 2 certification evidence; annual processor compliance review records; audit rights exercised for high-risk processors; corrective action tracking.","remediation":"Implement risk-based processor assessment before engagement. Require ISO 27001/27701 or SOC 2 for high-risk processors. Conduct annual reviews. Exercise audit rights at least every two years for high-risk processors."}]},{"id":3,"title":"Record Retention","questions":[{"id":"S3Q1","section":3,"subsection":"","number":1,"question":"Has the organisation conducted a comprehensive data mapping exercise covering all personal data across structured systems, unstructured environments, and physical files, resulting in an up-to-date ISO 27701 PII inventory?","why":"GDPR Art. 30 requires a RoPA, which depends on knowing where personal data is held. ISO 27701 cl.7.2.1 (controller) and cl.8.2.1 (processor) require a PII inventory and data flow mapping as the foundation of the PIMS. Without mapping, the RoPA is incomplete and breach responses are hampered.","gdpr_ref":"GDPR Art. 30; DUAA 2025 s.1\\u201325","iso_ref":"ISO 27701 cl.7.2.1 (PII inventory & mapping \\u2013 controller), cl.8.2.1 (PII inventory \\u2013 processor)","risk":"Critical","evidence":"Data mapping report; RoPA listing systems, data categories, locations, owners, retention periods, data flows; data flow diagrams; asset discovery tool outputs; annual review log.","remediation":"Conduct a data mapping exercise per ISO 27701 cl.7.2.1. Document all personal data assets in the RoPA. Assign data owners. Review and update annually and on any new system or processing activity."},{"id":"S3Q2","section":3,"subsection":"","number":2,"question":"Does the organisation maintain an information asset register classifying personal data by sensitivity (general, special category, criminal, children\'s) and mapping it to retention periods, per ISO 27701 data inventory requirements?","why":"Data classification is the foundation of proportionate security controls and retention enforcement. ISO 27701 cl.7.2.1 requires data categories to be identified and classified. GDPR imposes higher obligations for special category and children\'s data. Unclassified data cannot be protected proportionately.","gdpr_ref":"GDPR Art. 9\\u201310, 32; UK Children\'s Code; DUAA 2025","iso_ref":"ISO 27701 cl.7.2.1 (PII inventory & mapping)","risk":"High","evidence":"Information asset register with classification column; data classification policy; retention schedule cross-referenced to asset register; annual review; UK Children\'s Code compliance assessment.","remediation":"Implement a data classification policy (Public / Internal / Confidential / Restricted). Apply to all assets. Cross-reference to retention schedule and security controls. Review annually."},{"id":"S3Q3","section":3,"subsection":"","number":3,"question":"Does the organisation have a board-approved Data Retention Policy with a retention schedule specifying retention periods for all personal data categories, referenced to the legal basis, per GDPR Art. 5(1)(e) and ISO 27701 cl.7.4.7?","why":"GDPR Art. 5(1)(e) (storage limitation) and ISO 27701 cl.7.4.7 (Minimum necessary PII \\u2013 retention) both require personal data to be retained no longer than necessary. A documented retention schedule is the operational mechanism for enforcing this. The DUAA 2025 imposes specific retention limits for smart data access.","gdpr_ref":"GDPR Art. 5(1)(e), 17; DUAA 2025 s.3","iso_ref":"ISO 27701 cl.7.4.7 (Minimum necessary PII \\u2013 retention), cl.7.5 (Documented information)","risk":"Critical","evidence":"Board-approved Data Retention Policy; retention schedule (data category, period, legal basis, disposal method, owner); annual review log; statutory legislation cross-reference (Companies Act, HMRC, Employment Rights Act).","remediation":"Develop a Data Retention Policy and schedule per ISO 27701 cl.7.4.7. Map each data category to its statutory or business retention period. Cross-reference applicable UK legislation. Board-approve and review annually."},{"id":"S3Q4","section":3,"subsection":"","number":4,"question":"Are retention periods aligned with all applicable UK/EU sector-specific legislation, and are conflicts between statutory retention obligations formally resolved and documented?","why":"Multiple statutory obligations may apply to the same data. Failure to apply the longest applicable period can result in both GDPR storage limitation breaches and regulatory non-compliance. ISO 27701 cl.7.4.7 requires retention to be based on documented legal requirements.","gdpr_ref":"GDPR Art. 5(1)(e); Employment Rights Act 1996; Companies Act 2006; HMRC PAYE; FSMA 2000; DUAA 2025","iso_ref":"ISO 27701 cl.7.4.7 (Minimum necessary PII \\u2013 retention)","risk":"High","evidence":"Statutory retention mapping table; legal opinion for conflicting periods; retention schedule showing longer period applied with documented rationale.","remediation":"Commission a statutory retention mapping exercise. Apply the longer of applicable periods. Document the rationale. Obtain legal sign-off on the completed schedule."},{"id":"S3Q5","section":3,"subsection":"","number":5,"question":"Is personal data deleted, destroyed, or anonymised as soon as the purpose has lapsed and no legal retention obligation applies, per GDPR Art. 5(1)(e) and ISO 27701 cl.7.4.7\\u20137.4.8?","why":"GDPR Art. 5(1)(e) and Art. 17 require deletion once data is no longer necessary. ISO 27701 cl.7.4.7 (Retention) and cl.7.4.8 (Disposal of PII) provide the operational framework for implementing deletion. Retaining data beyond its retention period is a direct breach.","gdpr_ref":"GDPR Art. 5(1)(e), 17; DUAA 2025 s.3","iso_ref":"ISO 27701 cl.7.4.7 (Retention of PII), cl.7.4.8 (Disposal of PII)","risk":"Critical","evidence":"Automated deletion/archiving rules in CRM, HR, ERP; manual deletion procedure for systems without automation; deletion logs; anonymisation procedure and sample output; deletion certificates.","remediation":"Implement automated retention enforcement in all major systems. For manual systems, define quarterly deletion cycles. Maintain deletion certificates per ISO 27701 cl.7.4.8. Log all deletions."},{"id":"S3Q6","section":3,"subsection":"","number":6,"question":"Does the organisation have a documented procedure for the secure destruction of personal data in paper and electronic format, including media sanitisation standards, per ISO 27701 cl.7.4.8 and ISO 27002?","why":"GDPR Art. 5(1)(f) requires processing to ensure appropriate security including against unlawful destruction. ISO 27701 cl.7.4.8 (Disposal of PII) and ISO 27002 cl.7.14 (Secure disposal or reuse of equipment) provide the technical standard for secure destruction. Insecure disposal constitutes a reportable breach.","gdpr_ref":"GDPR Art. 5(1)(f), 32; ICO Security Outcome 8; NIST SP 800-88; BS EN 15713","iso_ref":"ISO 27701 cl.7.4.8 (Disposal of PII); ISO 27002 cl.7.14","risk":"High","evidence":"Destruction policy; cross-cut shredder records (DIN 66399 P-4 minimum); electronic media sanitisation standard (NIST 800-88); certificates of destruction; vetted destruction vendor contracts.","remediation":"Implement NIST SP 800-88 media sanitisation for electronic media. Require DIN 66399 P-4 minimum for paper. Engage vetted vendors with GDPR-compliant contracts. Retain destruction certificates."},{"id":"S3Q7","section":3,"subsection":"","number":7,"question":"Where personal data is anonymised as an alternative to deletion, is the anonymisation process documented, tested against re-identification risk, and confirmed effective per ISO 27701 and EDPB guidance?","why":"GDPR applies to pseudonymised data but not truly anonymous data. ISO 27701 cl.7.4.8 addresses disposal of PII, including anonymisation. EDPB Opinion 05/2014 warns that re-identification risk must be assessed against all reasonably available auxiliary data, including DUAA 2025 data-sharing outputs.","gdpr_ref":"GDPR Recital 26; EDPB Opinion 05/2014; ICO Anonymisation code","iso_ref":"ISO 27701 cl.7.4.8 (Disposal of PII)","risk":"High","evidence":"Anonymisation methodology documentation; re-identification risk assessment including auxiliary data; k-anonymity or equivalent testing results; annual review of re-identification risk; classification of anonymised vs. pseudonymised data.","remediation":"Define an anonymisation standard appropriate to the data sensitivity. Conduct and document a re-identification risk assessment. Reassess when new data sources become available. Never treat pseudonymised data as anonymous."},{"id":"S3Q8","section":3,"subsection":"","number":8,"question":"Are off-site or cloud archival storage locations included in the data inventory, subject to GDPR-compliant DPAs per ISO 27701 cl.6.12.1, and reviewed periodically to delete records past their retention period?","why":"Personal data in archives is still subject to GDPR obligations. ISO 27701 cl.6.12.1 (Supplier relationships) requires archival storage providers to be subject to supplier governance. GDPR Art. 30 requires all recipients (including archival storage) to be documented in the RoPA.","gdpr_ref":"GDPR Art. 30, 28; DUAA 2025","iso_ref":"ISO 27701 cl.7.4.7 (Retention), cl.6.12.1 (Supplier relationships)","risk":"Medium","evidence":"Off-site/cloud storage providers in RoPA; signed DPAs with archival providers; access logs; bi-annual archive review records; destruction certificates for purged records.","remediation":"Include all archival storage in the RoPA. Ensure providers have signed GDPR/ISO 27701-compliant DPAs. Conduct bi-annual archive reviews. Log all purge events."},{"id":"S3Q9","section":3,"subsection":"","number":9,"question":"Are operational databases purged regularly of personal data no longer required, with purge activities logged and reported to the DPO as part of ISO 27701 continual improvement?","why":"GDPR Art. 5(1)(e) storage limitation applies to operational systems. ISO 27701 cl.10.2 (Continual improvement) requires the effectiveness of privacy controls \\u2014 including retention enforcement \\u2014 to be monitored and improved. Databases accumulating personal data indefinitely are a common enforcement cause.","gdpr_ref":"GDPR Art. 5(1)(e), 32","iso_ref":"ISO 27701 cl.7.4.7 (Retention of PII), cl.10.2 (Continual improvement)","risk":"High","evidence":"Database purge schedule (minimum quarterly); purge logs with date, system, data category, record count; automated purge rule evidence; quarterly metrics report to DPO.","remediation":"Establish quarterly database purge cycles. Automate where possible. Log every purge. Report metrics to DPO quarterly as part of PIMS continual improvement."},{"id":"S3Q10","section":3,"subsection":"","number":10,"question":"Is there a documented procedure for personal data in backup systems, ensuring backups are subject to the retention policy and expired data is purged per ISO 27701 cl.7.4.7?","why":"GDPR storage limitation applies to backup data. ISO 27701 cl.7.4.7 requires retention controls to apply to all copies of PII, including backups. Backup environments are frequently overlooked, creating significant compliance gaps and breach risks.","gdpr_ref":"GDPR Art. 5(1)(e), 17; NIST SP 800-34","iso_ref":"ISO 27701 cl.7.4.7 (Minimum necessary PII \\u2013 retention)","risk":"Medium","evidence":"Backup retention policy aligned to data retention schedule; backup rotation/overwrite schedule; evidence of backup purge process; backup management system configuration.","remediation":"Define backup data retention in the Backup Policy, aligned to the Data Retention Schedule. Implement a rotation schedule. Ensure expired data is purged from backups. Test backup purge procedures annually."}]},{"id":4,"title":"Security of Personal Data","questions":[{"id":"S4Q1","section":4,"subsection":"","number":1,"question":"Does the organisation have a board-approved Information Security Policy incorporating GDPR Art. 32 security obligations and aligned to ISO 27701 and ISO 27001, reviewed at least annually?","why":"GDPR Art. 32 requires \'appropriate technical and organisational measures\'. ISO 27701 cl.6.2 (Information security objectives and planning) requires security objectives to be established. ISO 27001 provides the security management framework within which ISO 27701 privacy controls operate.","gdpr_ref":"GDPR Art. 32; DUAA 2025 s.84; ICO Security Outcomes","iso_ref":"ISO 27701 cl.6.2 (Information security objectives); ISO 27002 cl.5.1 (Policies for information security)","risk":"Critical","evidence":"Information Security Policy (board-approved, version-controlled); ISO 27001/27701 certification or gap assessment; annual review log; Art. 32 risk assessment; staff acknowledgement records.","remediation":"Update the Information Security Policy to address GDPR Art. 32, ISO 27701 cl.6.2, and DUAA 2025 obligations. Board-approve and review annually. Align to ISO 27001 controls."},{"id":"S4Q2","section":4,"subsection":"","number":2,"question":"Has the organisation conducted a formal information security risk assessment per ISO 27701 cl.6.1.2 that explicitly includes PII-related risks, with a documented risk treatment plan and residual risk acceptance?","why":"GDPR Art. 32(1) requires security measures proportionate to the risk to individuals. ISO 27701 cl.6.1.2 (PII-related risk assessment) and cl.6.1.3 (Risk treatment) provide the structured methodology for identifying and treating privacy risks. A formal assessment is the mechanism for calibrating controls.","gdpr_ref":"GDPR Art. 32, 35; DUAA 2025 s.84; EDPB Guidelines 4/2019","iso_ref":"ISO 27701 cl.6.1.2 (PII-related risk assessment), cl.6.1.3 (Risk treatment)","risk":"Critical","evidence":"Risk assessment report with PII-specific risks; risk register; risk treatment plan; residual risk acceptance by senior management; DPIA register linked to risk assessment.","remediation":"Conduct an annual ISO 27701 cl.6.1.2 risk assessment including PII risks. Develop a risk treatment plan. Document residual risk acceptance. Update following material changes in the threat landscape."},{"id":"S4Q3","section":4,"subsection":"","number":3,"question":"Are physical access controls in place to restrict access to all areas where personal data is stored or processed, with access logs maintained per ISO 27701 cl.6.9?","why":"GDPR Art. 32(1)(b) requires measures to ensure ongoing confidentiality and integrity. ISO 27701 cl.6.9 references physical and environmental security controls. Physical security breaches involving personal data are reportable to the ICO.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 5","iso_ref":"ISO 27701 cl.6.9 (Physical & environmental security); ISO 27002 cl.7.2\\u20137.4","risk":"High","evidence":"Access control logs; biometric/key card records; visitor register; CCTV policy and retention records; physical security audit report.","remediation":"Implement electronic access control for sensitive areas. Maintain visitor register. Review access logs monthly. Revoke access for leavers within 24 hours."},{"id":"S4Q4","section":4,"subsection":"","number":4,"question":"Is a clear-desk and clear-screen policy enforced, with workstations configured to auto-lock after a maximum of 5 minutes of inactivity?","why":"Physical exposure of personal data on desks or unlocked screens is a reportable breach source. ISO 27002 cl.7.7 (Clear desk and clear screen) provides the control standard. These are low-cost, high-impact preventive measures.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 5","iso_ref":"ISO 27002 cl.7.7 (Clear desk & clear screen)","risk":"Medium","evidence":"Clear-desk policy; physical security audit walkthrough records; screen lock configuration evidence (auto-lock \\u22645 minutes); staff training records.","remediation":"Implement and communicate a clear-desk and clear-screen policy. Configure auto-lock at maximum 5 minutes. Conduct unannounced quarterly walkthrough audits."},{"id":"S4Q5","section":4,"subsection":"","number":5,"question":"Is personal data encrypted at rest (AES-256 or equivalent) and in transit (TLS 1.2 minimum, TLS 1.3 preferred) per GDPR Art. 32(1)(a) and ISO 27701 cl.6.10?","why":"GDPR Art. 32(1)(a) explicitly lists encryption as an appropriate measure. ISO 27701 cl.6.10 references cryptographic controls. Unencrypted personal data that is breached is a major aggravating factor in ICO enforcement. The DUAA 2025 requires secure transmission for data accessed through approved schemes.","gdpr_ref":"GDPR Art. 32(1)(a); DUAA 2025 s.84; ICO Security Outcome 7; NCSC TLS guidance","iso_ref":"ISO 27701 cl.6.10 (Cryptography); ISO 27002 cl.8.24 (Use of cryptography)","risk":"Critical","evidence":"Encryption policy; database encryption configuration (TDE or equivalent); TLS certificate inspection reports; email encryption configuration; penetration test results; deprecated protocol disablement evidence.","remediation":"Implement AES-256 for all personal data at rest. Enforce TLS 1.2 minimum (TLS 1.3 preferred) for all data in transit. Disable deprecated protocols (SSL, TLS 1.0, TLS 1.1)."},{"id":"S4Q6","section":4,"subsection":"","number":6,"question":"Are firewalls, network segmentation, IDS/IPS, and endpoint protection deployed and actively monitored per ISO 27701 cl.6.10 and ISO 27002 network security controls?","why":"GDPR Art. 32 requires measures ensuring ongoing confidentiality, integrity, and availability. ISO 27701 cl.6.10 references network security. Without network-level controls, personal data processed across the organisation is exposed to both internal and external threats.","gdpr_ref":"GDPR Art. 32; DUAA 2025 s.84; ICO Security Outcome 6","iso_ref":"ISO 27002 cl.8.20 (Network security), cl.8.21 (Security of network services), cl.8.7 (Protection against malware)","risk":"Critical","evidence":"Network architecture diagram; firewall rule review records; IDS/IPS alert and response logs; EDR/antivirus management console reports; quarterly security operations review.","remediation":"Implement network segmentation isolating personal data systems. Deploy EDR. Conduct quarterly firewall rule reviews. Review IDS/IPS alerts daily. Produce quarterly security operations reports."},{"id":"S4Q7","section":4,"subsection":"","number":7,"question":"Is vulnerability management (scanning, patching, penetration testing) conducted regularly per GDPR Art. 32(1)(d) and ISO 27002 cl.8.8, with defined SLAs for remediation?","why":"GDPR Art. 32(1)(d) explicitly requires a process for \'regularly testing, assessing and evaluating the effectiveness\' of security measures. ISO 27002 cl.8.8 (Management of technical vulnerabilities) provides the control framework. Unpatched vulnerabilities are a leading cause of reportable breaches.","gdpr_ref":"GDPR Art. 32(1)(d); ICO Security Outcome 3; NCSC Vulnerability Management","iso_ref":"ISO 27002 cl.8.8 (Management of technical vulnerabilities)","risk":"Critical","evidence":"Monthly vulnerability scan reports; patch management records (critical \\u226414 days, high \\u226430 days); annual penetration test reports (independent); remediation tracking log.","remediation":"Implement monthly vulnerability scanning. Define patch SLAs: critical \\u226414 days, high \\u226430 days, medium \\u226490 days. Conduct annual independent penetration tests. Report remediation metrics to DPO monthly."},{"id":"S4Q8","section":4,"subsection":"","number":8,"question":"Is a formal joiners-movers-leavers (JML) process in place, with access provisioned, modified, and revoked promptly \\u2014 leavers within 24 hours \\u2014 per GDPR Art. 32 and ISO 27002 cl.5.18?","why":"GDPR Art. 32 requires access controls proportionate to risk. Former employee accounts with continued access represent a significant and frequently exploited vulnerability. ISO 27002 cl.5.18 (Access rights) requires timely revocation as a specific control.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 4","iso_ref":"ISO 27002 cl.5.18 (Access rights), cl.6.1 (Screening)","risk":"Critical","evidence":"JML procedure integrated with HR; onboarding/offboarding checklists; access provisioning/de-provisioning logs; evidence of access removal within 24 hours for leavers; quarterly access recertification reports.","remediation":"Integrate JML with HR to trigger automated IT notifications. Verify access removal within 24 hours for leavers. Conduct quarterly access recertification reviews."},{"id":"S4Q9","section":4,"subsection":"","number":9,"question":"Is RBAC implemented with least-privilege principles, and are access rights formally requested, approved, and documented, with a PAM solution for privileged accounts per ISO 27002 cl.8.2?","why":"GDPR Art. 32 requires access limited to those who need it. ISO 27002 cl.8.2 (Privileged access rights) and cl.5.18 (Access rights) provide the control standards. Overly broad access rights amplify the impact of any breach or insider threat.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 4","iso_ref":"ISO 27002 cl.8.2 (Privileged access rights), cl.5.18 (Access rights)","risk":"Critical","evidence":"RBAC matrix aligned to job roles; access request and approval forms; system access reports confirming RBAC alignment; PAM solution for administrative accounts; quarterly access rights review records.","remediation":"Develop and maintain an RBAC matrix. Require formal access requests with approvals. Implement a PAM solution for administrative accounts. Conduct quarterly access reviews."},{"id":"S4Q10","section":4,"subsection":"","number":10,"question":"Is MFA enforced for all remote access, privileged accounts, cloud platforms, and systems processing special category data per GDPR Art. 32 and ISO 27002 cl.8.5?","why":"GDPR Art. 32 requires security proportionate to risk. MFA is a universally recognised critical control. ISO 27002 cl.8.5 (Secure authentication) specifically includes MFA as an authentication control. The ICO has cited MFA failures in enforcement decisions.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 4; NCSC MFA guidance","iso_ref":"ISO 27002 cl.8.5 (Secure authentication)","risk":"Critical","evidence":"MFA policy; MFA configuration evidence (Azure AD Conditional Access, Okta, Duo, etc.); list of systems with MFA enforced; exceptions register with compensating controls; annual MFA coverage audit.","remediation":"Enforce MFA on all remote access, cloud platforms, and sensitive data systems. Maintain an exceptions register. Review exceptions quarterly."},{"id":"S4Q11","section":4,"subsection":"","number":11,"question":"Is there a documented password/credential policy enforcing minimum length (14+ characters), complexity, prohibition on reuse, and account lockout, per GDPR Art. 32 and ISO 27002 cl.5.17?","why":"GDPR Art. 32 requires appropriate technical measures. ISO 27002 cl.5.17 (Authentication information) provides the control standard for credential policies. Weak credentials are a leading cause of personal data breaches.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 4; NCSC Password Guidance; NIST SP 800-63B","iso_ref":"ISO 27002 cl.5.17 (Authentication information)","risk":"High","evidence":"Password policy; Active Directory/IdP configuration confirming enforcement; account lockout configuration (max 10 attempts); prohibition on reuse of last 12 passwords; MFA deployment evidence.","remediation":"Implement password policy per NCSC guidance (14+ character passphrase, lockout after 10 attempts, prohibition on reuse of last 12). Enforce via AD or IdP. Prioritise MFA."},{"id":"S4Q12","section":4,"subsection":"","number":12,"question":"Is a DLP solution deployed to detect and prevent unauthorised transfer of personal data via email, web, cloud sync, or removable media per GDPR Art. 32 and ISO 27002 cl.8.12?","why":"GDPR Art. 32 requires prevention of unauthorised disclosure. ISO 27002 cl.8.12 (Data leakage prevention) provides the control standard for DLP. DLP alerts can also provide early breach detection, supporting the 72-hour notification obligation.","gdpr_ref":"GDPR Art. 32, 33; ICO Security Outcome 7","iso_ref":"ISO 27002 cl.8.12 (Data leakage prevention)","risk":"High","evidence":"DLP solution configuration and policy rules; DLP alert and incident logs; monthly DLP incident report; policy refinement evidence.","remediation":"Deploy enterprise DLP covering endpoint, email, and network channels. Define policies for personal data categories. Review alerts weekly. Report incidents monthly to DPO."},{"id":"S4Q13","section":4,"subsection":"","number":13,"question":"Are removable media ports disabled or strictly controlled per GDPR Art. 32 and ISO 27002 cl.7.10, with exceptions subject to formal approval?","why":"Removable media is a common vector for data loss and exfiltration. ISO 27002 cl.7.10 (Storage media) requires controls over removable media. Unencrypted personal data on lost USB drives constitutes a reportable breach.","gdpr_ref":"GDPR Art. 32; ICO Security Outcome 7","iso_ref":"ISO 27002 cl.7.10 (Storage media)","risk":"High","evidence":"Endpoint management configuration showing USB restriction; exceptions register with management and DPO approval; approved encrypted USB whitelist; removable media usage logs.","remediation":"Block all removable media by default. Establish a formal exception process with DPO approval. Whitelist only encrypted USB devices. Log all approved usage."},{"id":"S4Q14","section":4,"subsection":"","number":14,"question":"Are all laptops and mobile devices subject to full-disk encryption, MDM enrolment, and remote wipe per GDPR Art. 32(1)(a) and ISO 27002 cl.8.1?","why":"Lost or stolen unencrypted devices are one of the most common reportable breach sources. ISO 27002 cl.8.1 (User endpoint devices) and GDPR Art. 32(1)(a) (encryption as an appropriate measure) set the standard. Remote wipe is essential for mobile device management.","gdpr_ref":"GDPR Art. 32(1)(a); ICO Security Outcome 7; NCSC Device Security","iso_ref":"ISO 27002 cl.8.1 (User endpoint devices), cl.8.24 (Use of cryptography)","risk":"Critical","evidence":"MDM enrolment reports; full-disk encryption compliance reports (BitLocker/FileVault); remote wipe capability evidence; lost/stolen device response procedure; annual device audit.","remediation":"Enrol all endpoints in MDM. Enforce full-disk encryption. Enable remote wipe. Define and test lost/stolen device response procedure annually."},{"id":"S4Q15","section":4,"subsection":"","number":15,"question":"Are audit logs maintained for all access to and processing of personal data across all systems, retained for minimum 12 months, and protected from tampering per GDPR Art. 32(1)(d) and ISO 27002 cl.8.15?","why":"GDPR Art. 32(1)(d) requires regular testing of security measures \\u2014 which depends on audit logs. ISO 27002 cl.8.15 (Logging) and cl.8.17 (Clock synchronisation) provide the control standards. Tamperable logs have limited evidential value in breach investigations.","gdpr_ref":"GDPR Art. 32(1)(d); DUAA 2025 s.84; ICO Security Outcome 6","iso_ref":"ISO 27002 cl.8.15 (Logging), cl.8.17 (Clock synchronisation)","risk":"High","evidence":"SIEM/log management system; audit log retention policy (minimum 12 months); sample audit trails (user ID, action, timestamp, data accessed); tamper-evident log storage; NTP synchronisation configuration.","remediation":"Enable and centralise audit logging in a SIEM. Capture: user ID, action type, timestamp (UTC), system, data category. Configure NTP. Retain logs for minimum 12 months. Protect from tampering."},{"id":"S4Q16","section":4,"subsection":"","number":16,"question":"Are audit logs reviewed regularly for anomalous activity, with automated SIEM alerting configured for high-risk events per GDPR Art. 32(1)(d) and ISO 27002 cl.8.16?","why":"Unreviewed logs provide no protection. ISO 27002 cl.8.16 (Monitoring activities) requires regular log review and automated alerting. GDPR Art. 32(1)(d) requires regular evaluation of security measure effectiveness. Automated alerting is critical for meeting the 72-hour breach notification obligation.","gdpr_ref":"GDPR Art. 32(1)(d), 33; ICO Security Outcome 6","iso_ref":"ISO 27002 cl.8.16 (Monitoring activities)","risk":"High","evidence":"SIEM use case/alert rule documentation; alert log with investigation records; security operations daily review evidence; escalation and resolution records; monthly anomaly metrics to DPO.","remediation":"Configure SIEM alerting for: bulk downloads, off-hours access, privilege escalation, repeated failed authentications, special category data access. Assign daily analyst review. Document all investigations."},{"id":"S4Q17","section":4,"subsection":"","number":17,"question":"Does the organisation have a documented, tested Security Incident and Personal Data Breach Response Plan covering the GDPR Art. 33 72-hour notification obligation and Art. 34 data subject notification, with ISO 27701 cl.6.13 breach management procedures?","why":"GDPR Arts. 33\\u201334 impose mandatory notification obligations. ISO 27701 cl.6.13 (PII breach management) and ISO 27002 cl.5.24\\u20135.26 provide the operational framework for breach response. Failure to notify within 72 hours or late notification are among the most common enforcement outcomes.","gdpr_ref":"GDPR Art. 33\\u201334; DUAA 2025 s.84; EDPB Guidelines 01/2021","iso_ref":"ISO 27701 cl.6.13 (PII breach management); ISO 27002 cl.5.24\\u20135.26 (Incident management)","risk":"Critical","evidence":"Incident Response Plan with breach notification procedure; breach notification templates (to ICO and data subjects); breach register; annual tabletop exercise report; ICO notification records; DPO breach decision records.","remediation":"Develop an IRP with a dedicated breach notification procedure per ISO 27701 cl.6.13. Define the 72-hour ICO notification SLA and data subject notification triggers. Test annually via tabletop. Review after every actual breach."},{"id":"S4Q18","section":4,"subsection":"","number":18,"question":"Is a breach/incident register maintained per GDPR Art. 33(5) and ISO 27701 cl.6.13.1\\u20136.13.2, with root-cause analysis conducted for every confirmed breach and metrics reported to management quarterly?","why":"GDPR Art. 33(5) requires documentation of all breaches. ISO 27701 cl.6.13.1 (Responsibilities and procedures for PII breach management) and cl.6.13.2 require structured breach documentation, investigation, and corrective action. A comprehensive register is both a compliance requirement and an operational improvement tool.","gdpr_ref":"GDPR Art. 33(5), 5(2); EDPB Guidelines 01/2021","iso_ref":"ISO 27701 cl.6.13.1 (PII breach responsibilities & procedures), cl.6.13.2 (PII breach assessment)","risk":"Critical","evidence":"Breach/incident register (date, nature, data categories, number of data subjects, containment, notifications, root cause, lessons learned); root cause analysis reports; quarterly breach metrics to management; remediation tracked to closure.","remediation":"Maintain a centralised breach register per ISO 27701 cl.6.13.1. Report to DPO within 24 hours. Conduct root cause analysis for every confirmed breach. Report metrics quarterly to management."}]},{"id":5,"title":"Data Subject Rights & Requests","questions":[{"id":"S5Q1","section":5,"subsection":"","number":1,"question":"Has the organisation designated responsibility for data subject rights to the DPO (or named deputy), are contact details published per ISO 27701 cl.7.3.1, and is there a dedicated intake channel for rights requests?","why":"GDPR Art. 12 requires controllers to facilitate rights. Arts. 13\\u201314 require DPO contact details in privacy notices. ISO 27701 cl.7.3.1 (Obligations to PII principals) requires organisations to establish procedures for fulfilling PII principal rights. DUAA 2025 s.46\\u201355 enhances portability rights requiring clear intake processes.","gdpr_ref":"GDPR Art. 12\\u201314, 37(7); DUAA 2025 s.46\\u201355","iso_ref":"ISO 27701 cl.7.3.1 (Obligations to PII principals), cl.5.3.2 (Roles & responsibilities)","risk":"Critical","evidence":"DPO contact details on website, in privacy notices, and in all data subject communications; dedicated rights intake channel (email or web form); deputy DPO designation; DPO appointment letter.","remediation":"Publish DPO contact details on website and in all privacy notices per ISO 27701 cl.7.3.1. Create a dedicated intake channel. Designate a deputy DPO for absence cover."},{"id":"S5Q2","section":5,"subsection":"","number":2,"question":"Does the organisation have a documented SAR procedure per GDPR Art. 15 and ISO 27701 cl.7.3.2\\u20137.3.6, with responses within one month and extension procedures documented?","why":"GDPR Art. 15 gives data subjects the right of access. Art. 12 requires responses within one month. ISO 27701 cl.7.3.2 (Providing access to PII) and cl.7.3.6 (Providing mechanism to obtain PII) operationalise the SAR response process. The DUAA 2025 enhances portability rights that may accompany SARs.","gdpr_ref":"GDPR Art. 12, 15; DUAA 2025 s.46\\u201355; EDPB Guidelines 01/2022","iso_ref":"ISO 27701 cl.7.3.2 (Providing access to PII), cl.7.3.6 (Mechanism to obtain PII)","risk":"Critical","evidence":"SAR procedure document; SAR tracking register (date, due date, extension decision, status, outcome); response templates; identity verification checklist; evidence of responses within one month; extension notification evidence.","remediation":"Develop a SAR procedure per ISO 27701 cl.7.3.2. Cover: intake, identity verification, acknowledgement within 5 days, search across all systems, DPO approval, dispatch within one month. Set Day-20 and Day-27 reminder alerts."},{"id":"S5Q3","section":5,"subsection":"","number":3,"question":"Is identity verification proportionate, not creating unnecessary barriers per GDPR Art. 12(2)\\u2013(6) and ISO 27701 cl.7.3.6?","why":"GDPR Art. 12(6) allows additional information requests where identity is reasonably doubtful. Art. 12(2) requires procedures to be \'easily accessible\'. ISO 27701 cl.7.3.6 requires a mechanism to obtain PII that is proportionate. Excessive verification is itself a breach.","gdpr_ref":"GDPR Art. 12(2), 12(6); EDPB Guidelines 01/2022","iso_ref":"ISO 27701 cl.7.3.6 (Providing mechanism to obtain PII)","risk":"High","evidence":"Identity verification procedure with proportionality assessment; verification checklist scaled to data sensitivity; log of verification steps per SAR; evidence of no excessive verification for low-risk requests.","remediation":"Define a proportionate identity verification process. For low-risk requests, name and email may suffice. For high-risk, government-issued ID may be required. Document the proportionality rationale. Train all SAR handlers."},{"id":"S5Q4","section":5,"subsection":"","number":4,"question":"Does the organisation have a documented rectification procedure per GDPR Art. 16 and ISO 27701 cl.7.3.4 (Correcting or erasing PII), with corrections actioned across all systems within one month and third-party recipients notified per Art. 19?","why":"GDPR Art. 16 gives the right to rectification. Art. 19 requires notification to all recipients of corrected data. ISO 27701 cl.7.3.4 provides the operational procedure for correcting or erasing PII. Failure to correct and notify recipients breaches both Art. 16 and the accuracy principle.","gdpr_ref":"GDPR Art. 16, 19, 5(1)(d); EDPB Guidelines 01/2022","iso_ref":"ISO 27701 cl.7.3.4 (Correcting or erasing PII)","risk":"High","evidence":"Rectification request procedure; request log; evidence of corrections in all systems; notifications to third-party recipients; confirmation to data subject.","remediation":"Develop a rectification procedure per ISO 27701 cl.7.3.4. Update all systems within one month. Notify third-party recipients per Art. 19. Log all requests and outcomes."},{"id":"S5Q5","section":5,"subsection":"","number":5,"question":"Does the organisation have an erasure procedure per GDPR Art. 17 and ISO 27701 cl.7.3.4 and cl.7.4.8, assessing Art. 17(3) grounds, actioning deletion across all systems including processors within one month?","why":"GDPR Art. 17 gives the right to erasure (\'right to be forgotten\'). ISO 27701 cl.7.3.4 (Correcting or erasing PII) and cl.7.4.8 (Disposal of PII) operationalise erasure. Art. 17(3) provides grounds to refuse. Art. 19 requires processor notification. Blanket refusals or failure to action within one month breach Art. 17.","gdpr_ref":"GDPR Art. 17, 19; DUAA 2025 s.46\\u201355; EDPB Guidelines 01/2022","iso_ref":"ISO 27701 cl.7.3.4 (Correcting or erasing PII), cl.7.4.8 (Disposal of PII)","risk":"High","evidence":"Erasure request procedure; request log; Art. 17(3) grounds assessment records; deletion confirmation to data subject; evidence of deletion from all systems including processors; exceptions log where Art. 17(3) applies.","remediation":"Develop an erasure procedure per ISO 27701 cl.7.3.4 and cl.7.4.8. Assess Art. 17(3) grounds. Action deletion across all systems \\u2014 CRM, HR, ERP, archives, processors \\u2014 within one month. Notify processors. Provide written confirmation."},{"id":"S5Q6","section":5,"subsection":"","number":6,"question":"Does the organisation have procedures for restriction of processing (Art. 18) and data portability (Art. 20 / DUAA 2025 s.46\\u201355), including machine-readable export capability and API delivery per ISO 27701 obligations to PII principals?","why":"GDPR Art. 18 gives the right to restrict processing. Art. 20 gives the right to data portability. The DUAA 2025 significantly enhances portability rights through smart data schemes, requiring data to be shared with designated third parties in specified formats \\u2014 a new operational capability.","gdpr_ref":"GDPR Art. 18, 20; DUAA 2025 s.46\\u201355; EDPB Guidelines 05/2022","iso_ref":"ISO 27701 cl.7.3 (Obligations to PII principals \\u2013 general)","risk":"High","evidence":"Restriction request procedure; portability request procedure; restricted data flagging evidence in all systems; machine-readable data export capability (JSON/CSV); API documentation; DUAA 2025 smart data compliance assessment.","remediation":"Develop restriction and portability procedures. Implement machine-readable export capability. Assess DUAA 2025 smart data obligations for your sector. Respond to portability requests within one month."},{"id":"S5Q7","section":5,"subsection":"","number":7,"question":"Does the organisation have a procedure for objections to processing per GDPR Art. 21, with automatic suspension of processing pending DPO review, and immediate cessation for direct marketing objections?","why":"GDPR Art. 21 gives the right to object. For direct marketing objections, cessation is mandatory with no balancing test. ISO 27701 cl.7.3.5 (Providing mechanism to object to PII processing) requires a functioning objection mechanism. Failure to process objections is a common enforcement issue.","gdpr_ref":"GDPR Art. 21; EDPB Guidelines 01/2022","iso_ref":"ISO 27701 cl.7.3.5 (Providing mechanism to object to PII processing)","risk":"High","evidence":"Objection handling procedure; objection request log; evidence of processing suspension during review; DPO decision record with reasons; communication to data subject within one month.","remediation":"Develop an objection procedure per ISO 27701 cl.7.3.5. For direct marketing objections, cease immediately. For other objections, suspend processing pending DPO review. Communicate decision within one month."},{"id":"S5Q8","section":5,"subsection":"","number":8,"question":"Are data subjects informed of their right to lodge a complaint with the ICO/supervisory authority per GDPR Arts. 13\\u201314 and ISO 27701 cl.7.3.1, and is there an internal complaints procedure for first-line resolution?","why":"GDPR Arts. 13\\u201314 require privacy notices to include the right to complain to the supervisory authority. ISO 27701 cl.7.3.1 requires obligations to PII principals to be established, including complaint handling. An effective internal procedure reduces ICO referrals.","gdpr_ref":"GDPR Art. 13(2)(d), 14(2)(e), 77","iso_ref":"ISO 27701 cl.7.3.1 (Obligations to PII principals), cl.7.3.9 (Automated decision-making)","risk":"High","evidence":"Privacy notices referencing right to complain to ICO (ico.org.uk); internal complaints procedure; complaint register; evidence of complaints resolved within 20 business days.","remediation":"Include ICO complaint right in all privacy notices. Establish an internal procedure with 20 business day target. Maintain a complaint register."},{"id":"S5Q9","section":5,"subsection":"","number":9,"question":"Where automated decision-making including profiling produces legal or significant effects, has this been identified, disclosed, and are Art. 22 and ISO 27701 cl.7.3.9 safeguards implemented?","why":"GDPR Art. 22 restricts purely automated significant decisions. ISO 27701 cl.7.3.9 (Automated decision-making) requires disclosure of automated processing and a mechanism for human review. The DUAA 2025 requires transparency around automated processing in intermediary services.","gdpr_ref":"GDPR Art. 22, 13(2)(f), 14(2)(g); DUAA 2025 s.68; EDPB Guidelines 03/2017","iso_ref":"ISO 27701 cl.7.3.9 (Automated decision-making)","risk":"High","evidence":"Inventory of automated decision-making processes; privacy notice disclosures; DPIA for high-risk automated decisions; human review procedure; profiling opt-out mechanism.","remediation":"Identify all automated decision-making. Disclose in privacy notices per ISO 27701 cl.7.3.9. Establish human review process. Conduct DPIAs for high-risk automated decisions. Implement profiling opt-out."},{"id":"S5Q10","section":5,"subsection":"","number":10,"question":"Are front-line staff trained to recognise data subject rights requests regardless of channel, and to route them to the DPO within one business day, per GDPR Art. 12 and ISO 27701 cl.7.4 (Awareness)?","why":"GDPR Art. 12 requires rights to be \'easily accessible\'. Data subjects may exercise rights through any channel. The one-month clock starts on receipt \\u2014 not when it reaches the DPO. ISO 27701 cl.7.4 (Awareness) requires staff to be aware of PII principal rights and their role in supporting them.","gdpr_ref":"GDPR Art. 12(2), 12(3); EDPB Guidelines 01/2022","iso_ref":"ISO 27701 cl.7.4 (Awareness), cl.7.3 (Obligations to PII principals)","risk":"High","evidence":"Staff training records on data subject rights; call/email routing scripts; SAR routing procedure; evidence of requests correctly identified and routed within one business day.","remediation":"Include rights recognition and routing in all GDPR/ISO 27701 training. Provide scripts for all channels. Require escalation to DPO within one business day."},{"id":"S5Q11","section":5,"subsection":"","number":11,"question":"Are all data subject rights requests logged in a centralised tracking system with automated deadline reminders, and are metrics reported to the DPO monthly as part of ISO 27701 PIMS monitoring?","why":"GDPR Art. 12 requires responses within one month. A centralised tracking system is essential for deadline management and accountability. ISO 27701 cl.9.1 (Monitoring, measurement, analysis and evaluation) requires the effectiveness of rights request management to be monitored as part of PIMS performance evaluation.","gdpr_ref":"GDPR Art. 12(3), 5(2)","iso_ref":"ISO 27701 cl.9.1 (Monitoring, measurement, analysis & evaluation)","risk":"High","evidence":"SAR tracking register or ticketing system; Day-20 and Day-27 automated reminder evidence; monthly SAR metric report to DPO; escalation log for complex requests.","remediation":"Implement a centralised SAR tracking system. Configure Day-20 and Day-27 reminders. Report SAR volumes, completion rates, and average response times to DPO monthly as part of ISO 27701 cl.9.1 PIMS monitoring."}]},{"id":6,"title":"Direct Marketing","questions":[{"id":"S6Q1","section":6,"subsection":"","number":1,"question":"Does the organisation obtain freely given, specific, informed, and unambiguous opt-in consent per GDPR Art. 6(1)(a)/Art. 7, PECR Reg. 22, and ISO 27701 cl.7.2.3 before conducting electronic direct marketing, with consent granular per channel and purpose?","why":"GDPR Art. 7 and PECR Reg. 22 require opt-in consent for electronic direct marketing. ISO 27701 cl.7.2.3 (When and how consent is obtained) operationalises consent capture at a system level. Pre-ticked boxes, bundled consent, and consent buried in T&Cs are all non-compliant and a major ICO enforcement focus.","gdpr_ref":"GDPR Art. 6(1)(a), 7; PECR Reg. 22 (UK); ePrivacy Directive Art. 13; DUAA 2025 s.68","iso_ref":"ISO 27701 cl.7.2.3 (When & how consent is obtained), cl.7.3.3 (Fulfilling obligations to PII principals)","risk":"Critical","evidence":"Consent management system records (timestamp, wording version, channel, purpose per data subject); opt-in forms with no pre-ticked boxes; consent audit report.","remediation":"Implement opt-in consent per ISO 27701 cl.7.2.3 for every electronic marketing channel. Ensure consent is granular, unambiguous, and fully recorded. Audit all mechanisms. Remove pre-ticked boxes and bundled consent."},{"id":"S6Q2","section":6,"subsection":"","number":2,"question":"Is consent for direct marketing captured separately from consent for service delivery, with no bundling per GDPR Art. 7(2) and ISO 27701 cl.7.2.3?","why":"GDPR Art. 7(2) and EDPB Guidelines 05/2020 require marketing consent to be clearly distinguishable from other consent. ISO 27701 cl.7.2.3 requires consent to be specific to the processing activity. Bundled consent is a common enforcement target.","gdpr_ref":"GDPR Art. 7(2); EDPB Guidelines 05/2020; PECR Reg. 22","iso_ref":"ISO 27701 cl.7.2.3 (When & how consent is obtained)","risk":"Critical","evidence":"Consent form design showing separate checkboxes for marketing vs. service purposes; CRM with distinct consent flags per purpose; consent wording review log confirming no bundling.","remediation":"Audit all consent collection mechanisms. Ensure marketing consent is a separate, clearly distinguishable, optional tick-box. Update web forms, paper forms, app onboarding, and call scripts."},{"id":"S6Q3","section":6,"subsection":"","number":3,"question":"Are consent records retained for 3 years post-relationship as evidence of lawful marketing per GDPR Art. 5(2) and ISO 27701 cl.7.2.3, and preserved even after opt-out?","why":"GDPR Art. 5(2) accountability requires the ability to demonstrate valid consent. ISO 27701 cl.7.2.3 requires consent records to be maintained. Records must be preserved even after opt-out as evidence of prior lawful processing.","gdpr_ref":"GDPR Art. 7(1), 5(2); PECR Reg. 22","iso_ref":"ISO 27701 cl.7.2.3 (When & how consent is obtained), cl.7.4.7 (Minimum necessary PII \\u2013 retention)","risk":"High","evidence":"Consent record retention policy (3 years post-relationship); CRM export showing consent date, wording version, channel; evidence of historical consent records preserved after opt-out.","remediation":"Configure the CRM or consent management platform to retain records for relationship duration plus 3 years. Document in the Data Retention Policy. Preserve records even after opt-out."},{"id":"S6Q4","section":6,"subsection":"","number":4,"question":"Is a simple, cost-free opt-out/unsubscribe mechanism included in every direct marketing communication, and is withdrawal actioned within 5 business days per GDPR Art. 7(3), PECR Reg. 22(3)(b), and ISO 27701 cl.7.3.5?","why":"PECR Reg. 22(3)(b) requires an opt-out opportunity in every electronic marketing communication. GDPR Art. 7(3) requires withdrawal to be as easy as giving consent. ISO 27701 cl.7.3.5 (Providing mechanism to modify or withdraw consent) operationalises the withdrawal process.","gdpr_ref":"GDPR Art. 7(3); PECR Reg. 22(3)(b); ePrivacy Directive Art. 13(2)","iso_ref":"ISO 27701 cl.7.3.5 (Providing mechanism to modify or withdraw consent)","risk":"Critical","evidence":"Sample email, SMS, and digital communications showing one-click unsubscribe or STOP instruction; opt-out processing log with action dates; suppression list; SLA evidence (5 business days).","remediation":"Include one-click unsubscribe (email) or STOP (SMS) in every communication. Define 5 business day SLA per ISO 27701 cl.7.3.5. Configure CRM to automatically suppress opted-out data subjects. Conduct monthly suppression audits."},{"id":"S6Q5","section":6,"subsection":"","number":5,"question":"Is the central suppression/do-not-contact list scrubbed against all marketing lists before every campaign send, across all channels simultaneously, per GDPR Art. 7(3) and ISO 27701 cl.7.3.5?","why":"A central suppression list applied consistently across all channels is the control mechanism ensuring opted-out data subjects are not re-contacted. ISO 27701 cl.7.3.5 requires the withdrawal mechanism to be consistently effective. Failure to scrub before every send is a PECR breach.","gdpr_ref":"GDPR Art. 7(3); PECR Reg. 22","iso_ref":"ISO 27701 cl.7.3.5 (Providing mechanism to modify or withdraw consent)","risk":"Critical","evidence":"Suppression list management procedure; pre-campaign scrubbing evidence (list counts before and after suppression); CRM suppression report; cross-channel suppression evidence.","remediation":"Maintain a central suppression list covering all channels. Require mandatory scrubbing before every campaign send per ISO 27701 cl.7.3.5. Confirm cross-channel suppression simultaneously. Audit monthly."},{"id":"S6Q6","section":6,"subsection":"","number":6,"question":"Where marketing is outsourced to agencies or platforms, is a GDPR Art. 28 / ISO 27701 cl.6.12-compliant DPA in place with each, and has their compliance been assessed?","why":"GDPR Art. 28 requires a written DPA with every processor. ISO 27701 cl.6.12 (Supplier relationships) and cl.6.12.1 require processor governance and ongoing monitoring. Marketing agencies, email platforms, and ad networks are processors. Using a non-compliant processor exposes the controller to liability.","gdpr_ref":"GDPR Art. 28; DUAA 2025 s.66\\u201383","iso_ref":"ISO 27701 cl.6.12.1 (Supplier relationships \\u2013 information security), cl.8.5 (Processor obligations)","risk":"Critical","evidence":"Signed DPAs with all marketing processors; compliance assessment questionnaire; ISO 27001/SOC 2 certification evidence; right-to-audit clause in DPA; annual review records.","remediation":"Identify all marketing processors. Execute GDPR Art. 28 / ISO 27701 cl.6.12-compliant DPAs. Conduct annual assessments. Exercise audit rights for high-risk processors at least every two years."},{"id":"S6Q7","section":6,"subsection":"","number":7,"question":"If the organisation uses third-party marketing lists, has robust due diligence confirmed that valid, specific consent exists for data subjects to be contacted by this specific organisation, per GDPR Art. 6(1)(a) and ISO 27701 cl.7.2.3?","why":"Consent given to a list provider is not consent to be contacted by a purchaser. GDPR Art. 6(1)(a) requires consent to be specific to the controller. ISO 27701 cl.7.2.3 requires the lawful basis for processing to be documented. Using purchased lists without specific consent is a major PECR/GDPR enforcement risk.","gdpr_ref":"GDPR Art. 6(1)(a), 7; PECR Reg. 22; ICO Direct Marketing guidance","iso_ref":"ISO 27701 cl.7.2.3 (When & how consent is obtained)","risk":"Critical","evidence":"List provider contracts with consent warranty naming the organisation as recipient; sample consent evidence; due diligence checklist; re-consent campaign records where provenance is uncertain.","remediation":"Require written consent warranties from list providers specifying your organisation as named recipient. Where provenance is uncertain, conduct a re-consent campaign. Cease use of any list where valid, specific consent cannot be demonstrated."},{"id":"S6Q8","section":6,"subsection":"","number":8,"question":"Does the organisation prohibit sharing or selling customer personal data to third parties for their own marketing without explicit, separately obtained consent, per GDPR Art. 6(1)(a) and ISO 27701 cl.7.2.7?","why":"Sharing or selling personal data for third-party marketing requires a separate, explicit lawful basis. ISO 27701 cl.7.2.7 (Disclosures to third parties) requires documented authorisation for all third-party disclosures. Unauthorised data sharing is a serious GDPR breach and enforcement priority.","gdpr_ref":"GDPR Art. 6(1)(a), 44; PECR Reg. 22; ICO Data Sharing Code","iso_ref":"ISO 27701 cl.7.2.7 (Disclosures to third parties)","risk":"Critical","evidence":"Data sharing policy prohibiting unauthorised marketing data sharing; partner contracts with data sharing restrictions; consent records for any approved sharing; annual data sharing audit log.","remediation":"Implement a data sharing policy per ISO 27701 cl.7.2.7 prohibiting sale/transfer for third-party marketing without explicit consent. Include restrictions in partner contracts. Audit annually."},{"id":"S6Q9","section":6,"subsection":"","number":9,"question":"Do all electronic marketing communications identify the organisation by full legal name, include a physical/postal address, and provide a valid contact address per PECR Reg. 22(3)(a) and ISO 27701 cl.7.3.2 (transparency obligations)?","why":"PECR Reg. 22(3)(a) requires sender identification. ISO 27701 cl.7.3.2 (Providing privacy notices) requires transparency in all communications. Failure to identify the sender undermines the right to object and is a direct PECR breach.","gdpr_ref":"PECR Reg. 22(3)(a); CAP Code; GDPR Art. 5(1)(a)","iso_ref":"ISO 27701 cl.7.3.2 (Providing privacy notices)","risk":"High","evidence":"Sample marketing emails, SMSs, and digital communications; marketing template compliance review log; CAP Code compliance checklist.","remediation":"Review all templates. Ensure each includes: full legal name, valid physical/postal address, and valid contact. Update non-compliant templates. Conduct quarterly template reviews."},{"id":"S6Q10","section":6,"subsection":"","number":10,"question":"Is the organisation\'s use of electronic marketing channels documented in a Direct Marketing Policy per GDPR Art. 5(2), ISO 27701 cl.5.2 (PIMS policy), and PECR, with DPO oversight assigned?","why":"A documented Direct Marketing Policy demonstrates GDPR Art. 5(2) accountability. ISO 27701 cl.5.2 (PIMS policy and objectives) requires PII-related objectives to be documented. The DUAA 2025 requires policies to address smart data marketing obligations.","gdpr_ref":"GDPR Art. 5(2), 24; PECR; DUAA 2025 s.68","iso_ref":"ISO 27701 cl.5.2 (PIMS policy & objectives)","risk":"High","evidence":"Direct Marketing Policy (board-approved, version-controlled); channel-specific compliance guidelines; role assignments (marketing manager, DPO); training records.","remediation":"Develop a Direct Marketing Policy per ISO 27701 cl.5.2. Cover: permitted channels, consent requirements, opt-out SLAs, prohibited practices, DUAA 2025 obligations, DPO oversight. Board-approve. Train all marketing staff annually."},{"id":"S6Q11","section":6,"subsection":"","number":11,"question":"Where profiling or tracking technologies (cookies, pixels, fingerprinting) are used for marketing, is this disclosed in the privacy/cookie notice and are PECR Reg. 6 / ISO 27701 cl.7.3.9 compliant consent mechanisms in place?","why":"PECR Reg. 6 requires prior consent for non-essential cookies. GDPR Art. 22 regulates automated profiling with significant effects. ISO 27701 cl.7.3.9 (Automated decision-making) requires disclosure and safeguards for profiling. Bundled cookie consent is non-compliant.","gdpr_ref":"GDPR Art. 22; PECR Reg. 6; ePrivacy Directive Art. 5(3); ICO Cookie guidance","iso_ref":"ISO 27701 cl.7.3.9 (Automated decision-making), cl.7.3.2 (Privacy notices)","risk":"High","evidence":"Privacy notice and cookie policy disclosing profiling and targeting; PECR-compliant CMP with prior consent for non-essential cookies; profiling opt-out mechanism; DPIA for high-risk profiling.","remediation":"Implement a PECR-compliant CMP per ISO 27701 cl.7.3.9 for all non-essential cookies. Disclose profiling in privacy notice. Provide profiling opt-out. Conduct DPIA for high-risk profiling."},{"id":"S6Q12","section":6,"subsection":"","number":12,"question":"Does the organisation maintain campaign records (channel, audience, consent basis, suppression, opt-out rate) for minimum 3 years to demonstrate GDPR Art. 5(2) accountability and ISO 27701 PIMS documentation requirements?","why":"GDPR Art. 5(2) accountability requires the ability to demonstrate compliance. ISO 27701 cl.7.2.1 (RoPA and documentation) and cl.9.1 (Monitoring) require campaign records to be maintained as evidence of lawful marketing. ICO investigations routinely request campaign records.","gdpr_ref":"GDPR Art. 5(2), 30; PECR","iso_ref":"ISO 27701 cl.7.2.1 (PII inventory & mapping), cl.9.1 (Monitoring, measurement, analysis & evaluation)","risk":"Medium","evidence":"Campaign records log (date, channel, audience size, consent basis, suppression applied, opt-out count, compliance sign-off); 3-year records retention; quarterly marketing compliance report to DPO.","remediation":"Implement a campaign records register per ISO 27701 cl.9.1 capturing all required fields. Retain for minimum 3 years. Report marketing compliance metrics to DPO quarterly as part of PIMS monitoring."}]}]');
+var QQ = [];
+SECTIONS.forEach(function(s){ s.questions.forEach(function(q){ QQ.push(q); }); });
+
+var ST = {
+  1:'Procedural Issues & Awareness',
+  2:'Lawful Processing of Personal Data',
+  3:'Record Retention',
+  4:'Security of Personal Data',
+  5:'Data Subject Rights & Requests',
+  6:'Direct Marketing'
+};
+var STRIPE = {1:'#3b82f6',2:'#14b8a6',3:'#a78bfa',4:'#f87171',5:'#fb923c',6:'#fbbf24'};
+
+var meta = {org:'',auditor:'',date:'',ref:''};
+var resp = {};
+var cur = 0;
+var curSec = 1;
+
+function g(id){ return document.getElementById(id); }
+function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getR(id){ return resp[id] || {response:'',findings:'',owner:'',due:'',status:'Not Started'}; }
+function setR(id,d){ resp[id] = Object.assign({}, getR(id), d); }
+
+function scoreQ(id){
+  var r = getR(id).response;
+  if(r==='Yes - Fully Compliant') return 2;
+  if(r==='Yes - Partially Compliant') return 1;
+  if(r==='No - Non-Compliant') return 0;
+  return null;
+}
+
+function overall(){
+  var p=0,m=0,fc=0,pc=0,nc=0,na=0,un=0;
+  QQ.forEach(function(q){
+    var s=scoreQ(q.id),r=getR(q.id).response;
+    if(s===null){ r==='N/A - Not Applicable'?na++:un++; return; }
+    p+=s; m+=2; s===2?fc++:s===1?pc++:nc++;
+  });
+  return {pct:m?Math.round(p/m*100):0, pts:p, max:m, fc:fc, pc:pc, nc:nc, na:na, un:un};
+}
+
+function secScore(sid){
+  var p=0,m=0,fc=0,pc=0,nc=0;
+  QQ.filter(function(q){return q.section===sid;}).forEach(function(q){
+    var s=scoreQ(q.id); if(s===null)return;
+    p+=s; m+=2; s===2?fc++:s===1?pc++:nc++;
+  });
+  return {pct:m?Math.round(p/m*100):0, fc:fc, pc:pc, nc:nc};
+}
+
+function riskC(){
+  var r={Critical:0,High:0,Medium:0,Low:0};
+  QQ.forEach(function(q){
+    if(getR(q.id).response==='No - Non-Compliant' && q.risk in r) r[q.risk]++;
+  });
+  return r;
+}
+
+function comp(){ return QQ.filter(function(q){return getR(q.id).response;}).length; }
+function col(p){ return p>=75?'#16a34a':p>=50?'#ea580c':'#dc2626'; }
+function lbl(p){ return p>=75?'Satisfactory':p>=50?'Requires Improvement':'Significant Gaps Identified'; }
+
+// === VIEWS ===
+function showView(id){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  g(id).classList.add('active');
+  if(id==='home') updateHome();
+  if(id==='dashboard'){ commit(); updateDash(); }
+}
+
+// === HOME ===
+function updateHome(){
+  var sc=overall(), p=sc.pct, c=col(p), rc=riskC(), done=comp();
+  // Score hero
+  g('h-score').textContent = done>0 ? p+'%' : '—';
+  g('h-score').style.color = done>0 ? c : '#fff';
+  g('h-rating').textContent = done>0 ? lbl(p) : 'Not started';
+  g('h-rating').style.color = done>0 ? c : '#93b4d4';
+  g('h-comp').textContent = done+' of '+QQ.length+' answered';
+  // Risk
+  g('rs-C').textContent=rc.Critical; g('rs-H').textContent=rc.High;
+  g('rs-M').textContent=rc.Medium;  g('rs-L').textContent=rc.Low;
+  // Unanswered bar
+  var rem = QQ.length - done;
+  g('ub-badge').textContent = rem+' remaining';
+  g('ub-text').textContent = done===0
+    ? 'Begin your audit by selecting a section below.'
+    : done+' questions answered. '+rem+' remaining.';
+  // Section grid
+  buildSecGrid();
+}
+
+function buildSecGrid(){
+  var html = '';
+  [1,2,3,4,5,6].forEach(function(sid){
+    var s = secScore(sid);
+    var qs = QQ.filter(function(q){return q.section===sid;});
+    var done = qs.filter(function(q){return getR(q.id).response;}).length;
+    var c = s.pct>0 ? col(s.pct) : '#94a3b8';
+    var badge = done===0 ? 'Not started' : (done===qs.length ? 'Complete' : done+'/'+qs.length+' done');
+    var badgeBg = done===0 ? '#f1f5f9' : (done===qs.length ? '#f0fdf4' : '#eff6ff');
+    var badgeFg = done===0 ? '#64748b' : (done===qs.length ? '#16a34a' : '#2563a8');
+    html += '<div class="sec-card sc'+sid+'" onclick="openSection('+sid+')">'
+      + '<div class="sec-card-accent"></div>'
+      + '<div class="sec-card-body">'
+      + '<div class="scb-top"><span class="scb-num">Section '+sid+'</span>'
+      + '<span class="scb-badge" style="background:'+badgeBg+';color:'+badgeFg+'">'+badge+'</span></div>'
+      + '<div class="scb-title">'+ST[sid]+'</div>'
+      + '<div class="scb-qcount">'+qs.length+' questions</div>'
+      + '<div class="scb-bar-wrap">'
+      + '<div class="scb-bar-bg"><div class="scb-bar-fill" style="width:'+s.pct+'%;background:'+c+'"></div></div>'
+      + '<div class="scb-score-row">'
+      + '<div class="scb-stats"><span class="stat-fc">&#10003; '+s.fc+'</span><span class="stat-pc">&#9680; '+s.pc+'</span><span class="stat-nc">&#10007; '+s.nc+'</span></div>'
+      + '<span class="scb-pct" style="color:'+c+'">'+s.pct+'%</span></div></div>'
+      + '</div>'
+      + '<div class="sec-card-footer">Open section &rarr; <span>'+qs.filter(function(q){return !getR(q.id).response;}).length+' unanswered</span></div>'
+      + '</div>';
+  });
+  g('sec-grid').innerHTML = html;
+}
+
+function openSection(sid){
+  curSec = sid;
+  // Find first unanswered in section, or first question
+  var qs = QQ.filter(function(q){return q.section===sid;});
+  var unanswered = qs.find(function(q){return !getR(q.id).response;});
+  cur = QQ.indexOf(unanswered || qs[0]);
+  showView('audit');
+  buildAuditNav();
+  renderQ();
+}
+
+function continueAudit(){
+  // Find first unanswered question overall
+  var unanswered = QQ.find(function(q){return !getR(q.id).response;});
+  cur = unanswered ? QQ.indexOf(unanswered) : 0;
+  curSec = QQ[cur].section;
+  showView('audit');
+  buildAuditNav();
+  renderQ();
+}
+
+// === AUDIT ===
+function buildAuditNav(){
+  // Section tabs
+  var html='';
+  [1,2,3,4,5,6].forEach(function(sid){
+    var s=secScore(sid);
+    html+='<button class="snt'+(sid===curSec?' on':'')+'" onclick="switchSec('+sid+')">S'+sid+': '+ST[sid].split(' ').slice(0,2).join(' ')+'<span style="margin-left:6px;color:'+(s.pct>0?col(s.pct):'#94a3b8')+'">'+s.pct+'%</span></button>';
+  });
+  g('sec-nav').innerHTML=html;
+  buildQStrip();
+}
+
+function buildQStrip(){
+  var qs=QQ.filter(function(q){return q.section===curSec;});
+  var html='';
+  qs.forEach(function(q,i){
+    var r=getR(q.id).response;
+    var cls=r==='Yes - Fully Compliant'?'fc':r==='Yes - Partially Compliant'?'pc':r==='No - Non-Compliant'?'nc':r==='N/A - Not Applicable'?'na':'';
+    var on=QQ.indexOf(q)===cur?' on':'';
+    html+='<button class="qb '+cls+on+'" onclick="jumpQ('+QQ.indexOf(q)+')" title="Q'+q.number+': '+h(q.question.slice(0,60))+'">'+q.number+'</button>';
+  });
+  g('q-strip').innerHTML=html;
+}
+
+function switchSec(sid){
+  commit();
+  curSec=sid;
+  var qs=QQ.filter(function(q){return q.section===sid;});
+  var un=qs.find(function(q){return !getR(q.id).response;});
+  cur=QQ.indexOf(un||qs[0]);
+  buildAuditNav();
+  renderQ();
+}
+
+function jumpQ(qi){ commit(); cur=qi; curSec=QQ[qi].section; renderQ(); buildQStrip(); buildAuditNav(); }
+
+var ROPTS=[
+  {v:'Yes - Fully Compliant',c:'rFC',label:'Yes &#8211; Fully Compliant'},
+  {v:'Yes - Partially Compliant',c:'rPC',label:'Yes &#8211; Partially Compliant'},
+  {v:'No - Non-Compliant',c:'rNC',label:'No &#8211; Non-Compliant'},
+  {v:'N/A - Not Applicable',c:'rNA',label:'N/A &#8211; Not Applicable'}
+];
+
+function renderQ(){
+  var q=QQ[cur], r=getR(q.id);
+  curSec=q.section;
+  // Header
+  g('ah-title').textContent='Section '+q.section+': '+ST[q.section];
+  var secQs=QQ.filter(function(x){return x.section===q.section;});
+  var secIdx=secQs.indexOf(q)+1;
+  g('ah-prog').textContent='Q'+secIdx+' of '+secQs.length+' in this section';
+  // Stripe
+  g('qc-stripe').style.background=STRIPE[q.section]||'#3b82f6';
+  // Meta
+  g('qc-sec').textContent='Section '+q.section+' / Q'+q.number+(q.subsection?' · '+q.subsection:'');
+  var rb=g('qc-risk');
+  rb.textContent=q.risk||'';
+  rb.className='qc-risk '+(q.risk?q.risk[0].toLowerCase():'');
+  rb.style.display=q.risk?'':'none';
+  // Question
+  g('qc-q').textContent=q.question;
+  // Why
+  g('qc-why').style.display=q.why?'':'none';
+  g('qc-wt').textContent=q.why||'';
+  // Refs
+  g('qc-gdpr').textContent=q.gdpr_ref||'—';
+  g('qc-iso').textContent=q.iso_ref||'—';
+  // Evidence / remedy
+  g('qc-ev').textContent=q.evidence||'—';
+  g('qc-rem').textContent=q.remediation||'—';
+  // Response options
+  g('ropts').innerHTML=ROPTS.map(function(o){
+    return '<div class="ropt '+o.c+(r.response===o.v?' sel':'')+'" onclick="setResp(this,''+o.v+'')">'
+      +'<input type="radio" name="resp" value="'+o.v+'"'+(r.response===o.v?' checked':'')+'>'
+      +'<span>'+o.label+'</span></div>';
+  }).join('');
+  // Tracking
+  g('tfind').value=r.findings||'';
+  g('town').value=r.owner||'';
+  g('tdue').value=r.due||'';
+  g('tstat').value=r.status||'Not Started';
+  // Progress
+  var done=comp();
+  g('sb-prog').textContent='Q'+(cur+1)+'/'+QQ.length+' · '+done+'/'+QQ.length+' answered';
+  // Scroll to top of audit body
+  var ab=document.querySelector('.audit-body');
+  if(ab)ab.scrollTop=0;
+  buildQStrip();
+}
+
+function setResp(el,v){
+  document.querySelectorAll('.ropt').forEach(function(r){r.classList.remove('sel');});
+  el.classList.add('sel');
+  el.querySelector('input').checked=true;
+}
+
+function commit(){
+  var q=QQ[cur];
+  var sel=document.querySelector('.ropt.sel input');
+  setR(q.id,{
+    response:sel?sel.value:'',
+    findings:g('tfind').value.trim(),
+    owner:g('town').value.trim(),
+    due:g('tdue').value,
+    status:g('tstat').value
+  });
+}
+
+function saveAndNext(){
+  commit();
+  buildQStrip();
+  buildSecGrid();
+  var m=g('smsg'); m.style.opacity=1; setTimeout(function(){m.style.opacity=0;},1800);
+  goQ(1);
+}
+
+function goQ(d){
+  commit();
+  var secQs=QQ.map(function(_,i){return i;}).filter(function(i){return QQ[i].section===curSec;});
+  var pos=secQs.indexOf(cur);
+  var nxt=secQs[Math.max(0,Math.min(secQs.length-1,pos+d))];
+  if(nxt!==undefined){ cur=nxt; renderQ(); }
+}
+
+function clearQ(){
+  document.querySelectorAll('.ropt').forEach(function(r){r.classList.remove('sel');});
+  document.querySelectorAll('.ropt input').forEach(function(r){r.checked=false;});
+  g('tfind').value='';
+}
+
+// === DASHBOARD ===
+function updateDash(){
+  var sc=overall(), p=sc.pct, c=col(p), rc=riskC();
+  var done=comp();
+  g('d-score').textContent=done>0?p+'%':'—%';
+  g('d-score').style.color=done>0?c:'#fff';
+  g('d-rating').textContent=done>0?lbl(p):'Not started';
+  g('d-rating').style.color=done>0?c:'#93b4d4';
+  g('d-detail').innerHTML=sc.fc+' fully compliant &nbsp;&middot;&nbsp; '+sc.pc+' partial &nbsp;&middot;&nbsp; '+sc.nc+' non-compliant &nbsp;&middot;&nbsp; '+sc.na+' N/A &nbsp;&middot;&nbsp; '+sc.un+' unanswered';
+  g('dc-C').textContent=rc.Critical; g('dc-H').textContent=rc.High;
+  g('dc-M').textContent=rc.Medium;  g('dc-L').textContent=rc.Low;
+  // Section scores
+  g('d-sec-scores').innerHTML=[1,2,3,4,5,6].map(function(sid){
+    var s=secScore(sid), c2=s.pct>0?col(s.pct):'#94a3b8';
+    return '<div class="ss-card">'
+      +'<div class="ssc-top"><span class="ssc-title">S'+sid+': '+ST[sid]+'</span>'
+      +'<span class="ssc-pct" style="color:'+c2+'">'+s.pct+'%</span></div>'
+      +'<div class="ssc-bar"><div class="ssc-fill" style="width:'+s.pct+'%;background:'+c2+'"></div></div>'
+      +'<div class="ssc-stats"><span class="stat-fc">&#10003; '+s.fc+' compliant</span>'
+      +'<span class="stat-pc">&#9680; '+s.pc+' partial</span>'
+      +'<span class="stat-nc">&#10007; '+s.nc+' non-compliant</span></div>'
+      +'</div>';
+  }).join('');
+  // Critical findings
+  var cr=QQ.filter(function(q){return q.risk==='Critical'&&getR(q.id).response==='No - Non-Compliant';});
+  if(cr.length){
+    g('d-crit-list').innerHTML='<div class="cl-header">'+cr.length+' Critical Finding'+(cr.length>1?'s':'')+'</div>'
+      +cr.map(function(q){
+        return '<div class="cl-item"><span class="cl-ref">S'+q.section+'/Q'+q.number+'</span>'
+          +'<span class="cl-q">'+h(q.question.slice(0,120))+(q.question.length>120?'...':'')+'</span></div>';
+      }).join('');
+  } else {
+    g('d-crit-list').innerHTML='<div class="cl-empty">No critical findings — good work.</div>';
+  }
+}
+
+// === SETTINGS ===
+function openSettings(){g('so').value=meta.org;g('sa').value=meta.auditor;g('sd').value=meta.date;g('sr').value=meta.ref;g('smod').classList.add('open');}
+function closeSettings(){g('smod').classList.remove('open');}
+function applySettings(){meta.org=g('so').value.trim();meta.auditor=g('sa').value.trim();meta.date=g('sd').value.trim();meta.ref=g('sr').value.trim();closeSettings();}
+
+// === FILE OPS ===
+function doSave(){
+  commit();
+  var d=JSON.stringify({meta:meta,responses:resp},null,2);
+  var a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(d);
+  a.download='audit_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function doLoad(){
+  var i=document.createElement('input');i.type='file';i.accept='.json';
+  i.onchange=function(e){
+    var f=e.target.files[0]; if(!f)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{
+        var d=JSON.parse(ev.target.result);
+        if(d.meta)Object.assign(meta,d.meta);
+        if(d.responses)Object.assign(resp,d.responses);
+        updateHome();
+        alert('Loaded successfully.');
+      }catch(err){alert('Error: '+err.message);}
+    };
+    r.readAsText(f);
+  };
+  i.click();
+}
+
+// === REPORTS ===
+function doReport(type){
+  commit();
+  var sc=overall(),rc=riskC();
+  var dt=meta.date||new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  var org=meta.org||'Organisation';
+  var scol=function(p){return p>=75?'#16a34a':p>=50?'#ea580c':'#dc2626';};
+
+  var out='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Audit Report</title>'
+    +'<style>body{font-family:Segoe UI,Arial,sans-serif;margin:0;color:#111;font-size:11pt}'
+    +'.page{max-width:860px;margin:0 auto;padding:40px}'
+    +'h2{font-size:13pt;color:#16304f;border-bottom:2px solid #1d4ed8;padding-bottom:5px;margin:24px 0 10px}'
+    +'table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10pt}'
+    +'th{background:#16304f;color:#fff;padding:7px 10px;text-align:left;font-size:9pt}'
+    +'td{padding:7px 10px;border-bottom:1px solid #e2e8f0;vertical-align:top}'
+    +'tr:nth-child(even) td{background:#f8fafc}'
+    +'.cover{background:#16304f;color:#fff;padding:44px 40px;margin:-40px -40px 32px}'
+    +'.cover h1{font-size:22pt;margin:0 0 6px;color:#fff}'
+    +'.cover p{color:#93b4d4;font-size:11pt;margin:3px 0}'
+    +'.conf{color:#fbbf24;font-size:9pt;margin-top:24px;font-weight:700}'
+    +'.sbox{display:inline-block;padding:10px 22px;border-radius:5px;font-size:36pt;font-weight:700;color:#fff;margin:8px 0}'
+    +'.pill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:8pt;font-weight:700;color:#fff}'
+    +'.pC{background:#dc2626}.pH{background:#ea580c}.pM{background:#d97706}.pL{background:#16a34a}'
+    +'.qb{border:1px solid #e2e8f0;border-radius:4px;margin:8px 0;overflow:hidden;page-break-inside:avoid}'
+    +'.qbh{padding:7px 12px;font-weight:700;font-size:10pt;color:#fff}'
+    +'.FC{background:#16a34a}.PC{background:#d97706}.NC{background:#dc2626}.NA,.UN{background:#64748b}'
+    +'.qbd{padding:10px 14px;font-size:10pt}'
+    +'.ql{font-size:8pt;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:8px;margin-bottom:2px}'
+    +'.rem{background:#f0fdfa;padding:7px 10px;border-radius:3px;color:#134e4a;margin-top:3px}'
+    +'.sf{border-top:1px solid #333;padding-top:5px;font-size:9pt;margin-top:8px}'
+    +'@media print{.page{padding:20px}}</style></head><body><div class="page">';
+
+  out+='<div class="cover"><p style="font-size:9pt;color:#60a5fa">GDPR &middot; DUAA 2025 &middot; ISO/IEC 27701:2019</p>'
+    +'<h1>'+(type==='exec'?'Executive Summary Report':'Detailed Audit Report')+'</h1>'
+    +'<p>'+h(org)+'</p>'
+    +'<p style="margin-top:16px">Ref: '+h(meta.ref||'&mdash;')+' | Date: '+h(dt)+' | Auditor: '+h(meta.auditor||'&mdash;')+'</p>'
+    +'<p class="conf">CONFIDENTIAL &mdash; PRIVILEGED LEGAL DOCUMENT</p></div>';
+
+  out+='<h2>Overall Score</h2>'
+    +'<div class="sbox" style="background:'+scol(sc.pct)+'">'+sc.pct+'%</div>'
+    +'<p><strong>'+lbl(sc.pct)+'</strong> &mdash; '+sc.pts+'/'+sc.max+' points. '
+    +sc.fc+' fully compliant, '+sc.pc+' partial, '+sc.nc+' non-compliant, '+sc.na+' N/A, '+sc.un+' unanswered.</p>';
+
+  out+='<h2>Risk Summary</h2><table><tr><th>Risk Level</th><th>Non-Compliant Findings</th><th>Remediation Timeframe</th></tr>'
+    +'<tr><td><span class="pill pC">Critical</span></td><td>'+rc.Critical+'</td><td>5 business days</td></tr>'
+    +'<tr><td><span class="pill pH">High</span></td><td>'+rc.High+'</td><td>30 days</td></tr>'
+    +'<tr><td><span class="pill pM">Medium</span></td><td>'+rc.Medium+'</td><td>90 days</td></tr>'
+    +'<tr><td><span class="pill pL">Low</span></td><td>'+rc.Low+'</td><td>6 months</td></tr></table>';
+
+  out+='<h2>Section Scorecard</h2><table><tr><th>Section</th><th>Score</th><th>Rating</th><th>FC</th><th>PC</th><th>NC</th></tr>';
+  [1,2,3,4,5,6].forEach(function(sid){
+    var s=secScore(sid);
+    out+='<tr><td>S'+sid+': '+ST[sid]+'</td><td><strong style="color:'+scol(s.pct)+'">'+s.pct+'%</strong></td><td>'+lbl(s.pct)+'</td><td>'+s.fc+'</td><td>'+s.pc+'</td><td>'+s.nc+'</td></tr>';
+  });
+  out+='</table>';
+
+  if(type==='exec'){
+    var cr=QQ.filter(function(q){return q.risk==='Critical'&&getR(q.id).response==='No - Non-Compliant';});
+    if(cr.length){
+      out+='<h2>Critical Non-Compliance Findings</h2><table><tr><th>Ref</th><th>Question</th><th>Findings</th></tr>';
+      cr.forEach(function(q){out+='<tr><td>S'+q.section+'/Q'+q.number+'</td><td>'+h(q.question)+'</td><td>'+h(getR(q.id).findings||'&mdash;')+'</td></tr>';});
+      out+='</table>';
+    }
+    var hi=QQ.filter(function(q){return q.risk==='High'&&getR(q.id).response==='No - Non-Compliant';});
+    if(hi.length){
+      out+='<h2>High Risk Findings</h2><table><tr><th>Ref</th><th>Question</th><th>Findings</th></tr>';
+      hi.forEach(function(q){out+='<tr><td>S'+q.section+'/Q'+q.number+'</td><td>'+h(q.question)+'</td><td>'+h(getR(q.id).findings||'&mdash;')+'</td></tr>';});
+      out+='</table>';
+    }
+  } else {
+    [1,2,3,4,5,6].forEach(function(sid){
+      out+='<h2>Section '+sid+': '+ST[sid]+'</h2>';
+      QQ.filter(function(q){return q.section===sid;}).forEach(function(q){
+        var r=getR(q.id),rv=r.response||'Unanswered';
+        var cls=rv==='Yes - Fully Compliant'?'FC':rv==='Yes - Partially Compliant'?'PC':rv==='No - Non-Compliant'?'NC':'NA';
+        out+='<div class="qb"><div class="qbh '+cls+'">S'+q.section+'/Q'+q.number+' ['+h(q.risk||'&mdash;')+'] &mdash; '+h(q.question.slice(0,80))+(q.question.length>80?'...':'')+'</div>'
+          +'<div class="qbd"><div class="ql">Response</div><div>'+h(rv)+'</div>'
+          +(r.findings?'<div class="ql">Findings</div><div>'+h(r.findings)+'</div>':'')
+          +(r.owner?'<div class="ql">Responsible</div><div>'+h(r.owner)+'</div>':'')
+          +(r.due?'<div class="ql">Target Date</div><div>'+h(r.due)+'</div>':'')
+          +((rv.indexOf('Non-Compliant')>=0||rv.indexOf('Partial')>=0)&&q.remediation?'<div class="ql">Remediation</div><div class="rem">'+h(q.remediation)+'</div>':'')
+          +'</div></div>';
+      });
+    });
+  }
+
+  out+='<h2>Sign-Off</h2>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px">'
+    +'<div class="sf">Lead Auditor: '+h(meta.auditor||'________________________________')+'</div>'
+    +'<div class="sf">Date: '+h(dt)+'</div>'
+    +'<div class="sf">Organisation: '+h(org)+'</div>'
+    +'<div class="sf">Reference: '+h(meta.ref||'________________________________')+'</div></div>'
+    +'<div style="border-top:2px solid #1d4ed8;margin-top:32px;padding-top:10px;font-size:9pt;color:#64748b;text-align:center">'
+    +'GDPR &middot; Data (Use and Access) Act 2025 &middot; ISO/IEC 27701:2019 | CONFIDENTIAL</div>'
+    +'</div></body></html>';
+
+  var w=window.open('','_blank'); w.document.write(out); w.document.close();
+  setTimeout(function(){w.print();},600);
+}
+
+// === INIT ===
+updateHome();
+</script>
+</body>
+</html>
