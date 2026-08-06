@@ -58,3 +58,7 @@ Thumbs.db
 *.temp
 .cache/
 *.pid
+
+# Large documentation files
+*.zip
+*.docx
