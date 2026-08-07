@@ -6,6 +6,7 @@ export type EngineTurn = { role: string; kind: string; content: string; question
 
 export type ResolvedIntent =
   | { type: 'answer'; response: CanonicalAnswer; prose: string }
+  | { type: 'confirm'; response: CanonicalAnswer; prose: string }
   | { type: 'explain' | 'example' | 'skip' | 'back' | 'leave_blank' | 'uncertain' | 'unrecognised'; prose: string };
 
 const canonical: Array<[RegExp, CanonicalAnswer]> = [
@@ -25,6 +26,11 @@ export function resolveIntent(input: string, phase: Phase = 'answer'): ResolvedI
   if (/^(skip|defer|later)\b/.test(lower)) return { type: 'skip', prose };
   if (/^(back|previous)\b/.test(lower)) return { type: 'back', prose };
   if (phase !== 'answer') return { type: 'unrecognised', prose };
+  const confirmation = lower.match(/^confirm\s+(fully[- _]?compliant|partial|non[- _]?compliant|na|n\/a)\s*$/);
+  if (confirmation) {
+    const response = confirmation[1].replace(/[- ]/g, '_') === 'n_a' ? 'na' : confirmation[1].replace(/[- ]/g, '_') as CanonicalAnswer;
+    return { type: 'confirm', response, prose };
+  }
   if (/^(i don['’]?t know|not sure|unsure|no idea|i['’]?m unsure)\b/.test(lower)) return { type: 'uncertain', prose };
   for (const [pattern, response] of canonical) if (pattern.test(prose)) return { type: 'answer', response, prose };
   return { type: 'unrecognised', prose };
@@ -44,6 +50,23 @@ export function nextQuestion(questions: EngineQuestion[], responses: EngineRespo
   const leftBlank = new Set(turns.filter(turn => turn.kind === 'navigation' && turn.content === '[deferred-final]' && turn.question_id).map(turn => turn.question_id as string));
   const unanswered = questions.filter(question => !answered.has(question.id) && !leftBlank.has(question.id));
   return unanswered.find(question => !deferred.has(question.id)) ?? unanswered[0] ?? null;
+}
+
+export function pendingProposalResponse(turns: EngineTurn[], questionId: string): CanonicalAnswer | null {
+  const proposal = turns.map((turn, index) => ({ turn, index })).reverse().find(item =>
+    item.turn.role === 'assistant' && item.turn.kind === 'proposal' && item.turn.question_id === questionId
+  );
+  if (!proposal || turns.slice(proposal.index + 1).some(turn => turn.role === 'user')) return null;
+  const match = proposal.turn.content.match(/confirm\s+(fully[_ -]?compliant|partial|non[_ -]?compliant|n\/a|na)\b/i);
+  if (!match) return null;
+  const normalized = match[1].toLowerCase().replace(/[- ]/g, '_');
+  return normalized === 'n_a' || normalized === 'na' ? 'na' : normalized as CanonicalAnswer;
+}
+
+export function confirmedAnswer(intent: ResolvedIntent, turns: EngineTurn[], questionId: string): CanonicalAnswer | null {
+  if (intent.type === 'answer') return intent.response;
+  if (intent.type === 'confirm' && pendingProposalResponse(turns, questionId) === intent.response) return intent.response;
+  return null;
 }
 
 export function followUpFor(question: EngineQuestion, response: CanonicalAnswer): Phase | null {

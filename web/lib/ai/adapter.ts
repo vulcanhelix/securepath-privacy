@@ -1,5 +1,8 @@
+import { openAIAdapter, type ModelRequest, type ModelResult } from './openai';
+
 export interface ConversationAdapter {
   render(kind: 'question' | 'explainer' | 'example' | 'prompt' | 'summary', data: Record<string, unknown>): string;
+  generate(request: ModelRequest): Promise<ModelResult | null>;
 }
 
 export const noneAdapter: ConversationAdapter = {
@@ -15,6 +18,12 @@ export const noneAdapter: ConversationAdapter = {
     if (kind === 'prompt') return String(data.text ?? 'Tell me a little more and I will guide you.');
     return q;
   },
+  async generate() {
+    return null;
+  },
 };
 
-export const conversationAdapter: ConversationAdapter = noneAdapter;
+export const conversationAdapter: ConversationAdapter = {
+  ...noneAdapter,
+  generate: openAIAdapter.generate,
+};

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS public.assessment_chat_turns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL REFERENCES public.assessment_sessions(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('assistant', 'user', 'system')),
-  kind TEXT NOT NULL CHECK (kind IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence')),
+  kind TEXT NOT NULL CHECK (kind IN ('question', 'answer', 'proposal', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence')),
   content TEXT NOT NULL,
   question_id UUID REFERENCES public.assessment_questions(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.assessment_chat_turns (
 );
 ALTER TABLE public.assessment_chat_turns DROP CONSTRAINT IF EXISTS assessment_chat_turns_kind_check;
 ALTER TABLE public.assessment_chat_turns ADD CONSTRAINT assessment_chat_turns_kind_check
-  CHECK (kind IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence'));
+  CHECK (kind IN ('question', 'answer', 'proposal', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence'));
 
 CREATE TABLE IF NOT EXISTS public.assessment_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

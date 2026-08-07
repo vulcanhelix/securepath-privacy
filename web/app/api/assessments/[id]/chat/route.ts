@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 import { conversationAdapter } from '@/lib/ai/adapter';
-import { nextFollowUp, nextQuestion, phaseFor, resolveIntent, type CanonicalAnswer, type EngineQuestion, type EngineResponse, type EngineTurn, type Phase } from '@/lib/ai/engine';
+import { confirmedAnswer, nextFollowUp, nextQuestion, phaseFor, resolveIntent, type CanonicalAnswer, type EngineQuestion, type EngineResponse, type EngineTurn, type Phase } from '@/lib/ai/engine';
 
 type Question = EngineQuestion & { section_id: number; section_name: string; question_number: number; risk: string };
 type ChatState = { supabase: Awaited<ReturnType<typeof serverClient>>; session: Record<string, unknown>; turns: EngineTurn[]; responses: EngineResponse[]; questions: Question[]; documents: Array<{ id: string; original_filename: string; mime: string; size: number; question_id: string | null; question?: string; created_at: string }> };
-type ChatKind = 'question' | 'answer' | 'explainer' | 'upload' | 'summary' | 'navigation' | 'gap_details' | 'owner' | 'target_date' | 'evidence';
+type ChatKind = 'question' | 'answer' | 'proposal' | 'explainer' | 'upload' | 'summary' | 'navigation' | 'gap_details' | 'owner' | 'target_date' | 'evidence';
 
 async function getState(supabase: ChatState['supabase'], id: string): Promise<ChatState> {
   const [{ data: session, error: sessionError }, { data: turns }, { data: responses }, { data: documents }] = await Promise.all([
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   };
 
   const alreadyDeferred = s.turns.some(turn => turn.question_id === q.id && turn.kind === 'navigation' && turn.content === '[deferred]');
-  const userKind: ChatKind = ['skip', 'leave_blank', 'back'].includes(intent.type) ? 'navigation' : intent.type === 'explain' || intent.type === 'example' ? 'explainer' : phase === 'answer' && intent.type === 'answer' ? 'answer' : phase;
+  const userKind: ChatKind = ['skip', 'leave_blank', 'back'].includes(intent.type) ? 'navigation' : intent.type === 'explain' || intent.type === 'example' ? 'explainer' : phase === 'answer' && (intent.type === 'answer' || intent.type === 'confirm') ? 'answer' : phase;
   const userContent = intent.type === 'leave_blank'
     ? '[deferred-final]'
     : intent.type === 'skip' && phase === 'answer' && alreadyDeferred
@@ -126,7 +126,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (intent.type === 'skip' && phase !== 'answer') return finishOrAdvance(s, append);
   if (phase === 'answer') {
     if (intent.type === 'uncertain') return reply('question', `No problem. We can take this one step at a time. What do you know about whether ${q.question.toLowerCase()}? You can describe what is in place, even if it is incomplete.`);
-    if (intent.type === 'unrecognised') return reply('question', `Thanks — I heard: “${content}”. Is that control fully in place, partly in place, not in place, or not applicable? You can answer in your own words.`);
+    if (intent.type === 'unrecognised') {
+      const model = await conversationAdapter.generate({ task: 'classify', sessionId: id, question: q, userInput: content, turns: s.turns });
+      if (model) {
+        const proposal = `${model.message}\n\nProposed classification: ${model.response}. Please confirm by replying “confirm ${model.response}”.`;
+        return reply('proposal', proposal, q.id, true);
+      }
+      return reply('question', `Thanks — I heard: “${content}”. Is that control fully in place, partly in place, not in place, or not applicable? You can answer in your own words.`);
+    }
     if (intent.type === 'back') {
       const previous = s.questions.filter(item => s.responses.some(response => response.question_id === item.id)).at(-1) ?? q;
       return reply('navigation', previous ? `Let's revisit this one: ${prompt(previous)}` : 'We are at the beginning of the assessment.', previous?.id);
@@ -136,8 +143,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         ? `You already deferred this question. If you want to leave it unanswered, say “leave blank”. Otherwise, answer it now.`
         : `I’ll come back to “${q.question}” before we wrap up.`, q.id, alreadyDeferred);
     }
-    if (intent.type === 'answer') {
+    if (intent.type === 'answer' || intent.type === 'confirm') {
       const answer = intent.response as CanonicalAnswer;
+      if (intent.type === 'confirm' && confirmedAnswer(intent, s.turns, q.id) !== answer) {
+        return reply('question', 'I do not have a matching classification proposal waiting. Please describe the control again and I will help classify it.', q.id, true);
+      }
       const { error: clearError } = await supabase.rpc('clear_assessment_response_followups', { p_session_id: id, p_question_id: q.id });
       if (clearError) return NextResponse.json({ error: clearError.message }, { status: 400 });
       const { error } = await supabase.rpc('upsert_response', { p_session_id: id, p_question_id: q.id, p_response: answer, p_findings: null, p_responsible_party: null, p_target_date: null, p_status: answer === 'na' ? 'na' : 'complete' });

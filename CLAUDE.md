@@ -249,3 +249,65 @@ North star: client-ready, evidence-linked monthly compliance report in <60 min a
 
 ## VPS: do not supabase start
 On this host, `supabase start` is blocked (exit 99). Live SecurePath uses `/root/securepath-privacy/staging` docker compose only. Override only with `SUPABASE_ALLOW_START=1`. See DO-NOT-SUPABASE-START-ON-VPS.md.
+
+## Conversational assessments
+
+The grid assessment remains available at `/assessments/[id]`. The companion
+conversation at `/assessments/[id]/chat` uses the server-side deterministic
+engine and the existing `upsert_response` RPC, so scoring remains canonical
+and Excel-parity is preserved. The append-only transcript is stored in
+`assessment_chat_turns`; evidence metadata is stored in
+`assessment_documents`, while evidence bytes remain on the VPS under
+`ASSESSMENT_EVIDENCE_DIR` (default `/opt/securepath/evidence`) in
+server-derived client/session paths.
+
+OpenAI is an optional conversational provider. It uses only the Responses API
+at `https://api.openai.com/v1/responses`, defaults to model `gpt-5.6-luna` and
+reasoning effort `max`, and never receives uploaded document contents or
+filenames. Environment variables are:
+
+- `AI_PROVIDER` — `auto` (default; OpenAI when a key exists), `none`/`deterministic`,
+  or `openai` (explicit provider selection).
+- `OPENAI_API_KEY` — server-only OpenAI key; never commit or place in an example
+  file.
+- `OPENAI_MODEL` — defaults to `gpt-5.6-luna`.
+- `OPENAI_REASONING_EFFORT` — defaults to `max`.
+- `OPENAI_TIMEOUT_MS` — request timeout, default 15000.
+
+Free-text model classifications are proposals only. A proposal is persisted in
+the transcript and requires an explicit `confirm <classification>` user turn
+before the deterministic engine writes a response. Missing keys, timeouts, API
+errors, and malformed outputs fall back to deterministic conversation text.
+
+### Langfuse tracing
+
+Tracing is optional and best-effort. Set all of the following in the web
+server environment to enable it:
+
+- `LANGFUSE_BASE_URL` — self-hosted Langfuse URL.
+- `LANGFUSE_PUBLIC_KEY` — Langfuse project public key.
+- `LANGFUSE_SECRET_KEY` — Langfuse project secret key.
+- `LANGFUSE_TRACING_ENVIRONMENT` — optional trace environment, default
+  `production`.
+
+The integration creates one trace identity per assessment session and one
+generation for each OpenAI call, including model, reasoning effort, latency,
+usage, prompt, and completion/error data. Export is asynchronous and errors
+are swallowed so tracing cannot block or fail an assessment. Because traces
+contain compliance answers and model prompts/completions, they are sensitive
+client data and require the same access, retention, backup, and deletion
+controls as assessment records.
+
+Run the standalone pinned stack in `observability/langfuse/` using its README.
+Current Langfuse self-hosting requires web/worker, PostgreSQL, Redis or Valkey,
+ClickHouse, and S3-compatible storage such as MinIO. Compose is intended for
+testing and low-scale deployments and does not provide HA, scaling, or backup
+functionality; it is materially heavier than the SecurePath application stack.
+Self-hosting can keep traces in-country when the host and its backups remain
+in-country, but it does not by itself establish a complete residency or
+compliance position.
+
+OpenAI is a US sub-processor for this optional feature. Its processing,
+cross-border transfer, contract, and security details must be included in the
+customer's POPIA operator and cross-border disclosure; self-hosted Langfuse
+does not change that OpenAI relationship.

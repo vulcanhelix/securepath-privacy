@@ -7,6 +7,9 @@
     "start": "next start"
   },
   "dependencies": {
+    "@langfuse/otel": "5.10.0",
+    "@langfuse/tracing": "5.10.0",
+    "@opentelemetry/sdk-trace-node": "2.10.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.55.0",
     "next": "^15.4.5",
