@@ -1,9 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface Client {
+  id: string;
+  name: string;
+  industry: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+}
 
 export default function NewAssessment() {
   const router = useRouter();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
   const [f, setF] = useState({ 
     client_org_id: '', 
     title: '', 
@@ -16,6 +26,21 @@ export default function NewAssessment() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    fetch('/api/clients')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setClients(data);
+        }
+      })
+      .catch(e => {
+        console.error('Failed to load clients:', e);
+        setErr('Failed to load clients');
+      })
+      .finally(() => setClientsLoading(false));
+  }, []);
+
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value });
 
@@ -23,6 +48,12 @@ export default function NewAssessment() {
     e.preventDefault();
     setBusy(true); 
     setErr('');
+    
+    if (!f.client_org_id) {
+      setErr('Please select a client');
+      setBusy(false);
+      return;
+    }
     
     const r = await fetch('/api/assessments', {
       method: 'POST', 
@@ -46,13 +77,16 @@ export default function NewAssessment() {
   return (
     <div className="card" style={{ maxWidth: 560, margin: '2rem auto' }}>
       <h1>New Assessment</h1>
-      <p className="muted">Create a new POPIA/GDPR compliance assessment for a client.</p>
+      <p className="muted">Create a new POPIA compliance assessment for a client.</p>
       <form onSubmit={submit}>
         <label>Client *</label>
         <select required value={f.client_org_id} onChange={set('client_org_id')}>
-          <option value="">Select a client...</option>
-          {/* TODO: Load clients from API */}
-          <option value="99a083a3-eff6-4a2c-b3fe-6a9193a2a4a1">ClientCo</option>
+          <option value="">{clientsLoading ? 'Loading clients...' : 'Select a client...'}</option>
+          {clients.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.name} {c.industry ? `(${c.industry})` : ''}
+            </option>
+          ))}
         </select>
 
         <label>Assessment Title *</label>
@@ -62,7 +96,6 @@ export default function NewAssessment() {
         <select value={f.framework} onChange={set('framework')}>
           <option value="popia">POPIA</option>
           <option value="gdpr">GDPR</option>
-          <option value="iso27701">ISO 27701</option>
         </select>
 
         <label>Organization Name</label>

@@ -3,6 +3,20 @@ import { serverClient } from '@/lib/supabase';
 import { BASE_URL } from '@/lib/base-url';
 import { opsAlert, sendMail } from '@/lib/mail';
 
+export async function GET() {
+  const supabase = await serverClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const { data, error } = await supabase
+    .from('client_orgs')
+    .select('id, name, industry, contact_name, contact_email, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json(data);
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await serverClient();
   const { data: { user } } = await supabase.auth.getUser();

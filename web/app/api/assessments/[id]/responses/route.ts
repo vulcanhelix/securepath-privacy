@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 
+const validResponses = ['fully_compliant', 'partial', 'non_compliant', 'na'];
+const validStatuses = ['not_started', 'in_progress', 'complete', 'na'];
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -35,17 +38,38 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const { id } = await params;
-  const body = await req.json();
-  
+
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  }
+
   if (Array.isArray(body.responses)) {
-    // Batch update
+    // Validate batch
+    for (const r of body.responses) {
+      if (!r.question_id) return NextResponse.json({ error: 'question_id required in batch' }, { status: 400 });
+      if (r.response && !validResponses.includes(r.response)) {
+        return NextResponse.json({ error: `invalid response value: ${r.response}` }, { status: 400 });
+      }
+    }
+
     const { error } = await supabase.rpc('batch_upsert_responses', {
       p_session_id: id,
-      p_responses: JSON.stringify(body.responses),
+      p_responses: body.responses,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   } else {
-    // Single response update
+    // Single response
+    if (!body.question_id) return NextResponse.json({ error: 'question_id required' }, { status: 400 });
+    if (!body.response || !validResponses.includes(body.response)) {
+      return NextResponse.json({ error: `invalid response value` }, { status: 400 });
+    }
+    if (body.status && !validStatuses.includes(body.status)) {
+      return NextResponse.json({ error: `invalid status value` }, { status: 400 });
+    }
+
     const { error } = await supabase.rpc('upsert_response', {
       p_session_id: id,
       p_question_id: body.question_id,
