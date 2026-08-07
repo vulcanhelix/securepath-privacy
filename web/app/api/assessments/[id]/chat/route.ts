@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 import { conversationAdapter } from '@/lib/ai/adapter';
-import { confirmedAnswer, nextFollowUp, nextQuestion, phaseFor, resolveIntent, type CanonicalAnswer, type EngineQuestion, type EngineResponse, type EngineTurn, type Phase } from '@/lib/ai/engine';
+import { confirmedAnswer, nextFollowUp, nextQuestion, pendingFindingsDraft, pendingProposalResponse, phaseFor, proposalConfirmation, resolveIntent, type CanonicalAnswer, type EngineQuestion, type EngineResponse, type EngineTurn, type Phase } from '@/lib/ai/engine';
 
 type Question = EngineQuestion & { section_id: number; section_name: string; question_number: number; risk: string };
 type ChatState = { supabase: Awaited<ReturnType<typeof serverClient>>; session: Record<string, unknown>; turns: EngineTurn[]; responses: EngineResponse[]; questions: Question[]; documents: Array<{ id: string; original_filename: string; mime: string; size: number; question_id: string | null; question?: string; created_at: string }> };
@@ -24,6 +24,11 @@ async function getState(supabase: ChatState['supabase'], id: string): Promise<Ch
 
 function prompt(question: Question) {
   return `Let's look at ${question.section_name}. ${question.question}`;
+}
+
+async function conversationalPrompt(id: string, question: Question, turns: EngineTurn[]) {
+  const model = await conversationAdapter.generate({ task: 'question', sessionId: id, question, userInput: '', turns });
+  return model?.message || prompt(question);
 }
 
 function followUpPrompt(question: Question, phase: Phase) {
@@ -66,7 +71,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
     const s = initial.turns.length ? initial : await getState(supabase, id);
     const next = nextQuestion(s.questions, s.responses, s.turns) as Question | null;
-    return NextResponse.json({ session: s.session, turns: presentTurns(s), next: next ? { ...next, prompt: prompt(next) } : null, documents: s.documents, progress: progress(s, next) });
+    const nextPrompt = next ? await conversationalPrompt(id, next, s.turns) : null;
+    return NextResponse.json({ session: s.session, turns: presentTurns(s), next: next ? { ...next, prompt: nextPrompt } : null, documents: s.documents, progress: progress(s, next) });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load chat' }, { status: 404 });
   }
@@ -88,7 +94,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!content) return NextResponse.json({ error: 'message is required' }, { status: 400 });
   if (!q) return NextResponse.json({ error: 'assessment is complete' }, { status: 400 });
   const phase: Phase = phaseFor(q.id, s.turns);
-  const intent = resolveIntent(content, phase);
+  const pendingClassification = pendingProposalResponse(s.turns, q.id);
+  const pendingDraft = pendingFindingsDraft(s.turns, q.id);
+  const action = proposalConfirmation(content);
+  const baseIntent = resolveIntent(content, phase);
+  const intent = pendingClassification && action === 'confirm'
+    ? { type: 'confirm' as const, response: pendingClassification, prose: content }
+    : baseIntent;
   const append = async (role: 'user' | 'assistant', kind: ChatKind, text: string, questionId?: string) => {
     const { error } = await supabase.rpc('append_assessment_chat_turn', { p_session_id: id, p_role: role, p_kind: kind, p_content: text, p_question_id: questionId ?? null });
     if (error) throw new Error(error.message);
@@ -97,7 +109,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await append('assistant', kind, text, questionId);
     const updated = { ...s, turns: [...s.turns, { role: 'assistant', kind, content: text, question_id: questionId }] };
     const next = stayOnQuestion ? q : nextQuestion(updated.questions, updated.responses, updated.turns) as Question | null;
-    return NextResponse.json({ turns: [{ role: 'assistant', kind, content: text, question_id: questionId }], next: next ? { ...next, prompt: prompt(next) } : null, documents: updated.documents, progress: progress(updated, next) });
+    const nextPrompt = next && !stayOnQuestion ? await conversationalPrompt(id, next, updated.turns) : null;
+    return NextResponse.json({ turns: [{ role: 'assistant', kind, content: text, question_id: questionId }], next: next ? { ...next, prompt: nextPrompt } : null, documents: updated.documents, progress: progress(updated, next) });
   };
 
   const alreadyDeferred = s.turns.some(turn => turn.question_id === q.id && turn.kind === 'navigation' && turn.content === '[deferred]');
@@ -115,9 +128,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   s.turns = [...s.turns, { role: 'user', kind: userKind, content: userContent, question_id: q.id }];
   if (intent.type === 'explain') {
     const response = s.responses.find(item => item.question_id === q.id);
-    return reply('explainer', conversationAdapter.render('explainer', { why: q.why_matters, regulatory_ref: q.regulatory_ref, remediation: response && ['partial', 'non_compliant'].includes(response.response) ? q.remediation : null }), q.id, true);
+    const model = await conversationAdapter.generate({ task: 'explain', sessionId: id, question: q, userInput: content, turns: s.turns });
+    return reply('explainer', model?.message ?? conversationAdapter.render('explainer', { why: q.why_matters, regulatory_ref: q.regulatory_ref, remediation: response && ['partial', 'non_compliant'].includes(response.response) ? q.remediation : null }), q.id, true);
   }
-  if (intent.type === 'example') return reply('explainer', conversationAdapter.render('example', { evidence: q.evidence_req }), q.id, true);
+  if (intent.type === 'example') {
+    const model = await conversationAdapter.generate({ task: 'explain', sessionId: id, question: q, userInput: content, turns: s.turns });
+    return reply('explainer', model?.message ?? conversationAdapter.render('example', { evidence: q.evidence_req }), q.id, true);
+  }
   if (intent.type === 'back' && phase !== 'answer') return reply(phase, `Let's stay with this step. ${followUpPrompt(q, phase)}`, q.id, true);
   if (intent.type === 'leave_blank') {
     if (!alreadyDeferred) return reply('navigation', 'I can leave this blank after you defer it once. Say “skip” first, then “leave blank” if you want to finish without answering.', q.id, true);
@@ -125,10 +142,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
   if (intent.type === 'skip' && phase !== 'answer') return finishOrAdvance(s, append);
   if (phase === 'answer') {
+    if (pendingClassification && action === 'rephrase') return reply('question', 'No problem. Tell me a little more about the control in your own words, and I’ll reconsider it.', q.id, true);
     if (intent.type === 'uncertain') return reply('question', `No problem. We can take this one step at a time. What do you know about whether ${q.question.toLowerCase()}? You can describe what is in place, even if it is incomplete.`);
     if (intent.type === 'unrecognised') {
       const model = await conversationAdapter.generate({ task: 'classify', sessionId: id, question: q, userInput: content, turns: s.turns });
-      if (model) {
+      if (model?.response) {
         const proposal = `${model.message}\n\nProposed classification: ${model.response}. Please confirm by replying “confirm ${model.response}”.`;
         return reply('proposal', proposal, q.id, true);
       }
@@ -161,6 +179,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } else if (phase === 'gap_details') {
     const response = s.responses.find(item => item.question_id === q.id);
     if (!response) return reply('question', 'Please answer the control first, then we can capture the gap details.');
+    if (pendingDraft && action === 'confirm') {
+      const { error } = await supabase.rpc('upsert_response', { p_session_id: id, p_question_id: q.id, p_response: response.response, p_findings: pendingDraft, p_responsible_party: response.responsible_party ?? null, p_target_date: response.target_date ?? null, p_status: 'in_progress' });
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      response.findings = pendingDraft;
+      return reply('owner', 'Thanks — I’ll record that. Who owns this control? A person, role, or team is fine.', q.id, true);
+    }
+    if (pendingDraft && action === 'rephrase') return reply('gap_details', 'No problem. Tell me what is in place and what is missing, in your own words.', q.id, true);
+    const findings = await conversationAdapter.generate({ task: 'findings', sessionId: id, question: q, userInput: content, turns: s.turns });
+    if (findings?.draft) {
+      return reply('proposal', `Draft findings: ${findings.draft}\n\n${findings.message}\n\nPlease choose “Yes, that’s right” to save this, or “No, let me rephrase”.`, q.id, true);
+    }
     await supabase.rpc('upsert_response', { p_session_id: id, p_question_id: q.id, p_response: response.response, p_findings: content, p_responsible_party: response.responsible_party ?? null, p_target_date: response.target_date ?? null, p_status: 'in_progress' });
     response.findings = content;
     return reply('owner', 'Who owns this control? A person, role, or team is fine.', q.id, true);
@@ -193,7 +222,7 @@ async function finishOrAdvance(s: ChatState, append: (role: 'user' | 'assistant'
     await append('assistant', 'summary', summary);
     return NextResponse.json({ turns: [{ role: 'assistant', kind: 'summary', content: summary }], next: null, complete: true, documents: s.documents, progress: progress(s, null) });
   }
-  const text = prompt(next);
+  const text = await conversationalPrompt(String(s.session.id), next, s.turns);
   await append('assistant', 'question', text, next.id);
   return NextResponse.json({ turns: [{ role: 'assistant', kind: 'question', content: text, question_id: next.id }], next: { ...next, prompt: text }, documents: s.documents, progress: progress(s, next) });
 }

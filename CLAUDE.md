@@ -272,42 +272,15 @@ filenames. Environment variables are:
   file.
 - `OPENAI_MODEL` — defaults to `gpt-5.6-luna`.
 - `OPENAI_REASONING_EFFORT` — defaults to `max`.
-- `OPENAI_TIMEOUT_MS` — request timeout, default 15000.
+- `OPENAI_TIMEOUT_MS` — request timeout, default 30000.
 
 Free-text model classifications are proposals only. A proposal is persisted in
-the transcript and requires an explicit `confirm <classification>` user turn
-before the deterministic engine writes a response. Missing keys, timeouts, API
-errors, and malformed outputs fall back to deterministic conversation text.
-
-### Langfuse tracing
-
-Tracing is optional and best-effort. Set all of the following in the web
-server environment to enable it:
-
-- `LANGFUSE_BASE_URL` — self-hosted Langfuse URL.
-- `LANGFUSE_PUBLIC_KEY` — Langfuse project public key.
-- `LANGFUSE_SECRET_KEY` — Langfuse project secret key.
-- `LANGFUSE_TRACING_ENVIRONMENT` — optional trace environment, default
-  `production`.
-
-The integration creates one trace identity per assessment session and one
-generation for each OpenAI call, including model, reasoning effort, latency,
-usage, prompt, and completion/error data. Export is asynchronous and errors
-are swallowed so tracing cannot block or fail an assessment. Because traces
-contain compliance answers and model prompts/completions, they are sensitive
-client data and require the same access, retention, backup, and deletion
-controls as assessment records.
-
-Run the standalone pinned stack in `observability/langfuse/` using its README.
-Current Langfuse self-hosting requires web/worker, PostgreSQL, Redis or Valkey,
-ClickHouse, and S3-compatible storage such as MinIO. Compose is intended for
-testing and low-scale deployments and does not provide HA, scaling, or backup
-functionality; it is materially heavier than the SecurePath application stack.
-Self-hosting can keep traces in-country when the host and its backups remain
-in-country, but it does not by itself establish a complete residency or
-compliance position.
+the transcript and requires a visible user confirmation before the deterministic
+engine writes a response. Missing keys, timeouts, API errors, and malformed
+outputs fall back to deterministic conversation text. Model calls emit a
+server-side diagnostic line containing model, status, latency, usage, and error
+metadata only; prompts and completions are not logged.
 
 OpenAI is a US sub-processor for this optional feature. Its processing,
 cross-border transfer, contract, and security details must be included in the
-customer's POPIA operator and cross-border disclosure; self-hosted Langfuse
-does not change that OpenAI relationship.
+customer's POPIA operator and cross-border disclosure.

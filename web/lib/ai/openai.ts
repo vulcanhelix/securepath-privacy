@@ -1,8 +1,7 @@
 import type { CanonicalAnswer, EngineQuestion, EngineTurn } from './engine';
-import { traceOpenAIGeneration } from './tracing';
 
 export type ModelRequest = {
-  task: 'classify';
+  task: 'classify' | 'explain' | 'question' | 'findings';
   sessionId: string;
   question: EngineQuestion;
   userInput: string;
@@ -10,8 +9,9 @@ export type ModelRequest = {
 };
 
 export type ModelResult = {
-  response: CanonicalAnswer;
+  response?: CanonicalAnswer;
   message: string;
+  draft?: string;
   model: string;
   status: string;
 };
@@ -19,7 +19,7 @@ export type ModelResult = {
 const endpoint = 'https://api.openai.com/v1/responses';
 const defaultModel = 'gpt-5.6-luna';
 const defaultReasoningEffort = 'max';
-const defaultTimeoutMs = 15_000;
+const defaultTimeoutMs = 30_000;
 
 function provider() {
   return (process.env.AI_PROVIDER ?? 'auto').trim().toLowerCase();
@@ -51,12 +51,20 @@ function textFromResponse(body: unknown): string | null {
   return texts.join('').trim() || null;
 }
 
-function parseResult(text: string, model: string, status: string): ModelResult | null {
+function parseResult(text: string, task: ModelRequest['task'], model: string, status: string): ModelResult | null {
   try {
-    const parsed = JSON.parse(text) as { response?: unknown; message?: unknown };
-    const responses: CanonicalAnswer[] = ['fully_compliant', 'partial', 'non_compliant', 'na'];
-    if (!responses.includes(parsed.response as CanonicalAnswer) || typeof parsed.message !== 'string') return null;
-    return { response: parsed.response as CanonicalAnswer, message: parsed.message.trim(), model, status };
+    const parsed = JSON.parse(text) as { response?: unknown; message?: unknown; draft?: unknown };
+    if (typeof parsed.message !== 'string' || !parsed.message.trim()) return null;
+    if (task === 'findings') {
+      if (typeof parsed.draft !== 'string' || !parsed.draft.trim()) return null;
+      return { draft: parsed.draft.trim(), message: parsed.message.trim(), model, status };
+    }
+    if (task === 'classify') {
+      const responses: CanonicalAnswer[] = ['fully_compliant', 'partial', 'non_compliant', 'na'];
+      if (!responses.includes(parsed.response as CanonicalAnswer)) return null;
+      return { response: parsed.response as CanonicalAnswer, message: parsed.message.trim(), model, status };
+    }
+    return { message: parsed.message.trim(), model, status };
   } catch {
     return null;
   }
@@ -73,25 +81,68 @@ function inputFor(request: ModelRequest) {
     .slice(-8)
     .map(turn => `${turn.role}: ${turn.content}`)
     .join('\n');
-  return [
+  const taskInstruction = request.task === 'classify'
+    ? 'Classify the user answer only as fully_compliant, partial, non_compliant, or na. Do not write or imply that you wrote an assessment response. Your message must state the proposed classification and ask the user to confirm it explicitly with "confirm <classification>".'
+    : request.task === 'explain'
+      ? 'Explain the current question plainly and helpfully. Use only the supplied grounding. Do not classify or write an assessment response.'
+      : request.task === 'question'
+        ? 'Rewrite the current question as a warm, concise conversational prompt. Preserve its meaning. Do not add requirements or regulatory claims.'
+        : 'Draft a concise findings entry from the user answer, preserving uncertainty and facts without inventing details. Do not classify or write an assessment response.';
+  const schema = request.task === 'classify'
+    ? {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          response: { type: 'string', enum: ['fully_compliant', 'partial', 'non_compliant', 'na'] },
+          message: { type: 'string' },
+        },
+        required: ['response', 'message'],
+      }
+    : request.task === 'findings'
+      ? {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            draft: { type: 'string' },
+            message: { type: 'string' },
+          },
+          required: ['draft', 'message'],
+        }
+      : {
+          type: 'object',
+          additionalProperties: false,
+          properties: { message: { type: 'string' } },
+          required: ['message'],
+        };
+  return {
+    input: [
     {
       role: 'system',
-      content: `You assist with one compliance assessment question. Classify the user's answer only as fully_compliant, partial, non_compliant, or na. Do not write or imply that you wrote an assessment response. Return JSON matching the requested schema. Your message must state the proposed classification and ask the user to confirm it explicitly with "confirm <classification>". Use only the current question and the supplied grounding. Do not invent statute sections, legal citations, case law, or regulatory claims. Do not mention files or evidence contents. Grounding:\n${grounding || 'No additional grounding was supplied.'}`,
+      content: `You assist with one compliance assessment question. ${taskInstruction} Return JSON matching the requested schema. Use only the current question and supplied grounding. Do not invent statute sections, legal citations, case law, or regulatory claims. Do not mention files or evidence contents. Grounding:\n${grounding || 'No additional grounding was supplied.'}`,
     },
     {
       role: 'user',
       content: `Current question: ${request.question.question}\nUser answer: ${request.userInput}\nRecent conversation:\n${transcript || '(none)'}`,
     },
-  ];
+    ],
+    text: {
+      format: {
+        type: 'json_schema',
+        name: request.task === 'classify' ? 'assessment_classification' : `assessment_${request.task}`,
+        strict: true,
+        schema,
+      },
+    },
+  };
 }
 
 export const openAIAdapter = {
   async generate(request: ModelRequest): Promise<ModelResult | null> {
     const config = settings();
     const forcedNone = provider() === 'none' || provider() === 'deterministic';
-    const forcedOpenAI = provider() === 'openai';
-    if (forcedNone || (!config.key && !forcedOpenAI)) return null;
+    if (forcedNone) return null;
     if (!config.key) return null;
+    const requestParts = inputFor(request);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), Number.isFinite(config.timeoutMs) && config.timeoutMs > 0 ? config.timeoutMs : defaultTimeoutMs);
     const started = Date.now();
@@ -105,23 +156,7 @@ export const openAIAdapter = {
         body: JSON.stringify({
           model: config.model,
           reasoning: { effort: config.reasoningEffort },
-          input: inputFor(request),
-          text: {
-            format: {
-              type: 'json_schema',
-              name: 'assessment_classification',
-              strict: true,
-              schema: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  response: { type: 'string', enum: ['fully_compliant', 'partial', 'non_compliant', 'na'] },
-                  message: { type: 'string' },
-                },
-                required: ['response', 'message'],
-              },
-            },
-          },
+          ...requestParts,
         }),
         signal: controller.signal,
       });
@@ -129,7 +164,7 @@ export const openAIAdapter = {
       if (!response.ok) throw new Error(`OpenAI API error (${response.status})`);
       const text = textFromResponse(body);
       if (!text) throw new Error('OpenAI response contained no output text');
-      result = parseResult(text, typeof (body as { model?: unknown })?.model === 'string' ? (body as { model: string }).model : config.model, typeof (body as { status?: unknown })?.status === 'string' ? (body as { status: string }).status : 'unknown');
+      result = parseResult(text, request.task, typeof (body as { model?: unknown })?.model === 'string' ? (body as { model: string }).model : config.model, typeof (body as { status?: unknown })?.status === 'string' ? (body as { status: string }).status : 'unknown');
       if (!result) throw new Error('OpenAI response did not match the classification schema');
       return result;
     } catch (caught) {
@@ -137,16 +172,15 @@ export const openAIAdapter = {
       return null;
     } finally {
       clearTimeout(timeout);
-      void traceOpenAIGeneration({
-        sessionId: request.sessionId,
-        model: config.model,
-        reasoningEffort: config.reasoningEffort,
-        input: inputFor(request),
-        output: result,
-        usage: body && typeof body === 'object' && (body as { usage?: unknown }).usage,
-        latencyMs: Date.now() - started,
+      const usage = body && typeof body === 'object' && (body as { usage?: unknown }).usage;
+      console.info('[assessment-ai]', JSON.stringify({
+        session_id: request.sessionId,
+        model: result?.model ?? config.model,
+        status: result?.status ?? 'error',
+        latency_ms: Date.now() - started,
+        usage,
         error,
-      });
+      }));
     }
   },
 };

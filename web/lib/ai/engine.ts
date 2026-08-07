@@ -52,11 +52,22 @@ export function nextQuestion(questions: EngineQuestion[], responses: EngineRespo
   return unanswered.find(question => !deferred.has(question.id)) ?? unanswered[0] ?? null;
 }
 
-export function pendingProposalResponse(turns: EngineTurn[], questionId: string): CanonicalAnswer | null {
+export function proposalConfirmation(input: string): 'confirm' | 'rephrase' | null {
+  const lower = input.trim().toLowerCase();
+  if (/^(yes|yep|yeah|correct|right|agree|that'?s right|looks good|sounds right|exactly)\b/.test(lower)) return 'confirm';
+  if (/^(no|nope|not quite|that'?s not right|let me rephrase|i need to correct)\b/.test(lower)) return 'rephrase';
+  return null;
+}
+
+export function pendingProposalResponse(turns: EngineTurn[], questionId: string, allowTrailingUser = false): CanonicalAnswer | null {
   const proposal = turns.map((turn, index) => ({ turn, index })).reverse().find(item =>
     item.turn.role === 'assistant' && item.turn.kind === 'proposal' && item.turn.question_id === questionId
   );
-  if (!proposal || turns.slice(proposal.index + 1).some(turn => turn.role === 'user')) return null;
+  if (!proposal) return null;
+  const turnsAfter = turns.slice(proposal.index + 1);
+  const userTurnsAfter = turnsAfter.filter(turn => turn.role === 'user');
+  if (userTurnsAfter.length > (allowTrailingUser ? 1 : 0)) return null;
+  if (!allowTrailingUser && userTurnsAfter.length) return null;
   const match = proposal.turn.content.match(/confirm\s+(fully[_ -]?compliant|partial|non[_ -]?compliant|n\/a|na)\b/i);
   if (!match) return null;
   const normalized = match[1].toLowerCase().replace(/[- ]/g, '_');
@@ -65,8 +76,26 @@ export function pendingProposalResponse(turns: EngineTurn[], questionId: string)
 
 export function confirmedAnswer(intent: ResolvedIntent, turns: EngineTurn[], questionId: string): CanonicalAnswer | null {
   if (intent.type === 'answer') return intent.response;
-  if (intent.type === 'confirm' && pendingProposalResponse(turns, questionId) === intent.response) return intent.response;
+  if (intent.type === 'confirm') {
+    const proposalIndex = turns.map((turn, index) => ({ turn, index })).reverse().find(item =>
+      item.turn.role === 'assistant' && item.turn.kind === 'proposal' && item.turn.question_id === questionId
+    )?.index;
+    const hasUserConfirmation = proposalIndex !== undefined && turns.slice(proposalIndex + 1).some(turn => turn.role === 'user');
+    if (hasUserConfirmation && pendingProposalResponse(turns, questionId, true) === intent.response) return intent.response;
+  }
   return null;
+}
+
+export function pendingFindingsDraft(turns: EngineTurn[], questionId: string, allowTrailingUser = false): string | null {
+  const proposal = turns.map((turn, index) => ({ turn, index })).reverse().find(item =>
+    item.turn.role === 'assistant' && item.turn.kind === 'proposal' && item.turn.question_id === questionId &&
+    item.turn.content.startsWith('Draft findings:')
+  );
+  if (!proposal) return null;
+  const userTurnsAfter = turns.slice(proposal.index + 1).filter(turn => turn.role === 'user');
+  if (userTurnsAfter.length > (allowTrailingUser ? 1 : 0)) return null;
+  const draft = proposal.turn.content.match(/^Draft findings:\s*([\s\S]*?)(?:\n\n|$)/i)?.[1]?.trim();
+  return draft || null;
 }
 
 export function followUpFor(question: EngineQuestion, response: CanonicalAnswer): Phase | null {
