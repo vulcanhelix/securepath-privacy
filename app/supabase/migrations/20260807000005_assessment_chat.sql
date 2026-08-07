@@ -3,12 +3,15 @@ CREATE TABLE IF NOT EXISTS public.assessment_chat_turns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL REFERENCES public.assessment_sessions(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('assistant', 'user', 'system')),
-  kind TEXT NOT NULL CHECK (kind IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation')),
+  kind TEXT NOT NULL CHECK (kind IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence')),
   content TEXT NOT NULL,
   question_id UUID REFERENCES public.assessment_questions(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
+ALTER TABLE public.assessment_chat_turns DROP CONSTRAINT IF EXISTS assessment_chat_turns_kind_check;
+ALTER TABLE public.assessment_chat_turns ADD CONSTRAINT assessment_chat_turns_kind_check
+  CHECK (kind IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence'));
 
 CREATE TABLE IF NOT EXISTS public.assessment_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -72,7 +75,7 @@ CREATE OR REPLACE FUNCTION public.append_assessment_chat_turn(
 DECLARE turn_id UUID;
 BEGIN
   IF p_role NOT IN ('assistant', 'user', 'system') OR
-     p_kind NOT IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation') THEN
+     p_kind NOT IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence') THEN
     RAISE EXCEPTION 'Invalid transcript turn';
   END IF;
   INSERT INTO public.assessment_chat_turns(session_id, role, kind, content, question_id, created_by)
@@ -89,6 +92,27 @@ BEGIN
   VALUES (auth.uid(), public.current_practice(), 'assessment.chat_turn_appended',
     jsonb_build_object('turn_id', turn_id, 'session_id', p_session_id, 'kind', p_kind));
   RETURN turn_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.ensure_assessment_chat_opening(p_session_id UUID)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE q RECORD;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_session_id::text, 0));
+  IF EXISTS (SELECT 1 FROM public.assessment_chat_turns WHERE session_id = p_session_id) THEN RETURN; END IF;
+  SELECT question, id INTO q
+  FROM public.assessment_questions aq
+  WHERE aq.framework = (SELECT framework FROM public.assessment_sessions WHERE id = p_session_id)
+    AND aq.active
+  ORDER BY section_id, question_number LIMIT 1;
+  IF q.id IS NULL THEN RETURN; END IF;
+  INSERT INTO public.assessment_chat_turns(session_id, role, kind, content, created_by)
+  VALUES (p_session_id, 'assistant', 'question',
+    'Welcome to your privacy assessment. I''ll guide you through each control conversationally. You can ask for an explanation or upload evidence at any time.',
+    auth.uid());
+  INSERT INTO public.assessment_chat_turns(session_id, role, kind, content, question_id, created_by)
+  VALUES (p_session_id, 'assistant', 'question', q.question, q.id, auth.uid());
 END;
 $$;
 
@@ -121,3 +145,4 @@ $$;
 GRANT SELECT ON public.assessment_chat_turns, public.assessment_documents TO authenticated;
 GRANT EXECUTE ON FUNCTION public.append_assessment_chat_turn(UUID, TEXT, TEXT, TEXT, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_assessment_document(UUID, UUID, UUID, TEXT, TEXT, BIGINT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ensure_assessment_chat_opening(UUID) TO authenticated;

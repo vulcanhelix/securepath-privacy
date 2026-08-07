@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { serverClient } from '@/lib/supabase';
 
@@ -22,15 +22,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: 'assessment not found' }, { status: 404 });
   const bytes = Buffer.from(await file.arrayBuffer());
   const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const suppliedQuestionId = form.get('question_id');
+  const questionId = typeof suppliedQuestionId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(suppliedQuestionId)
+    ? suppliedQuestionId
+    : null;
+  if (questionId) {
+    const { data: assessment } = await supabase.from('assessment_sessions').select('framework').eq('id', id).single();
+    const { data: question } = await supabase.from('assessment_questions').select('id').eq('id', questionId).eq('framework', assessment?.framework).eq('active', true).single();
+    if (!question) return NextResponse.json({ error: 'question does not belong to this assessment' }, { status: 400 });
+  }
   const storagePath = `${session.client_org_id}/${id}/${crypto.randomUUID()}`;
   const root = process.env.ASSESSMENT_EVIDENCE_DIR || '/opt/securepath/evidence';
   await mkdir(path.join(root, session.client_org_id, id), { recursive: true });
   await writeFile(path.join(root, storagePath), bytes, { flag: 'wx' });
   const { data: documentId, error } = await supabase.rpc('record_assessment_document', {
-    p_client_org_id: session.client_org_id, p_session_id: id, p_question_id: form.get('question_id') || null,
+    p_client_org_id: session.client_org_id, p_session_id: id, p_question_id: questionId,
     p_original_filename: file.name.slice(0, 255), p_mime: file.type, p_size: file.size, p_sha256: sha256, p_storage_path: storagePath,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  await supabase.rpc('append_assessment_chat_turn', { p_session_id: id, p_role: 'user', p_kind: 'upload', p_content: `Uploaded evidence: ${file.name}`, p_question_id: form.get('question_id') || null });
+  if (error) {
+    await unlink(path.join(root, storagePath)).catch(() => {});
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  await supabase.rpc('append_assessment_chat_turn', { p_session_id: id, p_role: 'user', p_kind: 'upload', p_content: `Uploaded evidence: ${file.name}`, p_question_id: questionId });
+  await supabase.rpc('append_assessment_chat_turn', { p_session_id: id, p_role: 'assistant', p_kind: 'upload', p_content: `Thanks — I’ve attached “${file.name}” as evidence for this assessment.`, p_question_id: questionId });
   return NextResponse.json({ id: documentId, filename: file.name, sha256 });
 }

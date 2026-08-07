@@ -24,16 +24,18 @@ export const noneAdapter: ConversationAdapter = {
     if (answerWords[text]) return answerWords[text];
     if (/\b(explain|why)\b/.test(text)) return { type: 'explain' };
     if (/\b(example|sample)\b/.test(text)) return { type: 'example' };
-    if (/\b(skip|later)\b/.test(text)) return { type: 'skip' };
+    if (/\b(skip|defer|later)\b/.test(text)) return { type: 'skip' };
     if (/\b(back|previous)\b/.test(text)) return { type: 'back' };
-    if (/\b(owner|responsible|person|team)\b/.test(text)) return { type: 'owner' };
-    if (/\b(know|sure|unsure|don't know|not sure)\b/.test(text)) return { type: 'unknown' };
-    if (/\b(20\d\d-\d\d-\d\d)\b/.test(text)) return { type: 'target_date' };
+    if (/^(i don['’]?t know|not sure|unsure|no idea)\b/.test(text)) return { type: 'unknown' };
     return { type: 'unknown' };
   },
   render(kind, data) {
     const q = String(data.question ?? '');
-    if (kind === 'explainer') return `This matters because ${data.why ?? 'it helps demonstrate that your privacy controls are operating in practice.'}`;
+    if (kind === 'explainer') {
+      const reference = data.regulatory_ref ? ` It relates to ${data.regulatory_ref}.` : '';
+      const remediation = data.remediation ? ` If there is a gap, a useful next step is: ${data.remediation}` : '';
+      return `This matters because ${data.why ?? 'it helps demonstrate that your privacy controls are operating in practice.'}${reference}${remediation}`;
+    }
     if (kind === 'example') return `For example: ${data.evidence ?? 'a policy, register, meeting record, or system report that supports this control.'}`;
     if (kind === 'summary') return `You have completed ${data.completed} of ${data.total} questions. Your current score is ${data.score}%.`;
     if (kind === 'prompt') return String(data.text ?? 'Tell me a little more and I will guide you.');

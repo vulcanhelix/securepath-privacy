@@ -60,4 +60,6 @@ th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-s
 .upload-strip { align-items: center; justify-content: center; color: var(--muted); font-size: .85rem; border-top-style: dashed; }
 .upload-strip button { margin: 0; }
 .chat-complete { padding: 2rem; text-align: center; }
+.chat-documents { display: grid; gap: .35rem; padding: .75rem 1rem 1rem; border-top: 1px solid var(--border); }
+.chat-documents a { font-size: .85rem; }
 @media (max-width: 640px) { .chat-heading { flex-wrap: wrap; } .chat-heading h1 { order: 3; flex-basis: 100%; } .chat-turn, .chat-welcome { max-width: 94%; } .chat-progress { align-items: flex-start; gap: .5rem; } }
