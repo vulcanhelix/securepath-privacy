@@ -142,7 +142,35 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.clear_assessment_response_followups(
+  p_session_id UUID, p_question_id UUID
+) RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF public.current_role_name() = 'read_only' OR NOT EXISTS (
+    SELECT 1 FROM public.assessment_sessions s
+    WHERE s.id = p_session_id
+      AND s.client_org_id IN (SELECT public.allowed_client_orgs())
+  ) THEN
+    RAISE EXCEPTION 'Assessment session not found or access denied';
+  END IF;
+
+  UPDATE public.assessment_responses
+  SET findings = NULL,
+      responsible_party = NULL,
+      target_date = NULL,
+      updated_at = NOW(),
+      updated_by = auth.uid()
+  WHERE session_id = p_session_id
+    AND question_id = p_question_id;
+
+  INSERT INTO public.audit_log(user_id, practice_id, action, detail)
+  VALUES (auth.uid(), public.current_practice(), 'assessment.response_followups_cleared',
+    jsonb_build_object('session_id', p_session_id, 'question_id', p_question_id));
+END;
+$$;
+
 GRANT SELECT ON public.assessment_chat_turns, public.assessment_documents TO authenticated;
 GRANT EXECUTE ON FUNCTION public.append_assessment_chat_turn(UUID, TEXT, TEXT, TEXT, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_assessment_document(UUID, UUID, UUID, TEXT, TEXT, BIGINT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.ensure_assessment_chat_opening(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.clear_assessment_response_followups(UUID, UUID) TO authenticated;

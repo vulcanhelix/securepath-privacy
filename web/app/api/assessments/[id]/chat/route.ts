@@ -26,10 +26,19 @@ function prompt(question: Question) {
   return `Let's look at ${question.section_name}. ${question.question}`;
 }
 
+function followUpPrompt(question: Question, phase: Phase) {
+  if (phase === 'gap_details') return 'What is currently in place, and why is this control only partial or not in place?';
+  if (phase === 'owner') return 'Who owns this control? A person, role, or team is fine.';
+  if (phase === 'target_date') return 'What target date should we use for closing this gap? Use YYYY-MM-DD.';
+  if (phase === 'evidence') return `Do you have this evidence available to upload? ${question.evidence_req}`;
+  return prompt(question);
+}
+
 function progress(s: ChatState, question: Question | null) {
   const sections = [...new Set(s.questions.map(q => q.section_id))];
+  const answered = new Set(s.responses.map(response => response.question_id)).size;
   return {
-    question_number: question ? s.questions.findIndex(q => q.id === question.id) + 1 : s.questions.length,
+    question_number: question ? Math.min(answered + 1, s.questions.length) : s.questions.length,
     question_total: s.questions.length,
     module_number: question ? sections.indexOf(question.section_id) + 1 : sections.length,
     module_total: sections.length,
@@ -48,7 +57,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const supabase = await serverClient();
   try {
     const initial = await getState(supabase, id);
-    if (!initial.turns.length) await supabase.rpc('ensure_assessment_chat_opening', { p_session_id: id });
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: membership } = user
+      ? await supabase.from('memberships').select('role').eq('user_id', user.id).maybeSingle()
+      : { data: null };
+    if (!initial.turns.length && membership?.role !== 'read_only') {
+      await supabase.rpc('ensure_assessment_chat_opening', { p_session_id: id });
+    }
     const s = initial.turns.length ? initial : await getState(supabase, id);
     const next = nextQuestion(s.questions, s.responses, s.turns) as Question | null;
     return NextResponse.json({ session: s.session, turns: presentTurns(s), next: next ? { ...next, prompt: prompt(next) } : null, documents: s.documents, progress: progress(s, next) });
@@ -64,11 +79,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const s = await getState(supabase, id);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  const q = (body.question_id && s.questions.find(item => item.id === body.question_id)) || nextQuestion(s.questions, s.responses, s.turns) as Question | null;
+  const requested = body.question_id ? s.questions.find(item => item.id === body.question_id) : null;
+  const requestedPhase = requested ? phaseFor(requested.id, s.turns) : null;
+  const q = requested && (requestedPhase !== 'answer' || !s.responses.some(response => response.question_id === requested.id))
+    ? requested
+    : nextQuestion(s.questions, s.responses, s.turns) as Question | null;
   const content = body.content?.trim() ?? '';
   if (!content) return NextResponse.json({ error: 'message is required' }, { status: 400 });
   if (!q) return NextResponse.json({ error: 'assessment is complete' }, { status: 400 });
-  const phase: Phase = phaseFor(q.id, s.turns, s.responses);
+  const phase: Phase = phaseFor(q.id, s.turns);
   const intent = resolveIntent(content, phase);
   const append = async (role: 'user' | 'assistant', kind: ChatKind, text: string, questionId?: string) => {
     const { error } = await supabase.rpc('append_assessment_chat_turn', { p_session_id: id, p_role: role, p_kind: kind, p_content: text, p_question_id: questionId ?? null });
@@ -81,16 +100,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ turns: [{ role: 'assistant', kind, content: text, question_id: questionId }], next: next ? { ...next, prompt: prompt(next) } : null, documents: updated.documents, progress: progress(updated, next) });
   };
 
-  const userKind: ChatKind = intent.type === 'skip' ? 'navigation' : phase === 'answer' && intent.type === 'answer' ? 'answer' : phase;
-  const userContent = intent.type === 'skip' ? '[deferred]' : content;
+  const alreadyDeferred = s.turns.some(turn => turn.question_id === q.id && turn.kind === 'navigation' && turn.content === '[deferred]');
+  const userKind: ChatKind = ['skip', 'leave_blank', 'back'].includes(intent.type) ? 'navigation' : intent.type === 'explain' || intent.type === 'example' ? 'explainer' : phase === 'answer' && intent.type === 'answer' ? 'answer' : phase;
+  const userContent = intent.type === 'leave_blank'
+    ? '[deferred-final]'
+    : intent.type === 'skip' && phase === 'answer' && alreadyDeferred
+      ? '[deferred-again]'
+      : intent.type === 'skip' && phase === 'answer'
+        ? '[deferred]'
+        : intent.type === 'skip'
+          ? '[skipped-follow-up]'
+        : content;
   await append('user', userKind, userContent, q.id);
   s.turns = [...s.turns, { role: 'user', kind: userKind, content: userContent, question_id: q.id }];
+  if (intent.type === 'explain') {
+    const response = s.responses.find(item => item.question_id === q.id);
+    return reply('explainer', conversationAdapter.render('explainer', { why: q.why_matters, regulatory_ref: q.regulatory_ref, remediation: response && ['partial', 'non_compliant'].includes(response.response) ? q.remediation : null }), q.id, true);
+  }
+  if (intent.type === 'example') return reply('explainer', conversationAdapter.render('example', { evidence: q.evidence_req }), q.id, true);
+  if (intent.type === 'back' && phase !== 'answer') return reply(phase, `Let's stay with this step. ${followUpPrompt(q, phase)}`, q.id, true);
+  if (intent.type === 'leave_blank') {
+    if (!alreadyDeferred) return reply('navigation', 'I can leave this blank after you defer it once. Say “skip” first, then “leave blank” if you want to finish without answering.', q.id, true);
+    return finishOrAdvance(s, append);
+  }
+  if (intent.type === 'skip' && phase !== 'answer') return finishOrAdvance(s, append);
   if (phase === 'answer') {
-    if (intent.type === 'explain') {
-      const response = s.responses.find(item => item.question_id === q.id);
-      return reply('explainer', conversationAdapter.render('explainer', { why: q.why_matters, regulatory_ref: q.regulatory_ref, remediation: response && ['partial', 'non_compliant'].includes(response.response) ? q.remediation : null }));
-    }
-    if (intent.type === 'example') return reply('explainer', conversationAdapter.render('example', { evidence: q.evidence_req }));
     if (intent.type === 'uncertain') return reply('question', `No problem. We can take this one step at a time. What do you know about whether ${q.question.toLowerCase()}? You can describe what is in place, even if it is incomplete.`);
     if (intent.type === 'unrecognised') return reply('question', `Thanks — I heard: “${content}”. Is that control fully in place, partly in place, not in place, or not applicable? You can answer in your own words.`);
     if (intent.type === 'back') {
@@ -98,10 +132,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return reply('navigation', previous ? `Let's revisit this one: ${prompt(previous)}` : 'We are at the beginning of the assessment.', previous?.id);
     }
     if (intent.type === 'skip') {
-      return reply('navigation', `I’ll come back to “${q.question}” before we wrap up.`);
+      return reply('navigation', alreadyDeferred
+        ? `You already deferred this question. If you want to leave it unanswered, say “leave blank”. Otherwise, answer it now.`
+        : `I’ll come back to “${q.question}” before we wrap up.`, q.id, alreadyDeferred);
     }
     if (intent.type === 'answer') {
       const answer = intent.response as CanonicalAnswer;
+      const { error: clearError } = await supabase.rpc('clear_assessment_response_followups', { p_session_id: id, p_question_id: q.id });
+      if (clearError) return NextResponse.json({ error: clearError.message }, { status: 400 });
       const { error } = await supabase.rpc('upsert_response', { p_session_id: id, p_question_id: q.id, p_response: answer, p_findings: null, p_responsible_party: null, p_target_date: null, p_status: answer === 'na' ? 'na' : 'complete' });
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       s.responses = [...s.responses.filter(response => response.question_id !== q.id), { question_id: q.id, response: answer, findings: null, responsible_party: null, target_date: null }];
@@ -130,8 +168,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (q.evidence_req) return reply('evidence', `Do you have this evidence available to upload? ${q.evidence_req}`, q.id, true);
     return finishOrAdvance(s, append);
   } else if (phase === 'evidence') {
-    if (resolveIntent(content).type === 'skip' || /^(no|not now|not yet|decline)\b/i.test(content)) return finishOrAdvance(s, append);
-    return reply('evidence', `Upload the requested evidence when ready: ${q.evidence_req}`, q.id, true);
+    if (intent.type === 'skip' || /^(no|not now|not yet|decline)\b/i.test(content)) return finishOrAdvance(s, append);
+    return finishOrAdvance(s, append);
   }
   return reply('question', `Tell me a little more about ${q.question.toLowerCase()}.`);
 }

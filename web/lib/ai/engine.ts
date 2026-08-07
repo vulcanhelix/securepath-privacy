@@ -6,7 +6,7 @@ export type EngineTurn = { role: string; kind: string; content: string; question
 
 export type ResolvedIntent =
   | { type: 'answer'; response: CanonicalAnswer; prose: string }
-  | { type: 'explain' | 'example' | 'skip' | 'back' | 'uncertain' | 'unrecognised'; prose: string };
+  | { type: 'explain' | 'example' | 'skip' | 'back' | 'leave_blank' | 'uncertain' | 'unrecognised'; prose: string };
 
 const canonical: Array<[RegExp, CanonicalAnswer]> = [
   [/\b(not applicable|n\/a|doesn['’]t apply)\b/i, 'na'],
@@ -19,17 +19,20 @@ const canonical: Array<[RegExp, CanonicalAnswer]> = [
 export function resolveIntent(input: string, phase: Phase = 'answer'): ResolvedIntent {
   const prose = input.trim();
   const lower = prose.toLowerCase();
-  if (phase !== 'answer') return { type: 'unrecognised', prose };
   if (/^(explain|why)\b/.test(lower)) return { type: 'explain', prose };
   if (/^(example|sample)\b/.test(lower)) return { type: 'example', prose };
+  if (/^(leave blank|leave unanswered|leave it blank)\b/.test(lower)) return { type: 'leave_blank', prose };
   if (/^(skip|defer|later)\b/.test(lower)) return { type: 'skip', prose };
   if (/^(back|previous)\b/.test(lower)) return { type: 'back', prose };
+  if (phase !== 'answer') return { type: 'unrecognised', prose };
   if (/^(i don['’]?t know|not sure|unsure|no idea|i['’]?m unsure)\b/.test(lower)) return { type: 'uncertain', prose };
   for (const [pattern, response] of canonical) if (pattern.test(prose)) return { type: 'answer', response, prose };
   return { type: 'unrecognised', prose };
 }
 
-export function phaseFor(questionId: string, turns: EngineTurn[], responses: EngineResponse[]): Phase {
+export function phaseFor(questionId: string, turns: EngineTurn[]): Phase {
+  const latest = [...turns].reverse().find(turn => turn.question_id === questionId);
+  if (latest?.role === 'assistant' && latest.kind === 'upload') return 'answer';
   const last = [...turns].reverse().find(turn => turn.question_id === questionId && turn.role === 'assistant' && ['gap_details', 'owner', 'target_date', 'evidence'].includes(turn.kind));
   if (last) return last.kind as Phase;
   return 'answer';
@@ -38,7 +41,8 @@ export function phaseFor(questionId: string, turns: EngineTurn[], responses: Eng
 export function nextQuestion(questions: EngineQuestion[], responses: EngineResponse[], turns: EngineTurn[]) {
   const answered = new Set(responses.map(response => response.question_id));
   const deferred = new Set(turns.filter(turn => turn.kind === 'navigation' && turn.content === '[deferred]' && turn.question_id).map(turn => turn.question_id as string));
-  const unanswered = questions.filter(question => !answered.has(question.id));
+  const leftBlank = new Set(turns.filter(turn => turn.kind === 'navigation' && turn.content === '[deferred-final]' && turn.question_id).map(turn => turn.question_id as string));
+  const unanswered = questions.filter(question => !answered.has(question.id) && !leftBlank.has(question.id));
   return unanswered.find(question => !deferred.has(question.id)) ?? unanswered[0] ?? null;
 }
 
