@@ -27,6 +27,8 @@ function prompt(question: Question) {
 }
 
 async function conversationalPrompt(id: string, question: Question, turns: EngineTurn[]) {
+  const asked = [...turns].reverse().find(turn => turn.role === 'assistant' && turn.kind === 'question' && turn.question_id === question.id);
+  if (asked) return asked.content;
   const model = await conversationAdapter.generate({ task: 'question', sessionId: id, question, userInput: '', turns });
   return model?.message || prompt(question);
 }
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (intent.type === 'unrecognised') {
       const model = await conversationAdapter.generate({ task: 'classify', sessionId: id, question: q, userInput: content, turns: s.turns });
       if (model?.response) {
-        const proposal = `${model.message}\n\nProposed classification: ${model.response}. Please confirm by replying “confirm ${model.response}”.`;
+        const proposal = `${model.message}\n\nProposed classification: ${model.response}. Choose “Yes, that’s right” to record it, or “No, let me rephrase” — or reply “confirm ${model.response}”.`;
         return reply('proposal', proposal, q.id, true);
       }
       return reply('question', `Thanks — I heard: “${content}”. Is that control fully in place, partly in place, not in place, or not applicable? You can answer in your own words.`);

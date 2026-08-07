@@ -67,7 +67,6 @@ export function pendingProposalResponse(turns: EngineTurn[], questionId: string,
   const turnsAfter = turns.slice(proposal.index + 1);
   const userTurnsAfter = turnsAfter.filter(turn => turn.role === 'user');
   if (userTurnsAfter.length > (allowTrailingUser ? 1 : 0)) return null;
-  if (!allowTrailingUser && userTurnsAfter.length) return null;
   const match = proposal.turn.content.match(/confirm\s+(fully[_ -]?compliant|partial|non[_ -]?compliant|n\/a|na)\b/i);
   if (!match) return null;
   const normalized = match[1].toLowerCase().replace(/[- ]/g, '_');
