@@ -75,7 +75,7 @@ CREATE OR REPLACE FUNCTION public.append_assessment_chat_turn(
 DECLARE turn_id UUID;
 BEGIN
   IF p_role NOT IN ('assistant', 'user', 'system') OR
-     p_kind NOT IN ('question', 'answer', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence') THEN
+     p_kind NOT IN ('question', 'answer', 'proposal', 'explainer', 'upload', 'summary', 'navigation', 'gap_details', 'owner', 'target_date', 'evidence') THEN
     RAISE EXCEPTION 'Invalid transcript turn';
   END IF;
   INSERT INTO public.assessment_chat_turns(session_id, role, kind, content, question_id, created_by)
@@ -100,6 +100,13 @@ RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE q RECORD;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended(p_session_id::text, 0));
+  IF public.current_role_name() = 'read_only' OR NOT EXISTS (
+    SELECT 1 FROM public.assessment_sessions s
+    WHERE s.id = p_session_id
+      AND s.client_org_id IN (SELECT public.allowed_client_orgs())
+  ) THEN
+    RAISE EXCEPTION 'Assessment session not found or access denied';
+  END IF;
   IF EXISTS (SELECT 1 FROM public.assessment_chat_turns WHERE session_id = p_session_id) THEN RETURN; END IF;
   SELECT question, id INTO q
   FROM public.assessment_questions aq

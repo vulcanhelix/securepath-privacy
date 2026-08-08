@@ -17,6 +17,15 @@ const canonical: Array<[RegExp, CanonicalAnswer]> = [
   [/\b(fully[- _]?compliant|compliant|yes|in place|we have (?:a|the))\b/i, 'fully_compliant'],
 ];
 
+function canonicalAnswerFromToken(token: string): CanonicalAnswer | null {
+  const normalized = token.trim().toLowerCase().replace(/[\/ -]+/g, '_');
+  if (normalized === 'fully_compliant') return 'fully_compliant';
+  if (normalized === 'partial') return 'partial';
+  if (normalized === 'non_compliant') return 'non_compliant';
+  if (normalized === 'na' || normalized === 'n_a') return 'na';
+  return null;
+}
+
 export function resolveIntent(input: string, phase: Phase = 'answer'): ResolvedIntent {
   const prose = input.trim();
   const lower = prose.toLowerCase();
@@ -26,10 +35,13 @@ export function resolveIntent(input: string, phase: Phase = 'answer'): ResolvedI
   if (/^(skip|defer|later)\b/.test(lower)) return { type: 'skip', prose };
   if (/^(back|previous)\b/.test(lower)) return { type: 'back', prose };
   if (phase !== 'answer') return { type: 'unrecognised', prose };
+  if (/^(fully_compliant|partial|non_compliant|na)$/i.test(prose)) {
+    return { type: 'answer', response: canonicalAnswerFromToken(prose) as CanonicalAnswer, prose };
+  }
   const confirmation = lower.match(/^confirm\s+(fully[- _]?compliant|partial|non[- _]?compliant|na|n\/a)\s*$/);
   if (confirmation) {
-    const response = confirmation[1].replace(/[- ]/g, '_') === 'n_a' ? 'na' : confirmation[1].replace(/[- ]/g, '_') as CanonicalAnswer;
-    return { type: 'confirm', response, prose };
+    const response = canonicalAnswerFromToken(confirmation[1]);
+    if (response) return { type: 'confirm', response, prose };
   }
   if (/^(i don['’]?t know|not sure|unsure|no idea|i['’]?m unsure)\b/.test(lower)) return { type: 'uncertain', prose };
   for (const [pattern, response] of canonical) if (pattern.test(prose)) return { type: 'answer', response, prose };
@@ -37,10 +49,19 @@ export function resolveIntent(input: string, phase: Phase = 'answer'): ResolvedI
 }
 
 export function phaseFor(questionId: string, turns: EngineTurn[]): Phase {
-  const latest = [...turns].reverse().find(turn => turn.question_id === questionId);
-  if (latest?.role === 'assistant' && latest.kind === 'upload') return 'answer';
-  const last = [...turns].reverse().find(turn => turn.question_id === questionId && turn.role === 'assistant' && ['gap_details', 'owner', 'target_date', 'evidence'].includes(turn.kind));
-  if (last) return last.kind as Phase;
+  const questionTurns = turns
+    .map((turn, index) => ({ turn, index }))
+    .filter(item => item.turn.question_id === questionId);
+  const latest = questionTurns.at(-1);
+  if (latest?.turn.role === 'assistant' && latest.turn.kind === 'upload') {
+    const interrupted = questionTurns
+      .slice(0, -1)
+      .reverse()
+      .find(item => item.turn.role === 'assistant' && ['gap_details', 'owner', 'target_date', 'evidence'].includes(item.turn.kind));
+    return interrupted?.turn.kind === 'evidence' ? 'answer' : (interrupted?.turn.kind as Phase | undefined) ?? 'answer';
+  }
+  const last = questionTurns.reverse().find(item => item.turn.role === 'assistant' && ['gap_details', 'owner', 'target_date', 'evidence'].includes(item.turn.kind));
+  if (last) return last.turn.kind as Phase;
   return 'answer';
 }
 
@@ -69,8 +90,7 @@ export function pendingProposalResponse(turns: EngineTurn[], questionId: string,
   if (userTurnsAfter.length > (allowTrailingUser ? 1 : 0)) return null;
   const match = proposal.turn.content.match(/confirm\s+(fully[_ -]?compliant|partial|non[_ -]?compliant|n\/a|na)\b/i);
   if (!match) return null;
-  const normalized = match[1].toLowerCase().replace(/[- ]/g, '_');
-  return normalized === 'n_a' || normalized === 'na' ? 'na' : normalized as CanonicalAnswer;
+  return canonicalAnswerFromToken(match[1]);
 }
 
 export function confirmedAnswer(intent: ResolvedIntent, turns: EngineTurn[], questionId: string): CanonicalAnswer | null {
