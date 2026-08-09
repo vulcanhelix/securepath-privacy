@@ -14,7 +14,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const supabase = await serverClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  const form = await req.formData();
+  const declared = Number(req.headers.get('content-length') ?? 0);
+  if (declared > maxSize) return NextResponse.json({ error: 'File is too large (maximum 25 MB)' }, { status: 413 });
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'Upload could not be read. The file may be too large (maximum 25 MB) or corrupt.' }, { status: 413 });
+  }
   const file = form.get('file');
   if (!(file instanceof File)) return NextResponse.json({ error: 'file is required' }, { status: 400 });
   if (!allowed.has(file.type) || file.size <= 0 || file.size > maxSize) return NextResponse.json({ error: 'Unsupported file type or size (maximum 25 MB)' }, { status: 400 });

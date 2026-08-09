@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 import { conversationAdapter } from '@/lib/ai/adapter';
-import { confirmedAnswer, nextFollowUp, nextQuestion, pendingFindingsDraft, pendingProposalResponse, phaseFor, proposalConfirmation, resolveIntent, type CanonicalAnswer, type EngineQuestion, type EngineResponse, type EngineTurn, type Phase } from '@/lib/ai/engine';
+import { activeQuestion, confirmedAnswer, isClassificationInput, nextFollowUp, nextQuestion, pendingFindingsDraft, pendingProposalResponse, phaseFor, proposalConfirmation, resolveIntent, type CanonicalAnswer, type EngineQuestion, type EngineResponse, type EngineTurn, type Phase } from '@/lib/ai/engine';
 
 type Question = EngineQuestion & { section_id: number; section_name: string; question_number: number; risk: string };
 type ChatState = { supabase: Awaited<ReturnType<typeof serverClient>>; session: Record<string, unknown>; turns: EngineTurn[]; responses: EngineResponse[]; questions: Question[]; documents: Array<{ id: string; original_filename: string; mime: string; size: number; question_id: string | null; question?: string; created_at: string }> };
@@ -22,15 +22,23 @@ async function getState(supabase: ChatState['supabase'], id: string): Promise<Ch
   return { supabase, session, turns: (turns ?? []) as EngineTurn[], responses: (responses ?? []) as EngineResponse[], questions: qs, documents: (documents ?? []).map(document => ({ ...document, question: qs.find(question => question.id === document.question_id)?.question })) };
 }
 
-function prompt(question: Question) {
-  return `Let's look at ${question.section_name}. ${question.question}`;
+function prompt(question: Question, sameSection = false) {
+  return sameSection ? question.question : `Let's look at ${question.section_name}. ${question.question}`;
 }
 
-async function conversationalPrompt(id: string, question: Question, turns: EngineTurn[]) {
+async function roleOf(supabase: ChatState['supabase'], userId: string | undefined) {
+  if (!userId) return null;
+  const { data } = await supabase.from('memberships').select('role').eq('user_id', userId).maybeSingle();
+  return data?.role ?? null;
+}
+
+async function conversationalPrompt(id: string, question: Question, turns: EngineTurn[], questions: Question[] = []) {
   const asked = [...turns].reverse().find(turn => turn.role === 'assistant' && turn.kind === 'question' && turn.question_id === question.id);
   if (asked) return asked.content;
+  const previous = [...turns].reverse().find(turn => turn.role === 'assistant' && turn.kind === 'question' && turn.question_id);
+  const sameSection = questions.find(item => item.id === previous?.question_id)?.section_id === question.section_id;
   const model = await conversationAdapter.generate({ task: 'question', sessionId: id, question, userInput: '', turns });
-  return model?.message || prompt(question);
+  return model?.message || prompt(question, sameSection);
 }
 
 function followUpPrompt(question: Question, phase: Phase) {
@@ -44,8 +52,9 @@ function followUpPrompt(question: Question, phase: Phase) {
 function progress(s: ChatState, question: Question | null) {
   const sections = [...new Set(s.questions.map(q => q.section_id))];
   const answered = new Set(s.responses.map(response => response.question_id)).size;
+  const index = question ? s.questions.findIndex(item => item.id === question.id) : -1;
   return {
-    question_number: question ? Math.min(answered + 1, s.questions.length) : s.questions.length,
+    question_number: index >= 0 ? index + 1 : question ? Math.min(answered + 1, s.questions.length) : s.questions.length,
     question_total: s.questions.length,
     module_number: question ? sections.indexOf(question.section_id) + 1 : sections.length,
     module_total: sections.length,
@@ -72,9 +81,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       await supabase.rpc('ensure_assessment_chat_opening', { p_session_id: id });
     }
     const s = initial.turns.length ? initial : await getState(supabase, id);
-    const next = nextQuestion(s.questions, s.responses, s.turns) as Question | null;
-    const nextPrompt = next ? await conversationalPrompt(id, next, s.turns) : null;
-    return NextResponse.json({ session: s.session, turns: presentTurns(s), next: next ? { ...next, prompt: nextPrompt } : null, documents: s.documents, progress: progress(s, next) });
+    const next = activeQuestion(s.questions, s.responses, s.turns);
+    const nextPrompt = next ? await conversationalPrompt(id, next, s.turns, s.questions) : null;
+    return NextResponse.json({
+      session: s.session,
+      turns: presentTurns(s),
+      next: next ? { ...next, prompt: nextPrompt, phase: phaseFor(next.id, s.turns) } : null,
+      documents: s.documents,
+      progress: progress(s, next),
+      can_write: membership?.role !== 'read_only',
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load chat' }, { status: 404 });
   }
@@ -87,11 +103,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const s = await getState(supabase, id);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  if (await roleOf(supabase, user.id) === 'read_only') {
+    return NextResponse.json({ error: 'Your role has read-only access to this assessment.' }, { status: 403 });
+  }
   const requested = body.question_id ? s.questions.find(item => item.id === body.question_id) : null;
   const requestedPhase = requested ? phaseFor(requested.id, s.turns) : null;
   const q = requested && (requestedPhase !== 'answer' || !s.responses.some(response => response.question_id === requested.id))
     ? requested
-    : nextQuestion(s.questions, s.responses, s.turns) as Question | null;
+    : activeQuestion(s.questions, s.responses, s.turns);
   const content = body.content?.trim() ?? '';
   if (!content) return NextResponse.json({ error: 'message is required' }, { status: 400 });
   if (!q) return NextResponse.json({ error: 'assessment is complete' }, { status: 400 });
@@ -111,8 +130,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await append('assistant', kind, text, questionId);
     const updated = { ...s, turns: [...s.turns, { role: 'assistant', kind, content: text, question_id: questionId }] };
     const next = stayOnQuestion ? q : nextQuestion(updated.questions, updated.responses, updated.turns) as Question | null;
-    const nextPrompt = next && !stayOnQuestion ? await conversationalPrompt(id, next, updated.turns) : null;
-    return NextResponse.json({ turns: [{ role: 'assistant', kind, content: text, question_id: questionId }], next: next ? { ...next, prompt: nextPrompt } : null, documents: updated.documents, progress: progress(updated, next) });
+    const nextPrompt = next && !stayOnQuestion ? await conversationalPrompt(id, next, updated.turns, updated.questions) : null;
+    return NextResponse.json({
+      turns: [{ role: 'assistant', kind, content: text, question_id: questionId }],
+      next: next ? { ...next, prompt: nextPrompt, phase: phaseFor(next.id, updated.turns) } : null,
+      documents: updated.documents,
+      progress: progress(updated, next),
+    });
   };
 
   const alreadyDeferred = s.turns.some(turn => turn.question_id === q.id && turn.kind === 'navigation' && turn.content === '[deferred]');
@@ -149,7 +173,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (intent.type === 'unrecognised') {
       const model = await conversationAdapter.generate({ task: 'classify', sessionId: id, question: q, userInput: content, turns: s.turns });
       if (model?.response) {
-        const proposal = `${model.message}\n\nProposed classification: ${model.response}. Choose “Yes, that’s right” to record it, or “No, let me rephrase” — or reply “confirm ${model.response}”.`;
+        const proposal = `${withoutConfirmInstruction(model.message)}\n\nProposed classification: ${model.response}. Choose “Yes, that’s right” to record it, or “No, let me rephrase” — or reply “confirm ${model.response}”.`;
         return reply('proposal', proposal, q.id, true);
       }
       return reply('question', `Thanks — I heard: “${content}”. Is that control fully in place, partly in place, not in place, or not applicable? You can answer in your own words.`);
@@ -181,6 +205,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } else if (phase === 'gap_details') {
     const response = s.responses.find(item => item.question_id === q.id);
     if (!response) return reply('question', 'Please answer the control first, then we can capture the gap details.');
+    if (isClassificationInput(content) && !(pendingDraft && action)) return reply('gap_details', `That is an answer to the control itself, which is already recorded as ${response.response}. ${followUpPrompt(q, phase)}`, q.id, true);
     if (pendingDraft && action === 'confirm') {
       const { error } = await supabase.rpc('upsert_response', { p_session_id: id, p_question_id: q.id, p_response: response.response, p_findings: pendingDraft, p_responsible_party: response.responsible_party ?? null, p_target_date: response.target_date ?? null, p_status: 'in_progress' });
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -197,10 +222,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return reply('owner', 'Who owns this control? A person, role, or team is fine.', q.id, true);
   } else if (phase === 'owner') {
     const response = s.responses.find(item => item.question_id === q.id);
+    if (isClassificationInput(content)) return reply('owner', `That is an answer to the control itself, not an owner. ${followUpPrompt(q, phase)}`, q.id, true);
     if (response) await supabase.rpc('upsert_response', { p_session_id: id, p_question_id: q.id, p_response: response.response, p_findings: response.findings ?? null, p_responsible_party: content, p_target_date: response.target_date ?? null, p_status: 'in_progress' });
     if (response) response.responsible_party = content;
     return reply('target_date', 'What target date should we use for closing this gap? Use YYYY-MM-DD.', q.id, true);
   } else if (phase === 'target_date') {
+    if (isClassificationInput(content)) return reply('target_date', `That is an answer to the control itself, not a date. ${followUpPrompt(q, phase)}`, q.id, true);
     const date = content.match(/\b20\d\d-\d\d-\d\d\b/)?.[0];
     if (!date || Number.isNaN(Date.parse(date))) return reply('target_date', 'Please give me a valid target date in YYYY-MM-DD format.', q.id, true);
     const response = s.responses.find(item => item.question_id === q.id);
@@ -209,10 +236,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (q.evidence_req) return reply('evidence', `Do you have this evidence available to upload? ${q.evidence_req}`, q.id, true);
     return finishOrAdvance(s, append);
   } else if (phase === 'evidence') {
-    if (intent.type === 'skip' || /^(no|not now|not yet|decline)\b/i.test(content)) return finishOrAdvance(s, append);
+    if (isClassificationInput(content)) return reply('evidence', `That is an answer to the control itself, which is already recorded. ${followUpPrompt(q, phase)} Upload a file, or say “no” to move on.`, q.id, true);
     return finishOrAdvance(s, append);
   }
   return reply('question', `Tell me a little more about ${q.question.toLowerCase()}.`);
+}
+
+// The model is told to ask for "confirm <classification>"; the route appends its own
+// confirmation instruction, so drop the model's version rather than saying it twice.
+function withoutConfirmInstruction(message: string) {
+  return message
+    .split(/(?<=[.!?])\s+/)
+    .filter(sentence => !/confirm/i.test(sentence))
+    .join(' ')
+    .trim() || message;
 }
 
 async function finishOrAdvance(s: ChatState, append: (role: 'user' | 'assistant', kind: ChatKind, text: string, questionId?: string) => Promise<void>) {
@@ -222,9 +259,10 @@ async function finishOrAdvance(s: ChatState, append: (role: 'user' | 'assistant'
     const { data: latestSession } = await s.supabase.from('assessment_sessions').select('score_pct').eq('id', s.session.id).single();
     const summary = `Assessment complete. Your current score is ${latestSession?.score_pct ?? s.session.score_pct ?? 0}%.\n\nRemediation to-dos:\n${remediation.length ? remediation.map(item => `• ${item}`).join('\n') : '• No non-compliant controls recorded.'}`;
     await append('assistant', 'summary', summary);
+    await s.supabase.rpc('update_assessment', { p_id: s.session.id, p_title: null, p_org_name: null, p_auditor_name: null, p_audit_date: null, p_audit_ref: null, p_status: 'complete' });
     return NextResponse.json({ turns: [{ role: 'assistant', kind: 'summary', content: summary }], next: null, complete: true, documents: s.documents, progress: progress(s, null) });
   }
-  const text = await conversationalPrompt(String(s.session.id), next, s.turns);
+  const text = await conversationalPrompt(String(s.session.id), next, s.turns, s.questions);
   await append('assistant', 'question', text, next.id);
   return NextResponse.json({ turns: [{ role: 'assistant', kind: 'question', content: text, question_id: next.id }], next: { ...next, prompt: text }, documents: s.documents, progress: progress(s, next) });
 }

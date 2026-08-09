@@ -48,6 +48,18 @@ export function resolveIntent(input: string, phase: Phase = 'answer'): ResolvedI
   return { type: 'unrecognised', prose };
 }
 
+const chipPhrases = /^(yes,? that'?s right|no,? let me rephrase)$/i;
+
+// Quick-reply tokens are answers to the classification question only. They must never be
+// stored as findings, owner, or target-date free text when a follow-up phase is active.
+export function isClassificationInput(input: string): boolean {
+  const prose = input.trim();
+  if (chipPhrases.test(prose)) return true;
+  if (canonicalAnswerFromToken(prose)) return true;
+  const confirmation = prose.toLowerCase().match(/^confirm\s+(fully[- _]?compliant|partial|non[- _]?compliant|na|n\/a)\s*$/);
+  return Boolean(confirmation && canonicalAnswerFromToken(confirmation[1]));
+}
+
 export function phaseFor(questionId: string, turns: EngineTurn[]): Phase {
   const questionTurns = turns
     .map((turn, index) => ({ turn, index }))
@@ -65,12 +77,23 @@ export function phaseFor(questionId: string, turns: EngineTurn[]): Phase {
   return 'answer';
 }
 
-export function nextQuestion(questions: EngineQuestion[], responses: EngineResponse[], turns: EngineTurn[]) {
+export function nextQuestion<Q extends EngineQuestion>(questions: Q[], responses: EngineResponse[], turns: EngineTurn[]): Q | null {
   const answered = new Set(responses.map(response => response.question_id));
   const deferred = new Set(turns.filter(turn => turn.kind === 'navigation' && turn.content === '[deferred]' && turn.question_id).map(turn => turn.question_id as string));
   const leftBlank = new Set(turns.filter(turn => turn.kind === 'navigation' && turn.content === '[deferred-final]' && turn.question_id).map(turn => turn.question_id as string));
   const unanswered = questions.filter(question => !answered.has(question.id) && !leftBlank.has(question.id));
   return unanswered.find(question => !deferred.has(question.id)) ?? unanswered[0] ?? null;
+}
+
+// A question with an unfinished follow-up stays current even though it already has a
+// response row, so reloading (or uploading evidence) mid-follow-up resumes that phase.
+export function activeQuestion<Q extends EngineQuestion>(questions: Q[], responses: EngineResponse[], turns: EngineTurn[]): Q | null {
+  const latest = [...turns].reverse().find(turn => turn.role === 'assistant' && turn.question_id);
+  if (latest?.question_id && phaseFor(latest.question_id, turns) !== 'answer') {
+    const question = questions.find(item => item.id === latest.question_id);
+    if (question) return question;
+  }
+  return nextQuestion(questions, responses, turns);
 }
 
 export function proposalConfirmation(input: string): 'confirm' | 'rephrase' | null {
