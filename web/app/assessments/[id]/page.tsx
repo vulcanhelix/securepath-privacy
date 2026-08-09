@@ -27,6 +27,7 @@ export default async function AssessmentDetail({ params }: { params: Promise<{ i
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <Link href="/assessments" style={{ marginRight: '1rem'}}>← Back</Link>
         <h1 style={{ flex: 1 }}>{assessment.title}</h1>
+        <Link href={`/assessments/${id}/chat`} className="button-link">Open conversation</Link>
       </div>
 
       <AssessmentEditor assessmentId={id} />

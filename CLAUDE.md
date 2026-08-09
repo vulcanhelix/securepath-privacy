@@ -249,3 +249,38 @@ North star: client-ready, evidence-linked monthly compliance report in <60 min a
 
 ## VPS: do not supabase start
 On this host, `supabase start` is blocked (exit 99). Live SecurePath uses `/root/securepath-privacy/staging` docker compose only. Override only with `SUPABASE_ALLOW_START=1`. See DO-NOT-SUPABASE-START-ON-VPS.md.
+
+## Conversational assessments
+
+The grid assessment remains available at `/assessments/[id]`. The companion
+conversation at `/assessments/[id]/chat` uses the server-side deterministic
+engine and the existing `upsert_response` RPC, so scoring remains canonical
+and Excel-parity is preserved. The append-only transcript is stored in
+`assessment_chat_turns`; evidence metadata is stored in
+`assessment_documents`, while evidence bytes remain on the VPS under
+`ASSESSMENT_EVIDENCE_DIR` (default `/opt/securepath/evidence`) in
+server-derived client/session paths.
+
+OpenAI is an optional conversational provider. It uses only the Responses API
+at `https://api.openai.com/v1/responses`, defaults to model `gpt-5.6-luna` and
+reasoning effort `max`, and never receives uploaded document contents or
+filenames. Environment variables are:
+
+- `AI_PROVIDER` — `auto` (default; OpenAI when a key exists), `none`/`deterministic`,
+  or `openai` (explicit provider selection).
+- `OPENAI_API_KEY` — server-only OpenAI key; never commit or place in an example
+  file.
+- `OPENAI_MODEL` — defaults to `gpt-5.6-luna`.
+- `OPENAI_REASONING_EFFORT` — defaults to `max`.
+- `OPENAI_TIMEOUT_MS` — request timeout, default 30000.
+
+Free-text model classifications are proposals only. A proposal is persisted in
+the transcript and requires a visible user confirmation before the deterministic
+engine writes a response. Missing keys, timeouts, API errors, and malformed
+outputs fall back to deterministic conversation text. Model calls emit a
+server-side diagnostic line containing model, status, latency, usage, and error
+metadata only; prompts and completions are not logged.
+
+OpenAI is a US sub-processor for this optional feature. Its processing,
+cross-border transfer, contract, and security details must be included in the
+customer's POPIA operator and cross-border disclosure.
