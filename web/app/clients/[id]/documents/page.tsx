@@ -43,7 +43,7 @@ export default async function ClientDocuments({ params }: { params: Promise<{ id
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies`}>Stage 3 — Policies →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — Document intake</h1>
         <span className="badge">Stage 2{track ? ` · track stage ${track.current_stage}` : ''}</span>
