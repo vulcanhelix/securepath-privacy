@@ -47,7 +47,7 @@ export default async function ClientPolicies({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/documents`}>Stage 2 — Documents</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/documents`}>Stage 2 — Documents</Link> · <Link href={`/clients/${id}/manual`}>Stage 4 — Manual →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — Policy workbench</h1>
         <span className="badge">Stage 3</span>
