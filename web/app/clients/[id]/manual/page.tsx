@@ -29,7 +29,7 @@ export default async function ClientManual({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies`}>Stage 3 — Policies</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies`}>Stage 3 — Policies</Link> · <Link href={`/clients/${id}/tasks`}>Stage 5 — Implementation →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — PIMS manual</h1>
         <span className="badge">Stage 4{track ? ` · track stage ${track.current_stage}` : ''}</span>
