@@ -37,3 +37,10 @@ docker exec -i -e PGPASSWORD=$PW securepath-staging-db-1 \
 - MFA enforcement is middleware-level only for now — add aal2 checks in RLS when API-direct access must be locked too.
 - Resend refuses fake recipient domains (example.com → GoTrue 500 "Error sending confirmation email"); use delivered@resend.dev for tests. Per-email rate limit ~60s between auth mails.
 - Self-hosted GoTrue default mail links use `?token=` (GET /verify flow) — app expects `?token_hash=` (verifyOtp). Fixed with custom templates at web/public/mail-templates/*.html (GOTRUE_MAILER_TEMPLATES_* fetch them from securepath.dev at send time; /mail-templates is middleware-exempt). If mail links break again, check template fetch + this format mismatch first.
+
+## Object storage (Stage 2+ document uploads)
+- **MinIO** container in the compose (S3-compatible), bound 127.0.0.1:9000 (API) / :9001 (console), bucket `securepath-documents`. Creds in `staging/.env` (`MINIO_ROOT_*`); the web app reads `S3_*` from `/opt/securepath/web.env`.
+- **Portable by design**: the app talks the S3 API only (`web/lib/storage.ts`, `@aws-sdk/client-s3`). Uploads/downloads go **server-side through Next** (`/api/documents`), which enforces `allowed_client_orgs()` before touching bytes — the bucket is never public.
+- **Prod / any host cutover**: point the `S3_*` env at the target store — for prod, AWS S3 **af-south-1** (unset `S3_ENDPOINT`, set `S3_REGION=af-south-1`, real bucket + keys, `S3_FORCE_PATH_STYLE` unset/false). **No code change.** Same app runs against MinIO, AWS S3, or any S3-compatible store.
+- Bucket create is lazy (`ensureBucket` in storage.ts) — at prod the bucket is pre-provisioned so HeadBucket succeeds and no create is attempted.
+- Downloads stream through the server (not presigned URLs) so they work identically whether the store is loopback MinIO or public S3, and always pass the access check first.
