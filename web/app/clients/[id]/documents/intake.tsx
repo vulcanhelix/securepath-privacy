@@ -13,6 +13,16 @@ export default function Intake({ clientOrgId, trackId, checklist, documents, lin
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
 
+  const confirmedSlot = (docId: string) =>
+    links.find(l => l.document_id === docId && l.status === 'confirmed')?.checklist_id ?? '';
+  const proposedSlot = (docId: string) =>
+    links.find(l => l.document_id === docId && l.status === 'proposed')?.checklist_id ?? '';
+  // what to show selected: a confirmed slot wins, else the AI-proposed suggestion
+  const initial = (docId: string) => confirmedSlot(docId) || proposedSlot(docId);
+
+  const [sel, setSel] = useState<Record<string, string>>(
+    Object.fromEntries(documents.map(d => [d.id, initial(d.id)])));
+
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
@@ -30,8 +40,7 @@ export default function Intake({ clientOrgId, trackId, checklist, documents, lin
     router.refresh();
   }
 
-  // advisor confirms which checklist slot a document satisfies
-  async function link(documentId: string, checklistId: string) {
+  async function confirm(documentId: string, checklistId: string) {
     if (!checklistId) return;
     const { error } = await browserClient().rpc('set_document_link', {
       p_document_id: documentId, p_checklist_id: checklistId, p_status: 'confirmed', p_confidence: null,
@@ -39,9 +48,6 @@ export default function Intake({ clientOrgId, trackId, checklist, documents, lin
     if (error) { setMsg({ err: error.message }); return; }
     router.refresh();
   }
-
-  const slotOf = (docId: string) =>
-    links.find(l => l.document_id === docId && l.status === 'confirmed')?.checklist_id ?? '';
 
   return (
     <div className="card">
@@ -56,21 +62,33 @@ export default function Intake({ clientOrgId, trackId, checklist, documents, lin
 
       {documents.length ? (
         <table style={{ marginTop: '1rem' }}>
-          <thead><tr><th>File</th><th>Size</th><th>Satisfies checklist slot</th></tr></thead>
+          <thead><tr><th>File</th><th>Size</th><th>Satisfies checklist slot</th><th></th></tr></thead>
           <tbody>
-            {documents.map(d => (
-              <tr key={d.id}>
-                <td><a href={`/api/documents/${d.id}`}>{d.original_filename}</a>
-                  {d.version > 1 ? <span className="muted"> v{d.version}</span> : null}</td>
-                <td className="muted">{(d.size / 1024).toFixed(0)} KB</td>
-                <td>
-                  <select defaultValue={slotOf(d.id)} onChange={e => link(d.id, e.target.value)}>
-                    <option value="">— unassigned —</option>
-                    {checklist.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </td>
-              </tr>
-            ))}
+            {documents.map(d => {
+              const cur = sel[d.id] ?? '';
+              const isConfirmed = cur !== '' && cur === confirmedSlot(d.id);
+              const isSuggestion = cur !== '' && !isConfirmed && cur === proposedSlot(d.id);
+              return (
+                <tr key={d.id}>
+                  <td><a href={`/api/documents/${d.id}`}>{d.original_filename}</a>
+                    {d.version > 1 ? <span className="muted"> v{d.version}</span> : null}</td>
+                  <td className="muted">{(d.size / 1024).toFixed(0)} KB</td>
+                  <td>
+                    <select value={cur} onChange={e => setSel({ ...sel, [d.id]: e.target.value })}>
+                      <option value="">— unassigned —</option>
+                      {checklist.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    {isSuggestion && <span className="muted" style={{ marginLeft: '.4rem', fontSize: '.8rem' }}>suggested</span>}
+                  </td>
+                  <td>
+                    {isConfirmed
+                      ? <span style={{ color: 'var(--accent)', fontWeight: 600 }}>✓ confirmed</span>
+                      : <button style={{ margin: 0, padding: '.3rem .7rem', fontSize: '.85rem' }}
+                                disabled={!cur} onClick={() => confirm(d.id, cur)}>Confirm</button>}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       ) : <p className="muted" style={{ marginTop: '.5rem' }}>No documents yet. Upload the client&rsquo;s existing policies, notices and registers.</p>}

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createHash } from 'crypto';
 import { serverClient } from '@/lib/supabase';
 import { putObject } from '@/lib/storage';
+import { proposeSlot } from '@/lib/classify';
 
 const ALLOWED = new Set([
   'application/pdf', 'image/png', 'image/jpeg',
@@ -59,5 +60,16 @@ export async function POST(req: NextRequest) {
     p_sha256: sha256, p_storage_path: key,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
-  return NextResponse.json({ id: docId, sha256 });
+
+  // auto-propose a checklist slot from the filename (advisor still confirms — never auto-fills)
+  const { data: checklist } = await supabase
+    .from('document_checklists').select('id, name, slot_key')
+    .eq('framework_key', 'popia').eq('active', true);
+  const guess = checklist ? proposeSlot(file.name, checklist) : null;
+  if (guess) {
+    await supabase.rpc('set_document_link', {
+      p_document_id: docId, p_checklist_id: guess.id, p_status: 'proposed', p_confidence: guess.confidence,
+    });
+  }
+  return NextResponse.json({ id: docId, sha256, proposed: guess?.id ?? null });
 }
