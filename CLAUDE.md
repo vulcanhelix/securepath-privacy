@@ -4,17 +4,21 @@
 >
 > "SecurePath" is a **placeholder name** — final name undecided. Working domain securepath.dev (Cloudflare).
 
-## Status (2026-07-29)
+## Status (2026-08-10)
 
 | Piece | State |
 |---|---|
 | Multi-tenant foundation (RLS, 5 roles, GoTrue) | ✅ built + e2e-proven (22/22, 18/18 suites) |
 | Staging at securepath.dev | ✅ LIVE — Next.js + lean self-hosted Supabase on the VPS |
-| Auth: signup + confirm, login, forgot password, magic link | ✅ live, Resend mail |
-| Compulsory TOTP 2FA (Google Authenticator etc.) | ✅ live, middleware-enforced |
-| Client instances + billing ledger + ops alerts | ✅ live (manual billing) |
-| 5-seat team invites, whitelabel branding | ✅ live |
-| Production (AWS af-south-1), CI, product name, F2 assessment engine | ⏸ pushed back deliberately |
+| Auth: signup+confirm, login, forgot, magic link, compulsory TOTP 2FA | ✅ live, Resend mail |
+| **Stage 0** — client instances + billing ledger + 5-seat invites + whitelabel | ✅ live |
+| **Stage 1** — POPIA assessment engine (89 Qs, scoring parity, RLS-hardened) | ✅ live, now on the spine |
+| **Workflow spine** — tracks/stage state, content packs, approvals ledger | ✅ built + verified 2026-08-10 |
+| **Stages 2–6** — intake → policy → manual → implement → monthly | 🔜 Stage 2 in build |
+| Cyber track (ISO 27701, Cyber Essentials) | ⏸ content pack once privacy track proven |
+| Production (AWS af-south-1), CI, product name | ⏸ pushed back deliberately |
+
+> **The product is a pipeline, not a set of features** — see *Product workflow* below. What's built (Stages 0–1 + spine) is the front of that pipeline; Stages 2–6 are the rest of it.
 
 ## System architecture
 
@@ -205,6 +209,70 @@ sequenceDiagram
 
 Practice owner sets display name, logo URL, accent color at `/settings/branding` (columns on `practices`). Layout reads them per-request: nav brand + `--accent` CSS var swap → whole workspace and client-facing pages render the MSP's brand. In-app only for now; custom domains per MSP = later (Caddy on-demand TLS when justified).
 
+## Product workflow — Assessment to Management (spec v1.0, William)
+
+The product is **one pipeline** a client travels once and then loops on monthly. Two tracks share it: **privacy** (POPIA & PAIA, built first) proves the pattern; **cyber** (ISO 27701, Cyber Essentials) reuses the *same machinery* with a different content pack. Seven stages, four human approval gates — nothing passes a gate automatically.
+
+```mermaid
+flowchart TD
+    S0["Stage 0 — Client setup & engagement"] --> S1["Stage 1 — POPIA & PAIA assessment"]
+    S1 --> G1{"Gate 1 — advisor review + client sign-off"}
+    G1 -->|approved| S2["Stage 2 — Document intake & gap map"]
+    G1 -->|rework| S1
+    S2 --> S3["Stage 3 — Policy creation"]
+    S3 --> G2{"Gate 2 — IO approves each policy"}
+    G2 -->|suite approved| S4["Stage 4 — PIMS manual compile, 27701-aligned"]
+    G2 -->|revise| S3
+    S4 --> G3{"Gate 3 — IO sign-off + PAIA s.51 publish"}
+    G3 --> S5["Stage 5 — Implementation via task engine"]
+    S5 --> G4{"Gate 4 — remediation substantially done"}
+    G4 --> S6["Stage 6 — Managed service, monthly report"]
+    S6 -.->|annual reassessment vs baseline| S1
+    CY["Cyber track — 27701 / Cyber Essentials<br/>same pipeline, different content pack"] -.->|upsell or parallel entry| S1
+    CY -.->|controls fold into monthly report| S6
+```
+
+**The load-bearing rule — content-driven screens.** Question sets, document checklists, templates, manual outlines are **content packs**, versioned at practice level. The frontend *renders* content, it does not *encode* it. Acceptance test for every screen: *does it work unchanged when the framework changes?* If a new framework needs a code change, the architecture failed.
+
+Other cross-cutting rules (all spec §6):
+- **Explicit stage state** — every transition is explicit and logged; a stage never advances as a side effect.
+- **Draft (AI) vs Approved** — nothing AI-drafted (summaries, policies, chapters, report narratives, letters) is client-visible or issuable without a *logged human approval*. The UI must distinguish Draft(AI) from Approved everywhere.
+- **Evidence immutability** — uploads, task completions, sign-offs, issued docs are immutable; corrections are new versions, never edits.
+- **The baseline runs through everything** — the Stage 1 score anchors the whole relationship: the implementation board closes gaps against it, the monthly report shows movement against it, the annual reassessment renews against it.
+
+### The spine (what makes the above true)
+
+Migration `app/supabase/migrations/20260810000002_workflow_spine.sql`. Three primitives every stage hangs off — build stages *on* these, never bespoke:
+
+```mermaid
+erDiagram
+    client_orgs ||--o{ tracks : "privacy + cyber, parallel"
+    tracks ||--o{ stage_transitions : "append-only, logged"
+    frameworks ||--o{ content_packs : "versioned content"
+    content_packs ||--o{ assessment_questions : "Stage 1 pack"
+    practices ||--o{ approvals : "append-only gate ledger"
+    tracks {
+        text track_kind "privacy | cyber"
+        int current_stage "0..6, moved only by advance_track_stage()"
+    }
+    frameworks {
+        text key "popia,paia,gdpr,iso27701,cyber_essentials — add = one INSERT"
+        text track_kind "privacy | cyber"
+    }
+    approvals {
+        text subject_type "assessment,policy,manual_chapter,monthly_report,..."
+        text action "drafted,approved,issued,rejected,superseded"
+    }
+```
+
+- **(a) Tracks + stage state** — `tracks` (one privacy + one cyber per client, run in parallel), `current_stage` 0–6, moved **only** by `advance_track_stage()` which writes an append-only `stage_transitions` row. That RPC is the whole "explicit, logged, never a side effect" rule.
+- **(b) Content packs** — `frameworks` registry + `content_packs` (versioned, practice-scopable) **replaced Devin's `CHECK(framework IN …)` enum**. Adding a framework is one `INSERT`, zero schema change (the acceptance test, in the DB). Scoring RPCs join on the framework text (now FK-backed) → unchanged, parity preserved. The 89 Stage-1 questions were migrated onto packs.
+- **(c) Draft/Approved + evidence** — `approval_status` domain (`draft_ai|draft_human|approved|issued|superseded`) reused by every future artifact table; append-only `approvals` ledger via `record_approval()`. Stage 1's gate is the first consumer (`assessment_sessions.approval_status`).
+
+Every spine RPC (`create_track`, `advance_track_stage`, `record_approval`) guards `allowed_client_orgs()` / `current_practice()` explicitly — a SECURITY DEFINER owned by a superuser bypasses RLS, so the check must be in the function body (learned the hard way, see below).
+
+**Build order for Stages 2–6** (spec §5, each increment client-demoable): 2 document intake (bulk upload, AI classify, gap map) · 3 policy workbench (template picker, AI draft, per-doc approval) · 4 manual builder (compile-from-registers, s.51 publish) · 5 implementation board (task engine, magic-link task pages) · 6 monthly report studio. Every screen content-driven; prove it by activating a Cyber Essentials pack against the same screens.
+
 ## Mail
 
 - Resend account: **verified domain is `mail.securepathconsulting.co.za`** (subdomain!). From = `noreply@mail.securepathconsulting.co.za` — root-domain from-address 403s.
@@ -215,8 +283,9 @@ Practice owner sets display name, logo URL, accent color at `/settings/branding`
 
 - Staging containers + Next bind **127.0.0.1 only**; dev Supabase :54321/:54322 and web :3100/:3200 dropped at `iptables -t raw` on eth0. **Self-testing public ports from the VPS lies** (loops via `lo`, bypasses eth0 rules) — verify from a real external host.
 - Dev CLI stack uses the **public demo JWT secret** — never expose :54321. Staging has fresh secrets (`staging/.env`, chmod 600).
-- `audit_log` and `billing_events` are append-only (REVOKE UPDATE/DELETE).
+- `audit_log`, `billing_events`, `stage_transitions`, `approvals` are append-only (REVOKE UPDATE/DELETE).
 - SELinux (EL10): systemd can't read files `mv`-ed from `/root` — `restorecon -R` after moving anything into `/opt/securepath`.
+- **SECURITY DEFINER owned by a superuser bypasses RLS** — the "RLS enforces access" comment is a lie inside a definer. Every such RPC touching tenant data MUST call `allowed_client_orgs()`/`current_practice()` in its body. Confirmed cross-tenant write on staging from Devin's assessment RPCs before this was fixed (`20260810000001_fix_assessment_rpc_authz.sql`).
 
 ## Repo map
 
@@ -226,11 +295,15 @@ Practice owner sets display name, logo URL, accent color at `/settings/branding`
 ├── roadmap.html         ← phase-0 roadmap page (historical)
 ├── app/                 ← supabase project: migrations = source of truth for schema
 │   ├── supabase/migrations/   1 tenancy+RLS · 2 grants · 3 billing/invites/onboarding
+│   │                    · 20260806* assessment engine + 8 POPIA modules (Stage 1, Devin)
+│   │                    · 20260807* scoring parity / batch / validation fixes (Devin)
+│   │                    · 20260810000001 assessment RPC authz fix (cross-tenant hole)
+│   │                    · 20260810000002 workflow spine (tracks, content packs, approvals)
 │   └── tests/e2e_isolation.py (22/22 CI gate)
 ├── web/                 ← Next.js 15 app (App Router, @supabase/ssr)
-│   ├── app/             pages: login, signup, forgot, reset, mfa(+enroll), onboarding,
-│   │                    dashboard, clients/new, team, notifications, settings/branding,
-│   │                    invite/[token] · api: clients, invites · auth: confirm, signout
+│   ├── app/             login, signup, forgot, reset, mfa(+enroll), onboarding, dashboard,
+│   │                    clients/new, team, notifications, settings/branding, invite/[token],
+│   │                    assessments (Stage 1 runner) · api: clients, invites, assessments · auth
 │   ├── lib/             supabase(-browser).ts, base-url.ts, mail.ts
 │   └── public/mail-templates/  GoTrue mail templates (token_hash links)
 ├── staging/             ← compose + secrets + deploy-web.sh + README (runbook)
@@ -238,12 +311,17 @@ Practice owner sets display name, logo URL, accent color at `/settings/branding`
 └── docs/                ← product scope, MVP spec, data model, source xlsx sheets
 ```
 
-## Roadmap — what's next (pushed-back list)
+## Roadmap — what's next
 
-1. **F1 remainder:** audit CSV export, Entra ID SSO (WorkOS, narrowly).
-2. **Infra:** real product name → domain; provision af-south-1 prod (runbook in `app/README.md`); CI running both isolation suites per migration.
-3. **F2 assessment engine** — digitise the Excel POPIA/GDPR sheets (`docs/files.zip`), **exact score parity required**. Then F3–F9 per `roadmap.html`.
-4. Prod hardening: aal2 in RLS, Stripe against `billing_events`, backups (WAL-G → S3 af-south-1, never cross-region).
+**Primary track — build the pipeline (spec v1.0).** Stages 0–1 + spine done. In order, each client-demoable:
+1. **Stage 2 — document intake & gap map** (in build): bulk upload, AI classification against an expected-document checklist, gap map. Checklist is content (per framework).
+2. **Stage 3 — policy workbench**: template picker, AI draft (Draft(AI) → per-doc approval via `record_approval`), edit.
+3. **Stage 4 — manual builder**: chapter outline (content), compile-from-registers, IO sign-off + PAIA s.51 publish.
+4. **Stage 5 — implementation board**: remediation as kanban on the task engine, magic-link task pages, gaps close against the Stage 1 baseline.
+5. **Stage 6 — monthly report studio**: AI narrative showing movement vs baseline, approve-and-issue, immutable archive.
+6. **Cyber content pack** (ISO 27701 → Cyber Essentials): prove the acceptance test — same screens, new pack, no code.
+
+**Deferred (pushed back deliberately):** real product name → domain; af-south-1 prod (runbook `app/README.md`); CI running both isolation suites per migration; Entra ID SSO (WorkOS); prod hardening (aal2 in RLS, Stripe against `billing_events`, WAL-G backups → S3 af-south-1); two unmerged Devin branches on GitHub (AI chat-assessment mode reviewed & safe pending base fix + 2 nits; testing skill).
 
 North star: client-ready, evidence-linked monthly compliance report in <60 min advisor time. Goal for this phase: 3–5 design-partner clients under 1–2 advisor tenants.
 
