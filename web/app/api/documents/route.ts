@@ -41,14 +41,17 @@ export async function POST(req: NextRequest) {
   if (!ALLOWED.has(file.type)) return NextResponse.json({ error: `Unsupported type ${file.type}` }, { status: 400 });
   if (file.size <= 0 || file.size > MAX) return NextResponse.json({ error: 'File must be 1 byte–25 MB' }, { status: 400 });
 
+  // Access check BEFORE writing bytes: client_orgs RLS returns the row only if the caller
+  // may touch this client, so a forged client_org_id can't even land an orphan object.
+  const { data: allowed } = await supabase.from('client_orgs').select('id').eq('id', clientOrg).maybeSingle();
+  if (!allowed) return NextResponse.json({ error: 'Access denied to client organisation' }, { status: 403 });
+
   const bytes = new Uint8Array(await file.arrayBuffer());
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   const key = `${clientOrg}/${sha256}`;
 
-  // Write bytes first, then the ledger row. The RPC re-checks allowed_client_orgs()
-  // in Postgres, so a forged client_org_id is rejected there even though we already wrote
-  // the object under that prefix (orphan object, harmless, GC-able).
   await putObject(key, bytes, file.type);
+  // record_document re-checks allowed_client_orgs() in Postgres (defence in depth).
 
   const { data: docId, error } = await supabase.rpc('record_document', {
     p_client_org_id: clientOrg, p_track_id: trackId,
