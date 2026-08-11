@@ -25,7 +25,9 @@ export default async function ClientPolicies({ params }: { params: Promise<{ id:
       supabase.from('policies').select('id, checklist_id, title, body, approval_status, updated_at').eq('client_org_id', id).order('created_at', { ascending: false }),
     ]);
 
-  const canEdit = ['practice_owner', 'practice_consultant', 'client_admin'].includes(membership?.role ?? '');
+  const role = membership?.role ?? '';
+  const canEdit = ['practice_owner', 'practice_consultant', 'client_admin'].includes(role);
+  const isAdvisor = ['practice_owner', 'practice_consultant'].includes(role);
   const filled = new Set((links ?? []).map(l => l.checklist_id));
   const hasPolicy = new Set((policies ?? []).map(p => p.checklist_id));
   const tplBySlot = new Map((templates ?? []).map(t => [t.slot_key, t]));
@@ -35,7 +37,13 @@ export default async function ClientPolicies({ params }: { params: Promise<{ id:
     c.required && !filled.has(c.id) && !hasPolicy.has(c.id) && tplBySlot.has(c.slot_key))
     .map(c => ({ checklist_id: c.id, slot_key: c.slot_key, name: c.name, template_id: tplBySlot.get(c.slot_key)!.id }));
 
-  const approved = (policies ?? []).filter(p => p.approval_status === 'approved').length;
+  const approved = (policies ?? []).filter(p => ['approved', 'issued'].includes(p.approval_status)).length;
+
+  // Gate 2 ready: every required slot that has a policy is approved-or-issued, and no drafts remain
+  const { data: track } = await supabase.from('tracks').select('id, current_stage')
+    .eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle();
+  const anyDraft = (policies ?? []).some(p => ['draft_ai', 'draft_human'].includes(p.approval_status));
+  const gate2Ready = (policies?.length ?? 0) > 0 && !anyDraft && draftable.length === 0;
 
   return (
     <>
@@ -47,7 +55,9 @@ export default async function ClientPolicies({ params }: { params: Promise<{ id:
       <p className="muted">Draft the policies that close the gaps from Stage 2, then approve each one.
         <strong> {approved}/{policies?.length ?? 0} policies approved.</strong></p>
 
-      <Workbench clientOrgId={id} canEdit={canEdit} draftable={draftable} policies={policies ?? []} />
+      <Workbench clientOrgId={id} canEdit={canEdit} isAdvisor={isAdvisor} draftable={draftable}
+                 policies={policies ?? []} trackId={track?.id ?? null} trackStage={track?.current_stage ?? null}
+                 gate2Ready={gate2Ready} />
     </>
   );
 }
