@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
   const file = form.get('file') as File | null;
   const clientOrg = form.get('client_org_id') as string | null;
   const trackId = (form.get('track_id') as string | null) || null;
+  const framework = (form.get('framework') as string | null) || 'popia';
   if (!file || !clientOrg) return NextResponse.json({ error: 'file and client_org_id required' }, { status: 400 });
   if (!ALLOWED.has(file.type)) return NextResponse.json({ error: `Unsupported type ${file.type}` }, { status: 400 });
   if (file.size <= 0 || file.size > MAX) return NextResponse.json({ error: 'File must be 1 byte–25 MB' }, { status: 400 });
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
   // auto-propose a checklist slot from the filename (advisor still confirms — never auto-fills)
   const { data: checklist } = await supabase
     .from('document_checklists').select('id, name, slot_key')
-    .eq('framework_key', 'popia').eq('active', true);
+    .eq('framework_key', framework).eq('active', true);
   const guess = checklist ? proposeSlot(file.name, checklist) : null;
   if (guess) {
     await supabase.rpc('set_document_link', {

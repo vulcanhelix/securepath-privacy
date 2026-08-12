@@ -3,7 +3,7 @@ import { serverClient } from '@/lib/supabase';
 
 // Compile the PIMS manual from the client's approved policies + confirmed documents, structured
 // by the 27701-aligned outline. Content-driven: the chapter structure comes from manual_outlines.
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await serverClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -12,7 +12,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { data: client } = await supabase.from('client_orgs').select('name').eq('id', id).maybeSingle();
   if (!client) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
-  const framework = 'popia';
+  const framework = (await req.json().catch(() => ({})))?.framework || 'popia';
   const [{ data: outline }, { data: checklist }, { data: policies }, { data: links }, { data: docs }] =
     await Promise.all([
       supabase.from('manual_outlines').select('chapter_key, title, clause_ref, narrative, source_slots')

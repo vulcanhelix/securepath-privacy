@@ -6,8 +6,12 @@ import Builder from './builder';
 export const dynamic = 'force-dynamic';
 
 // Stage 4 — PIMS manual compilation (27701-aligned). Content-driven outline.
-export default async function ClientManual({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClientManual(
+  { params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ framework?: string }> }) {
   const { id } = await params;
+  const framework = (await searchParams).framework ?? 'popia';
+  const qs = framework === 'popia' ? '' : `?framework=${framework}`;
+  const trackKind = ['cyber_essentials', 'iso27701'].includes(framework) ? 'cyber' : 'privacy';
   const supabase = await serverClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -17,10 +21,10 @@ export default async function ClientManual({ params }: { params: Promise<{ id: s
 
   const [{ data: membership }, { data: outline }, { data: manual }, { data: track }] = await Promise.all([
     supabase.from('memberships').select('role').eq('user_id', user.id).maybeSingle(),
-    supabase.from('manual_outlines').select('chapter_key, title, clause_ref').eq('framework_key', 'popia').eq('active', true).order('sort'),
+    supabase.from('manual_outlines').select('chapter_key, title, clause_ref').eq('framework_key', framework).eq('active', true).order('sort'),
     supabase.from('manuals').select('id, title, body, approval_status, s51_published, version, updated_at')
       .eq('client_org_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-    supabase.from('tracks').select('id, current_stage').eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle(),
+    supabase.from('tracks').select('id, current_stage').eq('client_org_id', id).eq('track_kind', trackKind).maybeSingle(),
   ]);
 
   const role = membership?.role ?? '';
@@ -29,7 +33,7 @@ export default async function ClientManual({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies`}>Stage 3 — Policies</Link> · <Link href={`/clients/${id}/tasks`}>Stage 5 — Implementation →</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies${qs}`}>Stage 3 — Policies</Link> · <Link href={`/clients/${id}/tasks${qs}`}>Stage 5 — Implementation →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — PIMS manual</h1>
         <span className="badge">Stage 4{track ? ` · track stage ${track.current_stage}` : ''}</span>
@@ -45,7 +49,7 @@ export default async function ClientManual({ params }: { params: Promise<{ id: s
         </ol>
       </div>
 
-      <Builder clientOrgId={id} isAdvisor={isAdvisor} canSignOff={canSignOff} manual={manual ?? null} />
+      <Builder clientOrgId={id} framework={framework} isAdvisor={isAdvisor} canSignOff={canSignOff} manual={manual ?? null} />
     </>
   );
 }

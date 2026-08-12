@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 
 type Manual = { id: string; title: string; body: string; approval_status: string; s51_published: boolean; version: number; updated_at: string };
 
-export default function Builder({ clientOrgId, isAdvisor, canSignOff, manual }:
-  { clientOrgId: string; isAdvisor: boolean; canSignOff: boolean; manual: Manual | null }) {
+export default function Builder({ clientOrgId, framework, isAdvisor, canSignOff, manual }:
+  { clientOrgId: string; framework: string; isAdvisor: boolean; canSignOff: boolean; manual: Manual | null }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
@@ -15,7 +15,9 @@ export default function Builder({ clientOrgId, isAdvisor, canSignOff, manual }:
 
   async function compile() {
     setBusy(true); setMsg({});
-    const r = await fetch(`/api/clients/${clientOrgId}/manual/compile`, { method: 'POST' });
+    const r = await fetch(`/api/clients/${clientOrgId}/manual/compile`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ framework }),
+    });
     setBusy(false);
     if (!r.ok) { setMsg({ err: (await r.json()).error ?? 'compile failed' }); return; }
     setMsg({ ok: 'Manual compiled — review the draft below, then sign off.' });

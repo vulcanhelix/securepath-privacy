@@ -7,8 +7,11 @@ export const dynamic = 'force-dynamic';
 
 // Stage 2 — Document intake & gap map. Content-driven: the checklist is rendered
 // from document_checklists (a content pack), not encoded here.
-export default async function ClientDocuments({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClientDocuments(
+  { params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ framework?: string }> }) {
   const { id } = await params;
+  const framework = (await searchParams).framework ?? 'popia';
+  const qs = framework === 'popia' ? '' : `?framework=${framework}`;
   const supabase = await serverClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -16,11 +19,10 @@ export default async function ClientDocuments({ params }: { params: Promise<{ id
   const { data: client } = await supabase.from('client_orgs').select('id, name').eq('id', id).maybeSingle();
   if (!client) redirect('/dashboard');
 
-  // resolve the privacy track (Stage 2 lives on it) — create-on-first-visit is a Stage 0 concern; may be null
+  // framework's track (privacy -> popia/paia, cyber -> cyber_essentials/iso27701)
+  const trackKind = ['cyber_essentials', 'iso27701'].includes(framework) ? 'cyber' : 'privacy';
   const { data: track } = await supabase.from('tracks')
-    .select('id, current_stage').eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle();
-
-  const framework = 'popia'; // TODO resolve per track when cyber track lands
+    .select('id, current_stage').eq('client_org_id', id).eq('track_kind', trackKind).maybeSingle();
   const [{ data: checklist }, { data: documents }, { data: links }] = await Promise.all([
     supabase.from('document_checklists')
       .select('id, slot_key, name, description, category, required, sort')
@@ -43,10 +45,10 @@ export default async function ClientDocuments({ params }: { params: Promise<{ id
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies`}>Stage 3 — Policies →</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies${qs}`}>Stage 3 — Policies →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — Document intake</h1>
-        <span className="badge">Stage 2{track ? ` · track stage ${track.current_stage}` : ''}</span>
+        <span className="badge">{framework === 'popia' ? 'POPIA' : framework} · Stage 2{track ? ` · track stage ${track.current_stage}` : ''}</span>
       </div>
       <p className="muted">
         Bring in the client&rsquo;s existing paperwork, map it to the expected-document checklist, and see the gaps.
@@ -56,6 +58,7 @@ export default async function ClientDocuments({ params }: { params: Promise<{ id
       <Intake
         clientOrgId={client.id}
         trackId={track?.id ?? null}
+        framework={framework}
         checklist={(checklist ?? []).map(c => ({ id: c.id, name: c.name }))}
         documents={documents ?? []}
         links={links ?? []}

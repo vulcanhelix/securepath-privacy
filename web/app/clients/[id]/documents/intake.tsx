@@ -7,8 +7,8 @@ type Doc = { id: string; original_filename: string; mime: string; size: number; 
 type Slot = { id: string; name: string };
 type LinkRow = { id: string; checklist_id: string; document_id: string; status: string };
 
-export default function Intake({ clientOrgId, trackId, checklist, documents, links }:
-  { clientOrgId: string; trackId: string | null; checklist: Slot[]; documents: Doc[]; links: LinkRow[] }) {
+export default function Intake({ clientOrgId, trackId, framework, checklist, documents, links }:
+  { clientOrgId: string; trackId: string | null; framework: string; checklist: Slot[]; documents: Doc[]; links: LinkRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
@@ -31,6 +31,7 @@ export default function Intake({ clientOrgId, trackId, checklist, documents, lin
       const fd = new FormData();
       fd.append('file', file);
       fd.append('client_org_id', clientOrgId);
+      fd.append('framework', framework);
       if (trackId) fd.append('track_id', trackId);
       const r = await fetch('/api/documents', { method: 'POST', body: fd });
       if (!r.ok) { setMsg({ err: `${file.name}: ${(await r.json()).error ?? 'upload failed'}` }); setBusy(false); return; }

@@ -6,16 +6,17 @@ import Workbench from './workbench';
 export const dynamic = 'force-dynamic';
 
 // Stage 3 — Policy creation & approval. Content-driven: templates come from policy_templates.
-export default async function ClientPolicies({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClientPolicies(
+  { params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ framework?: string }> }) {
   const { id } = await params;
+  const framework = (await searchParams).framework ?? 'popia';
+  const qs = framework === 'popia' ? '' : `?framework=${framework}`;
   const supabase = await serverClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const { data: client } = await supabase.from('client_orgs').select('id, name').eq('id', id).maybeSingle();
   if (!client) redirect('/dashboard');
-
-  const framework = 'popia';
   const [{ data: membership }, { data: checklist }, { data: links }, { data: templates }, { data: policies }] =
     await Promise.all([
       supabase.from('memberships').select('role').eq('user_id', user.id).maybeSingle(),
@@ -40,14 +41,15 @@ export default async function ClientPolicies({ params }: { params: Promise<{ id:
   const approved = (policies ?? []).filter(p => ['approved', 'issued'].includes(p.approval_status)).length;
 
   // Gate 2 ready: every required slot that has a policy is approved-or-issued, and no drafts remain
+  const trackKind = ['cyber_essentials', 'iso27701'].includes(framework) ? 'cyber' : 'privacy';
   const { data: track } = await supabase.from('tracks').select('id, current_stage')
-    .eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle();
+    .eq('client_org_id', id).eq('track_kind', trackKind).maybeSingle();
   const anyDraft = (policies ?? []).some(p => ['draft_ai', 'draft_human'].includes(p.approval_status));
   const gate2Ready = (policies?.length ?? 0) > 0 && !anyDraft && draftable.length === 0;
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/documents`}>Stage 2 — Documents</Link> · <Link href={`/clients/${id}/manual`}>Stage 4 — Manual →</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/documents${qs}`}>Stage 2 — Documents</Link> · <Link href={`/clients/${id}/manual${qs}`}>Stage 4 — Manual →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — Policy workbench</h1>
         <span className="badge">Stage 3</span>

@@ -11,8 +11,8 @@ const PRIO_COLOR: Record<string, string> = { critical: '#b23a3a', high: '#b07a1c
 const STATUS = ['todo', 'in_progress', 'blocked', 'done'];
 const themeLabel = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
-export default function Board({ clientOrgId, isAdvisor, canEdit, tasks, trackId, trackStage, progress, gate4Ready }:
-  { clientOrgId: string; isAdvisor: boolean; canEdit: boolean; tasks: Task[]; trackId: string | null;
+export default function Board({ clientOrgId, framework, isAdvisor, canEdit, tasks, trackId, trackStage, progress, gate4Ready }:
+  { clientOrgId: string; framework: string; isAdvisor: boolean; canEdit: boolean; tasks: Task[]; trackId: string | null;
     trackStage: number | null; progress: Progress; gate4Ready: boolean }) {
   const router = useRouter();
   const supabase = browserClient();
@@ -21,7 +21,7 @@ export default function Board({ clientOrgId, isAdvisor, canEdit, tasks, trackId,
 
   async function generate() {
     setBusy(true); setMsg({});
-    const { data, error } = await supabase.rpc('generate_remediation_plan', { p_client_org_id: clientOrgId });
+    const { data, error } = await supabase.rpc('generate_remediation_plan', { p_client_org_id: clientOrgId, p_framework: framework });
     setBusy(false);
     if (error) { setMsg({ err: error.message }); return; }
     setMsg({ ok: `Generated ${data} tasks.` }); router.refresh();
