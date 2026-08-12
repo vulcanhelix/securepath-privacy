@@ -4,21 +4,20 @@
 >
 > "SecurePath" is a **placeholder name** — final name undecided. Working domain securepath.dev (Cloudflare).
 
-## Status (2026-08-10)
+## Status (2026-08-12)
 
 | Piece | State |
 |---|---|
 | Multi-tenant foundation (RLS, 5 roles, GoTrue) | ✅ built + e2e-proven (22/22, 18/18 suites) |
 | Staging at securepath.dev | ✅ LIVE — Next.js + lean self-hosted Supabase on the VPS |
 | Auth: signup+confirm, login, forgot, magic link, compulsory TOTP 2FA | ✅ live, Resend mail |
-| **Stage 0** — client instances + billing ledger + 5-seat invites + whitelabel | ✅ live |
-| **Stage 1** — POPIA assessment engine (89 Qs, scoring parity, RLS-hardened) | ✅ live, now on the spine |
-| **Workflow spine** — tracks/stage state, content packs, approvals ledger | ✅ built + verified 2026-08-10 |
-| **Stages 2–6** — intake → policy → manual → implement → monthly | 🔜 Stage 2 in build |
-| Cyber track (ISO 27701, Cyber Essentials) | ⏸ content pack once privacy track proven |
+| **Workflow spine** — tracks/stage state, content packs, approvals ledger | ✅ built + verified |
+| **All 7 stages + 4 gates** (0→6, privacy track) | ✅ **built + e2e-verified on staging** |
+| **Object storage** (MinIO → S3 af-south-1, portable) | ✅ live |
+| **Acceptance test** — Cyber Essentials pack on the same screens | ✅ **PASSED** — next framework is content-only |
 | Production (AWS af-south-1), CI, product name | ⏸ pushed back deliberately |
 
-> **The product is a pipeline, not a set of features** — see *Product workflow* below. What's built (Stages 0–1 + spine) is the front of that pipeline; Stages 2–6 are the rest of it.
+> **The product is a pipeline, and the whole pipeline is now built.** A client travels Stage 0→6 on the privacy (POPIA/PAIA) track, and the same screens render a second framework (Cyber Essentials) with zero code change. What remains is depth (fuller content, AI drafting, client-staff task pages), not new machinery — see *Roadmap*.
 
 ## System architecture
 
@@ -271,7 +270,25 @@ erDiagram
 
 Every spine RPC (`create_track`, `advance_track_stage`, `record_approval`) guards `allowed_client_orgs()` / `current_practice()` explicitly — a SECURITY DEFINER owned by a superuser bypasses RLS, so the check must be in the function body (learned the hard way, see below).
 
-**Build order for Stages 2–6** (spec §5, each increment client-demoable): 2 document intake (bulk upload, AI classify, gap map) · 3 policy workbench (template picker, AI draft, per-doc approval) · 4 manual builder (compile-from-registers, s.51 publish) · 5 implementation board (task engine, magic-link task pages) · 6 monthly report studio. Every screen content-driven; prove it by activating a Cyber Essentials pack against the same screens.
+### Pipeline stages — all built (2026-08-11/12)
+
+Every stage rides the spine; every RPC guards `allowed_client_orgs()`; every artifact carries `approval_status`; issued docs are immutable evidence. Migrations `20260810000003`…`20260811000007` + `20260812000001/2`.
+
+| Stage / Gate | Content pack | Key tables · RPCs | Screen |
+|---|---|---|---|
+| **2** Document intake & gap map | `document_checklists` (31 POPIA slots) | `documents` (immutable), `document_links` · `record_document`, `set_document_link` | `/clients/[id]/documents` — bulk upload, auto-proposed slot, gap map |
+| **Gate 1** assessment sign-off | — | `sign_off_assessment` (baseline; advance to 2) | on the assessment page |
+| **3** Policy workbench | `policy_templates` | `policies` · `create_policy`, `update_policy_draft`, `approve_policy`, `issue_policy` | `/clients/[id]/policies` — draft→approve→**issue closes the gap** |
+| **Gate 2** policy suite approved | — | `advance_track_stage` → 4 | policies page |
+| **4** PIMS manual (27701-aligned) | `manual_outlines` (13 chapters, clause refs) | `manuals` · `record_manual`, `sign_off_manual` | `/clients/[id]/manual` — compile-from-registers |
+| **Gate 3** IO sign-off + PAIA s.51 | — | `sign_off_manual` → issue + advance to 5 | manual page |
+| **5** Implementation board | `task_templates` (18 POPIA tasks) | `tasks` · `generate_remediation_plan`, `update_task` | `/clients/[id]/tasks` — themed board, progress vs baseline |
+| **Gate 4** remediation done | — | `advance_track_stage` → 6 (all critical+high done) | tasks page |
+| **6** Monthly report studio | — (baseline + progress) | `monthly_reports` · `record_monthly_report`, `issue_monthly_report` | `/clients/[id]/report` — movement vs baseline, approve-and-issue, archive |
+
+**Object storage.** Document bytes live in S3-compatible storage — MinIO on staging, AWS S3 af-south-1 at prod, swapped by env (`S3_*`), zero code change. Uploads/downloads go **server-side through Next** (`web/lib/storage.ts`, `/api/documents`), which enforces `allowed_client_orgs()` before touching bytes; downloads stream through the server (not presigned) so the bucket is never public. Issued policies/manuals/reports are rendered to storage as immutable evidence documents.
+
+**Acceptance test — PASSED (2026-08-12).** Activated a **Cyber Essentials** content pack (`20260812000001`) — all content, zero schema change (10 questions, 8 checklist slots, 2 policy templates, 6 manual chapters, 8 tasks). The screens had one shortcut (framework hardcoded `popia` in 6 spots); fixed by threading a `?framework` param + a framework arg on `generate_remediation_plan` (`20260812000002`) — ~80 lines, all parameter-passing, no component rewrites, **one-time**. The same screens now render CE content end-to-end (tasks land on a parallel **cyber** track); POPIA unchanged. **The next framework is pure content — INSERTs, zero code.** The content-driven architecture is proven.
 
 ## Mail
 
@@ -299,12 +316,18 @@ Every spine RPC (`create_track`, `advance_track_stage`, `record_approval`) guard
 │   │                    · 20260807* scoring parity / batch / validation fixes (Devin)
 │   │                    · 20260810000001 assessment RPC authz fix (cross-tenant hole)
 │   │                    · 20260810000002 workflow spine (tracks, content packs, approvals)
+│   │                    · 20260810000003 Stage 2 · ...0004 real POPIA checklist
+│   │                    · 20260811000001 gate1 · 0002 Stage3 · 0003 issue+gate2
+│   │                    · 20260811000004 Stage4 · 0005 Stage5 · 0006 Stage6
+│   │                    · 20260812000001 Cyber Essentials pack · 0002 framework-parameterize
 │   └── tests/e2e_isolation.py (22/22 CI gate)
 ├── web/                 ← Next.js 15 app (App Router, @supabase/ssr)
-│   ├── app/             login, signup, forgot, reset, mfa(+enroll), onboarding, dashboard,
+│   ├── app/             auth pages (login/signup/forgot/reset/mfa/onboarding), dashboard,
 │   │                    clients/new, team, notifications, settings/branding, invite/[token],
-│   │                    assessments (Stage 1 runner) · api: clients, invites, assessments · auth
-│   ├── lib/             supabase(-browser).ts, base-url.ts, mail.ts
+│   │                    assessments (Stage 1) · clients/[id]/{documents,policies,manual,tasks,report}
+│   │                    (Stages 2–6, all take ?framework) · api: clients, invites, assessments,
+│   │                    documents, policies, manuals, reports · auth
+│   ├── lib/             supabase(-browser).ts, base-url.ts, mail.ts, storage.ts (S3), classify.ts
 │   └── public/mail-templates/  GoTrue mail templates (token_hash links)
 ├── staging/             ← compose + secrets + deploy-web.sh + README (runbook)
 ├── poc/                 ← original SQL isolation suite (18/18, reference)
@@ -313,15 +336,16 @@ Every spine RPC (`create_track`, `advance_track_stage`, `record_approval`) guard
 
 ## Roadmap — what's next
 
-**Primary track — build the pipeline (spec v1.0).** Stages 0–1 + spine done. In order, each client-demoable:
-1. **Stage 2 — document intake & gap map** (in build): bulk upload, AI classification against an expected-document checklist, gap map. Checklist is content (per framework).
-2. **Stage 3 — policy workbench**: template picker, AI draft (Draft(AI) → per-doc approval via `record_approval`), edit.
-3. **Stage 4 — manual builder**: chapter outline (content), compile-from-registers, IO sign-off + PAIA s.51 publish.
-4. **Stage 5 — implementation board**: remediation as kanban on the task engine, magic-link task pages, gaps close against the Stage 1 baseline.
-5. **Stage 6 — monthly report studio**: AI narrative showing movement vs baseline, approve-and-issue, immutable archive.
-6. **Cyber content pack** (ISO 27701 → Cyber Essentials): prove the acceptance test — same screens, new pack, no code.
+**The pipeline is built (Stages 0–6, both gates, two frameworks proven).** What remains is depth on the same machinery — no new architecture:
 
-**Deferred (pushed back deliberately):** real product name → domain; af-south-1 prod (runbook `app/README.md`); CI running both isolation suites per migration; Entra ID SSO (WorkOS); prod hardening (aal2 in RLS, Stripe against `billing_events`, WAL-G backups → S3 af-south-1); two unmerged Devin branches on GitHub (AI chat-assessment mode reviewed & safe pending base fix + 2 nits; testing skill).
+- **Fuller content packs.** Current seeds are focused-but-real. Extract the full libraries: POPIA policy templates from the PIM Generator prototype; the ~100-task tiered (Tier 1/2/3) remediation library and full checklist from `docs/extracted/Implementation App/PrivacyFramework.html`; the 87-question Cyber Essentials bank from the CE-SA-App prototype. All INSERTs.
+- **AI drafting / narrative** (Stages 3 & 6): replace template-fill and the templated report narrative with real drafts. **Use Claude (Anthropic API)** per platform guidance — not the OpenAI adapter on Devin's branch. Needs an API key.
+- **Client-staff task pages** (Stage 5): magic-link task pages (token like invites, no full login) + per-task evidence upload (`tasks.evidence_document_id` already exists).
+- **Cross-client practice console** (Stage 6 spec): month-status-per-client overview, overdue flags, report pipeline.
+- **Annual reassessment loop** (Stage 6 → 1): delta report vs baseline feeding renewal.
+- **Track/stage polish**: create the privacy track at Stage 0 / assessment-start (so Gate 1 logs 1→2 not 0→2); parallel cyber-track gates.
+
+**Deferred infra (pushed back deliberately):** real product name → domain; af-south-1 prod (runbook `app/README.md`); CI running both isolation suites per migration; Entra ID SSO (WorkOS); prod hardening (aal2 in RLS, Stripe against `billing_events`, WAL-G backups → S3 af-south-1); two unmerged Devin branches on GitHub (AI chat-assessment mode reviewed & safe pending base fix + 2 nits; testing skill).
 
 North star: client-ready, evidence-linked monthly compliance report in <60 min advisor time. Goal for this phase: 3–5 design-partner clients under 1–2 advisor tenants.
 
