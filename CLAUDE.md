@@ -15,7 +15,8 @@
 | **All 7 stages + 4 gates** (0→6, privacy track) | ✅ **built + e2e-verified on staging** |
 | **Object storage** (MinIO → S3 af-south-1, portable) | ✅ live |
 | **Acceptance test** — Cyber Essentials pack on the same screens | ✅ **PASSED** — next framework is content-only |
-| Production (AWS af-south-1), CI, product name | ⏸ pushed back deliberately |
+| CI — `.github/workflows/e2e.yml`, both suites per PR | ✅ written (verifies on first push; branch protection = one repo-settings click) |
+| Production (AWS af-south-1), product name | ⏸ pushed back deliberately |
 
 > **The product is a pipeline, and the whole pipeline is now built.** A client travels Stage 0→6 on the privacy (POPIA/PAIA) track, and the same screens render a second framework (Cyber Essentials) with zero code change. What remains is depth (fuller content, AI drafting, client-staff task pages), not new machinery — see *Roadmap*.
 
@@ -320,6 +321,10 @@ Every stage rides the spine; every RPC guards `allowed_client_orgs()`; every art
 │   │                    · 20260811000001 gate1 · 0002 Stage3 · 0003 issue+gate2
 │   │                    · 20260811000004 Stage4 · 0005 Stage5 · 0006 Stage6
 │   │                    · 20260812000001 Cyber Essentials pack · 0002 framework-parameterize
+│   │                    · 20260812000003 track correctness (tracks@stage0, cyber Gate 1,
+│   │                      baseline snapshot, registry-driven dropdown)
+│   │                    · 20260813* content depth: policy library (26 POPIA templates) ·
+│   │                      tiered task library (108) · CE bank (88q) · GDPR pack (77q)
 │   └── tests/e2e_isolation.py (22/22 CI gate)
 ├── web/                 ← Next.js 15 app (App Router, @supabase/ssr)
 │   ├── app/             auth pages (login/signup/forgot/reset/mfa/onboarding), dashboard,
@@ -338,12 +343,12 @@ Every stage rides the spine; every RPC guards `allowed_client_orgs()`; every art
 
 **The pipeline is built (Stages 0–6, both gates, two frameworks proven).** What remains is depth on the same machinery — no new architecture:
 
-- **Fuller content packs.** Current seeds are focused-but-real. Extract the full libraries: POPIA policy templates from the PIM Generator prototype; the ~100-task tiered (Tier 1/2/3) remediation library and full checklist from `docs/extracted/Implementation App/PrivacyFramework.html`; the 87-question Cyber Essentials bank from the CE-SA-App prototype. All INSERTs.
+- **Fuller content packs — DONE 2026-08-12** (`20260813000001–4`): 26 POPIA policy templates (PIM Generator), 108-task tiered remediation library (`task_templates.tier`; UI headcount filter still TODO), 88-question CE bank, 77-question GDPR pack. Remaining content work: William confirms the 31-slot checklist; PAIA/ISO 27701 packs (registered, no content); scoring-parity test vs the source xlsx; missing POPIA prototype from OneDrive.
 - **AI drafting / narrative** (Stages 3 & 6): replace template-fill and the templated report narrative with real drafts. **Use Claude (Anthropic API)** per platform guidance — not the OpenAI adapter on Devin's branch. Needs an API key.
 - **Client-staff task pages** (Stage 5): magic-link task pages (token like invites, no full login) + per-task evidence upload (`tasks.evidence_document_id` already exists).
 - **Cross-client practice console** (Stage 6 spec): month-status-per-client overview, overdue flags, report pipeline.
 - **Annual reassessment loop** (Stage 6 → 1): delta report vs baseline feeding renewal.
-- **Track/stage polish**: create the privacy track at Stage 0 / assessment-start (so Gate 1 logs 1→2 not 0→2); parallel cyber-track gates.
+- ~~**Track/stage polish**~~ **DONE 2026-08-12** (`20260812000003`): both tracks created at Stage 0 (client creation), assessment start logs 0→1, Gate 1 logs 1→2, cyber assessments sign off their own track, baseline snapshotted immutably onto the track.
 
 **Deferred infra (pushed back deliberately):** real product name → domain; af-south-1 prod (runbook `app/README.md`); CI running both isolation suites per migration; Entra ID SSO (WorkOS); prod hardening (aal2 in RLS, Stripe against `billing_events`, WAL-G backups → S3 af-south-1); two unmerged Devin branches on GitHub (AI chat-assessment mode reviewed & safe pending base fix + 2 nits; testing skill).
 
