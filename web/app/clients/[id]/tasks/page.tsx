@@ -34,7 +34,7 @@ export default async function ClientTasks({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/manual`}>Stage 4 — Manual</Link></p>
+      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/manual`}>Stage 4 — Manual</Link> · <Link href={`/clients/${id}/report`}>Stage 6 — Monthly report →</Link></p>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
         <h1 style={{ flex: 1 }}>{client.name} — Implementation board</h1>
         <span className="badge">Stage 5{track ? ` · track stage ${track.current_stage}` : ''}</span>
