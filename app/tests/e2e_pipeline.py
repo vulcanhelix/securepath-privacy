@@ -172,10 +172,18 @@ def test_pipeline():
     o = owner_with_client('pipe')
     cid, tok, cookie = o['client_org_id'], o['tok'], o['cookie']
 
+    # Stage 0 — both tracks exist at client creation (20260812000003)
+    t0 = rest(f'tracks?client_org_id=eq.{cid}&select=track_kind,current_stage&order=track_kind', tok)
+    check('Stage 0: privacy + cyber tracks created with the client',
+          [t['track_kind'] for t in (t0 or [])] == ['cyber', 'privacy'], t0)
+
     # Stage 1 — assessment, answer a few questions to produce a real baseline score
     aid = rpc('create_assessment', {'p_client_org_id': cid, 'p_framework': 'popia', 'p_title': 'Baseline',
                                      'p_org_name': 'C', 'p_auditor_name': 'a', 'p_audit_date': '2026-01-01',
                                      'p_audit_ref': 'r'}, tok)
+    t1 = rest(f'tracks?client_org_id=eq.{cid}&track_kind=eq.privacy&select=current_stage', tok)
+    check('Stage 1: starting the assessment moves the privacy track 0->1',
+          t1 and t1[0]['current_stage'] == 1, t1)
     qs = rest('assessment_questions?framework=eq.popia&select=id&limit=4', tok)
     for i, q in enumerate(qs):
         resp = ['fully_compliant', 'partial', 'non_compliant', 'fully_compliant'][i % 4]
@@ -188,9 +196,13 @@ def test_pipeline():
 
     # Gate 1 — sign off → track advances to Stage 2
     check('Gate 1: sign-off ok', rpc('sign_off_assessment', {'p_session_id': aid}, tok) is None or True)
-    tr = rest(f'tracks?client_org_id=eq.{cid}&track_kind=eq.privacy&select=id,current_stage', tok)
+    tr = rest(f'tracks?client_org_id=eq.{cid}&track_kind=eq.privacy&select=id,current_stage,baseline_pct,baseline_at', tok)
     check('Gate 1: track at stage 2', tr and tr[0]['current_stage'] == 2, tr)
+    check('Gate 1: baseline snapshotted onto the track', tr and tr[0]['baseline_at'] is not None, tr)
     tid = tr[0]['id']
+    trans = rest(f'stage_transitions?track_id=eq.{tid}&select=from_stage,to_stage&order=id', tok)
+    check('Gate 1: transition log reads 0->1 then 1->2',
+          [(t['from_stage'], t['to_stage']) for t in (trans or [])] == [(0, 1), (1, 2)], trans)
 
     # Stage 2 — upload a well-named doc (auto-proposed), then confirm it
     body, ct = multipart({'client_org_id': cid, 'track_id': tid, 'framework': 'popia'},

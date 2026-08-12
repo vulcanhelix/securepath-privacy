@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
+import { trackKindFor } from '@/lib/track';
 import Workbench from './workbench';
 
 export const dynamic = 'force-dynamic';
@@ -41,7 +42,7 @@ export default async function ClientPolicies(
   const approved = (policies ?? []).filter(p => ['approved', 'issued'].includes(p.approval_status)).length;
 
   // Gate 2 ready: every required slot that has a policy is approved-or-issued, and no drafts remain
-  const trackKind = ['cyber_essentials', 'iso27701'].includes(framework) ? 'cyber' : 'privacy';
+  const trackKind = await trackKindFor(supabase, framework);
   const { data: track } = await supabase.from('tracks').select('id, current_stage')
     .eq('client_org_id', id).eq('track_kind', trackKind).maybeSingle();
   const anyDraft = (policies ?? []).some(p => ['draft_ai', 'draft_human'].includes(p.approval_status));

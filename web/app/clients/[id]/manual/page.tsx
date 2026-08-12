@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
+import { trackKindFor } from '@/lib/track';
 import Builder from './builder';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +12,8 @@ export default async function ClientManual(
   const { id } = await params;
   const framework = (await searchParams).framework ?? 'popia';
   const qs = framework === 'popia' ? '' : `?framework=${framework}`;
-  const trackKind = ['cyber_essentials', 'iso27701'].includes(framework) ? 'cyber' : 'privacy';
   const supabase = await serverClient();
+  const trackKind = await trackKindFor(supabase, framework);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 

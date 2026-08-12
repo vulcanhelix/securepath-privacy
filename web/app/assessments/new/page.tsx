@@ -10,10 +10,17 @@ interface Client {
   contact_email: string | null;
 }
 
+interface Framework {
+  key: string;
+  name: string;
+  track_kind: string;
+}
+
 export default function NewAssessment() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
   const [f, setF] = useState({ 
     client_org_id: '', 
     title: '', 
@@ -39,6 +46,10 @@ export default function NewAssessment() {
         setErr('Failed to load clients');
       })
       .finally(() => setClientsLoading(false));
+    fetch('/api/frameworks')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setFrameworks(data); })
+      .catch(e => console.error('Failed to load frameworks:', e));
   }, []);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -94,8 +105,12 @@ export default function NewAssessment() {
 
         <label>Framework</label>
         <select value={f.framework} onChange={set('framework')}>
-          <option value="popia">POPIA</option>
-          <option value="gdpr">GDPR</option>
+          {frameworks.length === 0 && <option value="popia">POPIA</option>}
+          {frameworks.map(fw => (
+            <option key={fw.key} value={fw.key}>
+              {fw.name} {fw.track_kind === 'cyber' ? '(cyber track)' : ''}
+            </option>
+          ))}
         </select>
 
         <label>Organization Name</label>

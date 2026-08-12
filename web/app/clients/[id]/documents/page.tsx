@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
+import { trackKindFor } from '@/lib/track';
 import Intake from './intake';
 
 export const dynamic = 'force-dynamic';
@@ -19,8 +20,7 @@ export default async function ClientDocuments(
   const { data: client } = await supabase.from('client_orgs').select('id, name').eq('id', id).maybeSingle();
   if (!client) redirect('/dashboard');
 
-  // framework's track (privacy -> popia/paia, cyber -> cyber_essentials/iso27701)
-  const trackKind = ['cyber_essentials', 'iso27701'].includes(framework) ? 'cyber' : 'privacy';
+  const trackKind = await trackKindFor(supabase, framework);
   const { data: track } = await supabase.from('tracks')
     .select('id, current_stage').eq('client_org_id', id).eq('track_kind', trackKind).maybeSingle();
   const [{ data: checklist }, { data: documents }, { data: links }] = await Promise.all([

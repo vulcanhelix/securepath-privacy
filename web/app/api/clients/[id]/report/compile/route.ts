@@ -14,10 +14,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: client } = await supabase.from('client_orgs').select('name').eq('id', id).maybeSingle();
   if (!client) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
-  const [{ data: baseline }, { data: tasks }, { data: docs }] = await Promise.all([
-    supabase.from('assessment_sessions').select('score_pct, rating, audit_date')
-      .eq('client_org_id', id).eq('approval_status', 'approved')
-      .order('created_at', { ascending: true }).limit(1).maybeSingle(),
+  // baseline is the immutable snapshot taken at Gate 1 sign-off (tracks.baseline_*),
+  // never the live assessment — editing the assessment cannot drift a issued report
+  const [{ data: track }, { data: tasks }, { data: docs }] = await Promise.all([
+    supabase.from('tracks').select('baseline_pct, baseline_rating, baseline_at')
+      .eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle(),
     supabase.from('tasks').select('priority, status').eq('client_org_id', id),
     supabase.from('documents').select('original_filename, created_at').eq('client_org_id', id)
       .order('created_at', { ascending: false }),
@@ -40,14 +41,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     `_Period ${period} · POPIA & PAIA privacy track_`,
     '',
     '## Baseline',
-    baseline
-      ? `Stage 1 assessment (month zero): **${baseline.score_pct ?? '—'}%** — ${ratingLabel(baseline.rating)}.`
+    track?.baseline_at
+      ? `Stage 1 assessment (month zero): **${track.baseline_pct ?? '—'}%** — ${ratingLabel(track.baseline_rating)}.`
       : 'No signed-off Stage 1 baseline on record.',
     '',
     '## Movement this period',
     `Remediation programme: **${done}/${total} tasks complete (${pct}%)**. Critical & high priority: **${chDone}/${ch.length}**.`,
-    baseline?.score_pct != null
-      ? `The programme is closing the gaps identified against the ${baseline.score_pct}% baseline; ${pct}% of remediation is complete.`
+    track?.baseline_pct != null
+      ? `The programme is closing the gaps identified against the ${track.baseline_pct}% baseline; ${pct}% of remediation is complete.`
       : '',
     '',
     '## Documents issued this period',
@@ -66,8 +67,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: reportId, error } = await supabase.rpc('record_monthly_report', {
     p_client_org_id: id, p_period: period, p_title: `${client.name} — ${period} compliance report`,
-    p_body: lines.join('\n'), p_baseline_pct: baseline?.score_pct ?? null,
-    p_baseline_rating: baseline?.rating ?? null, p_tasks_done: done, p_tasks_total: total,
+    p_body: lines.join('\n'), p_baseline_pct: track?.baseline_pct ?? null,
+    p_baseline_rating: track?.baseline_rating ?? null, p_tasks_done: done, p_tasks_total: total,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
   return NextResponse.json({ id: reportId });
