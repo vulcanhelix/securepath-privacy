@@ -20,8 +20,9 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
   // what to show selected: a confirmed slot wins, else the AI-proposed suggestion
   const initial = (docId: string) => confirmedSlot(docId) || proposedSlot(docId);
 
-  const [sel, setSel] = useState<Record<string, string>>(
-    Object.fromEntries(documents.map(d => [d.id, initial(d.id)])));
+  // sel holds only the user's explicit choices; fresh props (incl. links written
+  // by the upload API after router.refresh()) fill everything else at render time
+  const [sel, setSel] = useState<Record<string, string>>({});
 
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -66,7 +67,7 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
           <thead><tr><th>File</th><th>Size</th><th>Satisfies checklist slot</th><th></th></tr></thead>
           <tbody>
             {documents.map(d => {
-              const cur = sel[d.id] ?? '';
+              const cur = sel[d.id] ?? initial(d.id);
               const isConfirmed = cur !== '' && cur === confirmedSlot(d.id);
               const isSuggestion = cur !== '' && !isConfirmed && cur === proposedSlot(d.id);
               return (
