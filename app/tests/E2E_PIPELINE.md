@@ -44,36 +44,10 @@ Exit code 0 on all-pass, 1 on any failure. No third-party dependencies (stdlib o
 
 ## Cleanup
 
-Test runs leave practices named `guard-* / pipe * / accept * / immut *` and `@resend.dev` users. Remove them as `supabase_admin` (staging):
+Test runs leave practices named `guard-* / pipe * / accept * / immut *` and `@resend.dev` users. Automated teardown (runs the delete as `supabase_admin` in the staging DB container, incl. breaking the tracks <-> assessment_sessions FK cycle):
 
 ```bash
-cd staging && PW=$(grep POSTGRES_PASSWORD .env | cut -d= -f2)
-docker exec -i -e PGPASSWORD=$PW securepath-staging-db-1 psql -h 127.0.0.1 -U supabase_admin -d postgres <<'SQL'
-DO $$ DECLARE junk uuid[];
-BEGIN
-  SELECT array_agg(id) INTO junk FROM practices WHERE name ~ '^(guard-|pipe |accept |immut )';
-  DELETE FROM document_links   WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM monthly_reports  WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM manuals          WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM policies         WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM tasks            WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM documents        WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM assessment_responses WHERE session_id IN (SELECT s.id FROM assessment_sessions s JOIN client_orgs c ON c.id=s.client_org_id WHERE c.practice_id=ANY(junk));
-  DELETE FROM assessment_scores    WHERE session_id IN (SELECT s.id FROM assessment_sessions s JOIN client_orgs c ON c.id=s.client_org_id WHERE c.practice_id=ANY(junk));
-  DELETE FROM assessment_sessions  WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM approvals        WHERE practice_id=ANY(junk);
-  DELETE FROM stage_transitions WHERE track_id IN (SELECT t.id FROM tracks t JOIN client_orgs c ON c.id=t.client_org_id WHERE c.practice_id=ANY(junk));
-  DELETE FROM tracks           WHERE client_org_id IN (SELECT id FROM client_orgs WHERE practice_id=ANY(junk));
-  DELETE FROM billing_events   WHERE practice_id=ANY(junk);
-  DELETE FROM notifications    WHERE practice_id=ANY(junk);
-  DELETE FROM audit_log        WHERE practice_id=ANY(junk);
-  DELETE FROM memberships      WHERE practice_id=ANY(junk);
-  DELETE FROM client_orgs      WHERE practice_id=ANY(junk);
-  DELETE FROM practices        WHERE id=ANY(junk);
-END $$;
-DELETE FROM public.users WHERE email ~ '@resend.dev$';
-DELETE FROM auth.users   WHERE email ~ '@resend.dev$';
-SQL
+app/tests/cleanup_e2e.sh
 ```
 
 (MinIO objects from uploads: `docker exec securepath-staging-minio-1 mc rm -r --force local/securepath-documents/` — staging only.)
