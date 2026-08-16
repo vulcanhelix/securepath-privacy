@@ -45,6 +45,15 @@ jobs:
             echo "MINIO_ROOT_USER=ci"
             echo "MINIO_ROOT_PASSWORD=ci-$POSTGRES_PASSWORD"
           } > .env
+          # db first: a fresh supabase/postgres init leaves the internal service roles
+          # (supabase_auth_admin, authenticator, supabase_storage_admin) with NO password,
+          # so GoTrue/PostgREST would fail SASL auth. Set them before those services start.
+          docker compose up -d --wait db minio
+          docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -c \
+            "ALTER ROLE supabase_auth_admin WITH PASSWORD '$POSTGRES_PASSWORD';
+             ALTER ROLE authenticator WITH PASSWORD '$POSTGRES_PASSWORD';
+             ALTER ROLE supabase_storage_admin WITH PASSWORD '$POSTGRES_PASSWORD';"
           docker compose up -d --wait
 
       - name: Apply all migrations in order
