@@ -42,7 +42,7 @@ jobs:
           {
             echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
             echo "JWT_SECRET=$JWT_SECRET"
-            echo "MINIO_ROOT_USER=ci"
+            echo "MINIO_ROOT_USER=ci-minio"
             echo "MINIO_ROOT_PASSWORD=ci-$POSTGRES_PASSWORD"
           } > .env
           # db first: a fresh supabase/postgres init leaves the internal service roles
@@ -82,7 +82,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8080 \
           NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
           APP_URL=http://127.0.0.1:8080 \
-          S3_ENDPOINT=http://127.0.0.1:9000 S3_ACCESS_KEY=ci S3_SECRET_KEY="ci-$POSTGRES_PASSWORD" \
+          S3_ENDPOINT=http://127.0.0.1:9000 S3_ACCESS_KEY=ci-minio S3_SECRET_KEY="ci-$POSTGRES_PASSWORD" \
           S3_FORCE_PATH_STYLE=true S3_BUCKET=securepath-documents \
           PORT=3200 HOSTNAME=127.0.0.1 nohup node server.js > /tmp/next.log 2>&1 &
           docker run -d --name ci-caddy --network host \
@@ -111,3 +111,4 @@ jobs:
           tail -50 /tmp/next.log || true
           docker logs securepath-staging-auth-1 2>&1 | tail -30 || true
           docker logs securepath-staging-rest-1 2>&1 | tail -20 || true
+          docker logs securepath-staging-minio-1 2>&1 | tail -20 || true
