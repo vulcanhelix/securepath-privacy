@@ -28,7 +28,7 @@ export default async function Dashboard() {
       <div className="card">
         {clients?.length ? (
           <table>
-            <thead><tr><th>Name</th><th>Industry</th><th>Contact</th><th>Created</th></tr></thead>
+            <thead><tr><th>Name</th><th>Industry</th><th>Contact</th><th>Created</th><th></th></tr></thead>
             <tbody>
               {clients.map(c => (
                 <tr key={c.id}>
@@ -36,6 +36,7 @@ export default async function Dashboard() {
                   <td>{c.industry ?? '—'}</td>
                   <td>{c.contact_name ?? '—'} <span className="muted">{c.contact_email ?? ''}</span></td>
                   <td className="muted">{new Date(c.created_at).toLocaleDateString()}</td>
+                  <td><Link href={`/clients/${c.id}/documents`}>Documents →</Link></td>
                 </tr>
               ))}
             </tbody>

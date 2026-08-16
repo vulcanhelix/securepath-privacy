@@ -1,0 +1,114 @@
+name: e2e
+
+# Full-stack e2e on every PR and push to main: ephemeral Supabase (compose from
+# staging/), all migrations applied in order, Next.js built + served, Caddy
+# path-routing one origin — then both suites over real HTTP exactly like prod.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Generate throwaway secrets + JWTs
+        run: |
+          JWT_SECRET=$(openssl rand -hex 32)
+          POSTGRES_PASSWORD=$(openssl rand -hex 16)
+          echo "::add-mask::$JWT_SECRET"
+          echo "::add-mask::$POSTGRES_PASSWORD"
+          echo "JWT_SECRET=$JWT_SECRET" >> "$GITHUB_ENV"
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANON_KEY=$(python3 ci/mint_jwt.py "$JWT_SECRET" anon)" >> "$GITHUB_ENV"
+          echo "SERVICE_KEY=$(python3 ci/mint_jwt.py "$JWT_SECRET" service_role)" >> "$GITHUB_ENV"
+
+      - name: Start Supabase stack (db, auth, rest, minio)
+        working-directory: staging
+        run: |
+          {
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+            echo "JWT_SECRET=$JWT_SECRET"
+            echo "MINIO_ROOT_USER=ci-minio"
+            echo "MINIO_ROOT_PASSWORD=ci-$POSTGRES_PASSWORD"
+          } > .env
+          # db first: a fresh supabase/postgres init leaves the internal service roles
+          # (supabase_auth_admin, authenticator, supabase_storage_admin) with NO password,
+          # so GoTrue/PostgREST would fail SASL auth. Set them before those services start.
+          docker compose up -d --wait db minio
+          docker exec -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -c \
+            "ALTER ROLE supabase_auth_admin WITH PASSWORD '$POSTGRES_PASSWORD';
+             ALTER ROLE authenticator WITH PASSWORD '$POSTGRES_PASSWORD';
+             ALTER ROLE supabase_storage_admin WITH PASSWORD '$POSTGRES_PASSWORD';"
+          docker compose up -d --wait
+
+      - name: Apply all migrations in order
+        run: |
+          for f in app/supabase/migrations/*.sql; do
+            echo "== $f"
+            docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+              psql -q -v ON_ERROR_STOP=1 -h 127.0.0.1 -U supabase_admin -d postgres < "$f"
+          done
+
+      - name: Build web
+        working-directory: web
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8080
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          APP_URL: http://127.0.0.1:8080
+        run: |
+          npm ci
+          npm run build
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
+      - name: Start web + Caddy
+        run: |
+          cd web/.next/standalone
+          NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8080 \
+          NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+          APP_URL=http://127.0.0.1:8080 \
+          S3_ENDPOINT=http://127.0.0.1:9000 S3_ACCESS_KEY=ci-minio S3_SECRET_KEY="ci-$POSTGRES_PASSWORD" \
+          S3_FORCE_PATH_STYLE=true S3_BUCKET=securepath-documents \
+          PORT=3200 HOSTNAME=127.0.0.1 nohup node server.js > /tmp/next.log 2>&1 &
+          docker run -d --name ci-caddy --network host \
+            -v "$PWD/../../../ci/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.8
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8080/login && break
+            sleep 2
+          done
+          curl -sf -o /dev/null http://127.0.0.1:8080/login
+
+      - name: Isolation suite (22 checks)
+        env:
+          SUPABASE_URL: http://127.0.0.1:8080
+        run: |
+          ANON_KEY="$ANON_KEY" SERVICE_KEY="$SERVICE_KEY" python3 app/tests/e2e_isolation.py
+
+      - name: Pipeline suite (Stages 0-6 + gates)
+        env:
+          BASE_URL: http://127.0.0.1:8080
+        run: |
+          ANON_KEY="$ANON_KEY" SERVICE_ROLE_KEY="$SERVICE_KEY" python3 app/tests/e2e_pipeline.py
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          tail -50 /tmp/next.log || true
+          docker logs securepath-staging-auth-1 2>&1 | tail -30 || true
+          docker logs securepath-staging-rest-1 2>&1 | tail -20 || true
+          docker logs securepath-staging-minio-1 2>&1 | tail -20 || true

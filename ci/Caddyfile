@@ -1,0 +1,16 @@
+# CI reverse proxy — mirrors /etc/caddy/Caddyfile on staging (one origin,
+# path-routed Supabase API) but plain HTTP on :8080.
+{
+	auto_https off
+}
+:8080 {
+	handle_path /auth/v1/* {
+		reverse_proxy 127.0.0.1:55321
+	}
+	handle_path /rest/v1/* {
+		reverse_proxy 127.0.0.1:55322
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3200
+	}
+}
