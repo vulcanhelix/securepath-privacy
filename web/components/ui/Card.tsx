@@ -18,7 +18,8 @@ export function Card({
   return (
     <section className={`sp-card sp-card--${tone}`} style={style}>
       {title || action ? (
-        <header className="sp-card-hd" style={{ padding: `18px ${pad}px` }}>
+        // header keeps its 28px gutter even when the body is flush (pad=0 table cards)
+        <header className="sp-card-hd" style={{ padding: `18px ${pad || 28}px` }}>
           <h2 className="sp-card-title">{title}</h2>
           <div>{action}</div>
         </header>

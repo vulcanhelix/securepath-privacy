@@ -9,6 +9,7 @@ import { Alert } from '@/components/ui/Alert';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { DataTable } from '@/components/ui/DataTable';
 import { Icon } from '@/components/ui/Icon';
+import { DocPreview } from '@/components/ui/DocPreview';
 
 type Doc = { id: string; original_filename: string; mime: string; size: number; version: number; created_at: string };
 type Slot = { id: string; name: string };
@@ -76,7 +77,7 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>Document type</span>
           <Select value={uploadSlot} onChange={e => setUploadSlot(e.target.value)} style={{ width: 'auto', minWidth: 280 }}>
-            <option value="">— pick a checklist slot, or leave for auto-suggest —</option>
+            <option value="">— select a type (or we&rsquo;ll suggest one from the filename) —</option>
             {checklist.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
         </div>
@@ -106,7 +107,7 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
 
       {documents.length ? (
         <DataTable
-          columns={[{ label: 'File' }, { label: 'Size', align: 'right' }, { label: 'Satisfies checklist slot' }, { label: '' }]}
+          columns={[{ label: 'File' }, { label: 'Size', align: 'right' }, { label: 'Satisfies checklist slot' }, { label: '' }, { label: '' }]}
           rows={documents.map(d => {
             const cur = sel[d.id] ?? initial(d.id);
             const isConfirmed = cur !== '' && cur === confirmedSlot(d.id);
@@ -126,6 +127,7 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
                 </Select>
                 {isSuggestion && <span className="muted" style={{ fontSize: 'var(--fs-xs)' }}>suggested</span>}
               </span>,
+              <DocPreview key="v" docId={d.id} filename={d.original_filename} />,
               isConfirmed
                 ? <StatusDot key="c" tone="pass" label="Confirmed" />
                 : <Button key="c" size="sm" variant="secondary" disabled={!cur} onClick={() => confirm(d.id, cur)}>Confirm</Button>,

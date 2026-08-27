@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/Badge';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { Checkbox } from '@/components/ui/forms';
+import { DocPreview } from '@/components/ui/DocPreview';
 
 type Slot = {
   id: string; name: string; description: string | null; category: string; required: boolean;
@@ -40,7 +41,10 @@ export default function GapMap({ slots }: { slots: Slot[] }) {
               : <StatusDot key="s" tone="neutral" label="—" />,
           <span key="f">
             {s.fills.map(d => (
-              <a key={d.id} href={`/api/documents/${d.id}`} style={{ display: 'block', color: 'var(--text-2)' }}>{d.name}</a>
+              <span key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <a href={`/api/documents/${d.id}`} style={{ color: 'var(--text-2)' }}>{d.name}</a>
+                <DocPreview docId={d.id} filename={d.name} />
+              </span>
             ))}
           </span>,
         ])}

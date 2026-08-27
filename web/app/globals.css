@@ -392,3 +392,8 @@ td { color: var(--text-2); }
 .sp-kpi-label{font-size:var(--fs-label);font-weight:var(--w-medium);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--faint)}
 .sp-kpi-value{font-family:var(--font-display);font-size:34px;font-weight:var(--w-semibold);letter-spacing:var(--ls-display);line-height:1.05;margin:8px 0 6px;color:var(--text)}
 .sp-kpi-sub{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);color:var(--muted)}
+
+.sp-modal-scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:32px;z-index:100}
+.sp-modal{display:flex;flex-direction:column;width:min(960px,100%);height:min(85vh,100%);background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow-pop);overflow:hidden}
+.sp-modal-hd{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-bottom:1px solid var(--border)}
+.sp-modal-body{flex:1;width:100%;border:0;background:var(--inset)}
