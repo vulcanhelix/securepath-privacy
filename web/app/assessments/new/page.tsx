@@ -8,6 +8,7 @@ interface Client {
   industry: string | null;
   contact_name: string | null;
   contact_email: string | null;
+  org_scale: 'sme' | 'large' | null;
 }
 
 interface Framework {
@@ -28,7 +29,8 @@ export default function NewAssessment() {
     org_name: '', 
     auditor_name: '', 
     audit_date: '', 
-    audit_ref: '' 
+    audit_ref: '',
+    org_scale: '' as '' | 'sme' | 'large',
   });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
@@ -91,7 +93,11 @@ export default function NewAssessment() {
       <p className="muted">Create a new POPIA compliance assessment for a client.</p>
       <form onSubmit={submit}>
         <label>Client *</label>
-        <select required value={f.client_org_id} onChange={set('client_org_id')}>
+        <select required value={f.client_org_id} onChange={e => {
+          const id = e.target.value;
+          const c = clients.find(x => x.id === id);
+          setF({ ...f, client_org_id: id, org_scale: c?.org_scale || 'large' });
+        }}>
           <option value="">{clientsLoading ? 'Loading clients...' : 'Select a client...'}</option>
           {clients.map(c => (
             <option key={c.id} value={c.id}>
@@ -112,6 +118,16 @@ export default function NewAssessment() {
             </option>
           ))}
         </select>
+
+        <label>Organisation scale *</label>
+        <select required value={f.org_scale} onChange={set('org_scale')}>
+          <option value="">Select scale…</option>
+          <option value="sme">SME (source pack: ≤10 users) — 83 questions</option>
+          <option value="large">Large corporation — 100 questions</option>
+        </select>
+        <p className="muted" style={{ marginTop: '-0.5rem' }}>
+          Copied from the client; override if this assessment should use the other Section 4 set. Snapshotted on create.
+        </p>
 
         <label>Organization Name</label>
         <input value={f.org_name} onChange={set('org_name')} placeholder="Legal organization name" />

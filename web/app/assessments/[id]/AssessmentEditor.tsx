@@ -34,6 +34,7 @@ interface Assessment {
   status: string;
   score_pct: number | null;
   rating: string | null;
+  org_scale: string | null;
   client_orgs: { name: string } | null;
 }
 
@@ -91,9 +92,7 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
 
       setAssessment(assessmentRes);
 
-      // Load questions for this assessment's framework
-      const framework = assessmentRes.framework || 'popia';
-      const questionsRes = await fetch(`/api/assessment/questions?framework=${framework}`)
+      const questionsRes = await fetch(`/api/assessment/questions?session_id=${assessmentId}`)
         .then(r => { if (!r.ok) throw new Error('questions'); return r.json(); });
 
       setQuestions(questionsRes);
@@ -232,6 +231,10 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
               <span className="badge">{assessment.framework.toUpperCase()}</span>
             </div>
             <div>
+              <label>Scale</label>
+              <strong>{assessment.org_scale === 'sme' ? 'SME' : assessment.org_scale === 'large' ? 'Large' : '—'}</strong>
+            </div>
+            <div>
               <label>Status</label>
               <span className="badge">{assessment.status}</span>
             </div>
@@ -280,7 +283,7 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
                   fontSize: '0.85rem',
                 }}
               >
-                <div>Section {sectionId}</div>
+                <div>{sectionQuestions[0]?.section_name || `Section ${sectionId}`}</div>
                 <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>
                   {answeredCount}/{sectionQuestions.length} answered
                 </div>
@@ -344,6 +347,7 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
             <div>
               <span className="badge" style={{ background: 'var(--accent)', color: 'white' }}>
                 Section {currentQuestion.section_id}
+                {currentQuestion.section_name ? ` — ${currentQuestion.section_name}` : ''}
               </span>
               <span style={{ marginLeft: '0.5rem', fontWeight: 600 }}>
                 Question {currentQuestion.question_number}

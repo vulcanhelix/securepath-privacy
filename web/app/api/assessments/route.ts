@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     p_auditor_name: body.auditor_name || null,
     p_audit_date: body.audit_date || null,
     p_audit_ref: body.audit_ref || null,
+    p_org_scale: body.org_scale === 'sme' || body.org_scale === 'large' ? body.org_scale : undefined,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

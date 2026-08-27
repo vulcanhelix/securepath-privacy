@@ -14,7 +14,7 @@ export default async function Dashboard() {
 
   const { data: clients } = await supabase
     .from('client_orgs')
-    .select('id, name, industry, contact_name, contact_email, created_at')
+    .select('id, name, industry, contact_name, contact_email, org_scale, created_at')
     .order('created_at', { ascending: false });
 
   const isOwner = membership.role === 'practice_owner';
@@ -28,11 +28,12 @@ export default async function Dashboard() {
       <div className="card">
         {clients?.length ? (
           <table>
-            <thead><tr><th>Name</th><th>Industry</th><th>Contact</th><th>Created</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Scale</th><th>Industry</th><th>Contact</th><th>Created</th><th></th></tr></thead>
             <tbody>
               {clients.map(c => (
                 <tr key={c.id}>
                   <td><strong>{c.name}</strong></td>
+                  <td>{c.org_scale === 'sme' ? 'SME' : c.org_scale === 'large' ? 'Large' : '—'}</td>
                   <td>{c.industry ?? '—'}</td>
                   <td>{c.contact_name ?? '—'} <span className="muted">{c.contact_email ?? ''}</span></td>
                   <td className="muted">{new Date(c.created_at).toLocaleDateString()}</td>

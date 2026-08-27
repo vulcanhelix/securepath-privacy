@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation';
 
 export default function NewClient() {
   const router = useRouter();
-  const [f, setF] = useState({ name: '', registration_no: '', industry: '', contact_name: '', contact_email: '', invite_admin: false });
+  const [f, setF] = useState({ name: '', registration_no: '', industry: '', contact_name: '', contact_email: '', org_scale: 'sme', invite_admin: false });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setF({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +33,14 @@ export default function NewClient() {
         <input value={f.registration_no} onChange={set('registration_no')} />
         <label>Industry</label>
         <input value={f.industry} onChange={set('industry')} placeholder="e.g. Healthcare" />
+        <label>Organisation scale *</label>
+        <select required value={f.org_scale} onChange={set('org_scale')}>
+          <option value="sme">SME (source pack: ≤10 users)</option>
+          <option value="large">Large corporation</option>
+        </select>
+        <p className="muted" style={{ marginTop: '-0.5rem' }}>
+          Determines which Section 4 security questions apply. Advisor judgement — SME edition in the 2026 POPIA pack is ≤10 users.
+        </p>
         <label>Primary contact name</label>
         <input value={f.contact_name} onChange={set('contact_name')} />
         <label>Primary contact email</label>
