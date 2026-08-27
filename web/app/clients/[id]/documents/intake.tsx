@@ -31,6 +31,9 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
   // by the upload API after router.refresh()) fill everything else at render time
   const [sel, setSel] = useState<Record<string, string>>({});
 
+  // slot chosen BEFORE uploading — the upload lands pre-confirmed into it
+  const [uploadSlot, setUploadSlot] = useState('');
+
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
@@ -43,8 +46,17 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
       if (trackId) fd.append('track_id', trackId);
       const r = await fetch('/api/documents', { method: 'POST', body: fd });
       if (!r.ok) { setMsg({ err: `${file.name}: ${(await r.json()).error ?? 'upload failed'}` }); setBusy(false); return; }
+      if (uploadSlot) {
+        const { id } = await r.json();
+        const { error } = await browserClient().rpc('set_document_link', {
+          p_document_id: id, p_checklist_id: uploadSlot, p_status: 'confirmed', p_confidence: null,
+        });
+        if (error) { setMsg({ err: `${file.name}: uploaded, but assigning the slot failed — ${error.message}` }); setBusy(false); router.refresh(); return; }
+      }
     }
-    setBusy(false); setMsg({ ok: `Uploaded ${files.length} file(s).` });
+    setBusy(false);
+    const slotName = checklist.find(c => c.id === uploadSlot)?.name;
+    setMsg({ ok: uploadSlot ? `Uploaded ${files.length} file(s) into “${slotName}”.` : `Uploaded ${files.length} file(s).` });
     e.target.value = '';
     router.refresh();
   }
@@ -61,6 +73,13 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
   return (
     <Card title="Uploaded documents" pad={0}>
       <div style={{ padding: '20px 28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>Document type</span>
+          <Select value={uploadSlot} onChange={e => setUploadSlot(e.target.value)} style={{ width: 'auto', minWidth: 280 }}>
+            <option value="">— pick a checklist slot, or leave for auto-suggest —</option>
+            {checklist.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </Select>
+        </div>
         <label
           style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer',
@@ -69,7 +88,13 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
           }}
         >
           <Icon name="upload" size={18} />
-          <span>{busy ? 'Uploading…' : 'Drop files or click to upload — policies, notices, registers'}</span>
+          <span>
+            {busy
+              ? 'Uploading…'
+              : uploadSlot
+                ? `Drop files or click to upload into “${checklist.find(c => c.id === uploadSlot)?.name}”`
+                : 'Drop files or click to upload — a slot will be auto-suggested for you to confirm'}
+          </span>
           <input
             type="file" multiple onChange={upload} disabled={busy} style={{ display: 'none' }}
             accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt,.csv"
