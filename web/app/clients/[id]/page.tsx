@@ -173,6 +173,13 @@ export default async function ClientWorkspace({ params }: { params: Promise<{ id
             </div>
           </Card>
         </Link>
+        <Link href={`/clients/${id}/awareness`} className="sp-kpi">
+          <Card pad={20}>
+            <div className="sp-kpi-label">Awareness</div>
+            <div className="sp-kpi-value">people risk</div>
+            <div className="sp-kpi-sub">staff interview cohorts</div>
+          </Card>
+        </Link>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, alignItems: 'start' }}>
