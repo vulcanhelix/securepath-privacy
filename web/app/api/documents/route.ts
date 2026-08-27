@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
   const clientOrg = form.get('client_org_id') as string | null;
   const trackId = (form.get('track_id') as string | null) || null;
   const framework = (form.get('framework') as string | null) || 'popia';
+  const supersedes = (form.get('supersedes') as string | null) || null;
   if (!file || !clientOrg) return NextResponse.json({ error: 'file and client_org_id required' }, { status: 400 });
   if (!ALLOWED.has(file.type)) return NextResponse.json({ error: `Unsupported type ${file.type}` }, { status: 400 });
   if (file.size <= 0 || file.size > MAX) return NextResponse.json({ error: 'File must be 1 byte–25 MB' }, { status: 400 });
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   const { data: docId, error } = await supabase.rpc('record_document', {
     p_client_org_id: clientOrg, p_track_id: trackId,
     p_filename: file.name, p_mime: file.type, p_size: file.size,
-    p_sha256: sha256, p_storage_path: key,
+    p_sha256: sha256, p_storage_path: key, p_supersedes: supersedes,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 

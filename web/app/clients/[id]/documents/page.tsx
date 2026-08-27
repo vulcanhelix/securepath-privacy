@@ -34,7 +34,7 @@ export default async function ClientDocuments(
       .select('id, slot_key, name, description, category, required, sort')
       .eq('framework_key', framework).eq('active', true).order('sort'),
     supabase.from('documents')
-      .select('id, original_filename, mime, size, version, created_at')
+      .select('id, original_filename, mime, size, version, supersedes, created_at')
       .eq('client_org_id', id).order('created_at', { ascending: false }),
     supabase.from('document_links')
       .select('id, checklist_id, document_id, status').eq('client_org_id', id),
@@ -42,8 +42,13 @@ export default async function ClientDocuments(
 
   const confirmed = (links ?? []).filter(l => l.status === 'confirmed');
   const docById = new Map((documents ?? []).map(d => [d.id, d]));
+  // a document another upload supersedes is history, not a current fill
+  const superseded = new Set((documents ?? []).map(d => d.supersedes).filter(Boolean));
   const slots = (checklist ?? []).map(c => {
-    const fills = confirmed.filter(l => l.checklist_id === c.id).map(l => docById.get(l.document_id)).filter(Boolean);
+    const fills = confirmed
+      .filter(l => l.checklist_id === c.id)
+      .map(l => docById.get(l.document_id))
+      .filter((d): d is NonNullable<typeof d> => Boolean(d) && !superseded.has(d!.id));
     return { ...c, fills };
   });
   const requiredSlots = slots.filter(s => s.required);
@@ -105,7 +110,10 @@ export default async function ClientDocuments(
       <GapMap
         slots={slots.map(s => ({
           id: s.id, name: s.name, description: s.description, category: s.category, required: s.required,
-          fills: s.fills.map((d: any) => ({ id: d.id, name: d.original_filename })),
+          fills: s.fills.map((d: any) => ({
+            id: d.id, name: d.original_filename, version: d.version,
+            replaces: d.supersedes ? docById.get(d.supersedes)?.original_filename ?? null : null,
+          })),
         }))}
       />
 

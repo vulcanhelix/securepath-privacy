@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, HeadBucketCommand, CreateBucketCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadBucketCommand, CreateBucketCommand } from '@aws-sdk/client-s3';
 
 // Portable object storage: MinIO on staging, AWS S3 af-south-1 at prod — same code,
 // swapped by env (S3_ENDPOINT/S3_REGION/S3_BUCKET/S3_ACCESS_KEY/S3_SECRET_KEY).
@@ -28,6 +28,12 @@ async function ensureBucket() {
 export async function putObject(key: string, body: Uint8Array, contentType: string) {
   await ensureBucket();
   await s3.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType }));
+}
+
+// Only ever called after delete_document() in Postgres has allowed the delete —
+// confirmed evidence never reaches here.
+export async function deleteObject(key: string) {
+  await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 }
 
 // Stream the object back through our server (works identically for MinIO on loopback and

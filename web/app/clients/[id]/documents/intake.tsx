@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
 import { Card } from '@/components/ui/Card';
@@ -10,8 +10,9 @@ import { StatusDot } from '@/components/ui/StatusDot';
 import { DataTable } from '@/components/ui/DataTable';
 import { Icon } from '@/components/ui/Icon';
 import { DocPreview } from '@/components/ui/DocPreview';
+import { Badge } from '@/components/ui/Badge';
 
-type Doc = { id: string; original_filename: string; mime: string; size: number; version: number; created_at: string };
+type Doc = { id: string; original_filename: string; mime: string; size: number; version: number; supersedes: string | null; created_at: string };
 type Slot = { id: string; name: string };
 type LinkRow = { id: string; checklist_id: string; document_id: string; status: string };
 
@@ -35,6 +36,12 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
   // slot chosen BEFORE uploading — the upload lands pre-confirmed into it
   const [uploadSlot, setUploadSlot] = useState('');
 
+  // ids of documents an existing upload already supersedes
+  const supersededIds = new Set(documents.map(d => d.supersedes).filter(Boolean));
+  // the current (non-superseded) confirmed document for a slot — the one a new upload replaces
+  const currentDocForSlot = (slotId: string) =>
+    links.find(l => l.checklist_id === slotId && l.status === 'confirmed' && !supersededIds.has(l.document_id))?.document_id ?? null;
+
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
@@ -45,6 +52,11 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
       fd.append('client_org_id', clientOrgId);
       fd.append('framework', framework);
       if (trackId) fd.append('track_id', trackId);
+      if (uploadSlot) {
+        // uploading into a filled slot replaces its current file: immutable history, new version
+        const prev = currentDocForSlot(uploadSlot);
+        if (prev) fd.append('supersedes', prev);
+      }
       const r = await fetch('/api/documents', { method: 'POST', body: fd });
       if (!r.ok) { setMsg({ err: `${file.name}: ${(await r.json()).error ?? 'upload failed'}` }); setBusy(false); return; }
       if (uploadSlot) {
@@ -59,6 +71,49 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
     const slotName = checklist.find(c => c.id === uploadSlot)?.name;
     setMsg({ ok: uploadSlot ? `Uploaded ${files.length} file(s) into “${slotName}”.` : `Uploaded ${files.length} file(s).` });
     e.target.value = '';
+    router.refresh();
+  }
+
+  // Replace: upload a new version superseding this document; if it was confirmed into a
+  // slot, the new version is confirmed into the same slot. History stays immutable.
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const [replaceTarget, setReplaceTarget] = useState<Doc | null>(null);
+
+  async function replaceFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const target = replaceTarget;
+    e.target.value = '';
+    if (!file || !target) return;
+    setBusy(true); setMsg({});
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('client_org_id', clientOrgId);
+    fd.append('framework', framework);
+    if (trackId) fd.append('track_id', trackId);
+    fd.append('supersedes', target.id);
+    const r = await fetch('/api/documents', { method: 'POST', body: fd });
+    if (!r.ok) { setMsg({ err: `${file.name}: ${(await r.json()).error ?? 'upload failed'}` }); setBusy(false); return; }
+    const slot = confirmedSlot(target.id);
+    if (slot) {
+      const { id } = await r.json();
+      const { error } = await browserClient().rpc('set_document_link', {
+        p_document_id: id, p_checklist_id: slot, p_status: 'confirmed', p_confidence: null,
+      });
+      if (error) { setMsg({ err: `uploaded, but re-linking the slot failed — ${error.message}` }); setBusy(false); router.refresh(); return; }
+    }
+    setBusy(false);
+    setMsg({ ok: `Replaced “${target.original_filename}” with “${file.name}”.` });
+    setReplaceTarget(null);
+    router.refresh();
+  }
+
+  async function remove(d: Doc) {
+    if (!window.confirm(`Delete “${d.original_filename}”? Only possible because it was never confirmed as evidence.`)) return;
+    setBusy(true); setMsg({});
+    const r = await fetch(`/api/documents/${d.id}`, { method: 'DELETE' });
+    setBusy(false);
+    if (!r.ok) { setMsg({ err: (await r.json()).error ?? 'delete failed' }); return; }
+    setMsg({ ok: `Deleted “${d.original_filename}”.` });
     router.refresh();
   }
 
@@ -93,7 +148,9 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
             {busy
               ? 'Uploading…'
               : uploadSlot
-                ? `Drop files or click to upload into “${checklist.find(c => c.id === uploadSlot)?.name}”`
+                ? currentDocForSlot(uploadSlot)
+                  ? `Drop files to upload into “${checklist.find(c => c.id === uploadSlot)?.name}” — replaces the current file (kept as history)`
+                  : `Drop files or click to upload into “${checklist.find(c => c.id === uploadSlot)?.name}”`
                 : 'Drop files or click to upload — a slot will be auto-suggested for you to confirm'}
           </span>
           <input
@@ -103,6 +160,8 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
         </label>
         {msg.err && <Alert tone="err">{msg.err}</Alert>}
         {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+        <input ref={replaceInput} type="file" onChange={replaceFile} style={{ display: 'none' }}
+               accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt,.csv" />
       </div>
 
       {documents.length ? (
@@ -112,6 +171,21 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
             const cur = sel[d.id] ?? initial(d.id);
             const isConfirmed = cur !== '' && cur === confirmedSlot(d.id);
             const isSuggestion = cur !== '' && !isConfirmed && cur === proposedSlot(d.id);
+            const isSuperseded = supersededIds.has(d.id);
+            if (isSuperseded) {
+              return [
+                <span key="f" style={{ opacity: 0.55 }}>
+                  <a href={`/api/documents/${d.id}`} style={{ color: 'var(--text)', fontWeight: 500 }}>{d.original_filename}</a>
+                  {d.version > 1 ? <span className="muted"> v{d.version}</span> : null}
+                </span>,
+                <span key="s" className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)', opacity: 0.55 }}>
+                  {(d.size / 1024).toFixed(0)} KB
+                </span>,
+                <Badge key="b" tone="warn" dot>Superseded</Badge>,
+                <DocPreview key="v" docId={d.id} filename={d.original_filename} />,
+                '',
+              ];
+            }
             return [
               <span key="f">
                 <a href={`/api/documents/${d.id}`} style={{ color: 'var(--text)', fontWeight: 500 }}>{d.original_filename}</a>
@@ -127,7 +201,18 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
                 </Select>
                 {isSuggestion && <span className="muted" style={{ fontSize: 'var(--fs-xs)' }}>suggested</span>}
               </span>,
-              <DocPreview key="v" docId={d.id} filename={d.original_filename} />,
+              <span key="v" style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}>
+                <DocPreview docId={d.id} filename={d.original_filename} />
+                <Button size="sm" variant="ghost" icon="refresh-cw" disabled={busy}
+                        onClick={() => { setReplaceTarget(d); replaceInput.current?.click(); }}>
+                  Replace
+                </Button>
+                {!confirmedSlot(d.id) && (
+                  <Button size="sm" variant="ghost" icon="trash-2" disabled={busy} onClick={() => remove(d)}>
+                    Delete
+                  </Button>
+                )}
+              </span>,
               isConfirmed
                 ? <StatusDot key="c" tone="pass" label="Confirmed" />
                 : <Button key="c" size="sm" variant="secondary" disabled={!cur} onClick={() => confirm(d.id, cur)}>Confirm</Button>,

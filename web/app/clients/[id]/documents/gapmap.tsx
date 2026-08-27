@@ -9,7 +9,7 @@ import { DocPreview } from '@/components/ui/DocPreview';
 
 type Slot = {
   id: string; name: string; description: string | null; category: string; required: boolean;
-  fills: { id: string; name: string }[];
+  fills: { id: string; name: string; version: number; replaces: string | null }[];
 };
 
 export default function GapMap({ slots }: { slots: Slot[] }) {
@@ -41,9 +41,15 @@ export default function GapMap({ slots }: { slots: Slot[] }) {
               : <StatusDot key="s" tone="neutral" label="—" />,
           <span key="f">
             {s.fills.map(d => (
-              <span key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <a href={`/api/documents/${d.id}`} style={{ color: 'var(--text-2)' }}>{d.name}</a>
-                <DocPreview docId={d.id} filename={d.name} />
+              <span key={d.id}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <a href={`/api/documents/${d.id}`} style={{ color: 'var(--text-2)' }}>{d.name}</a>
+                  {d.version > 1 && <span className="mono" style={{ fontSize: 'var(--fs-label)', color: 'var(--faint)' }}>v{d.version}</span>}
+                  <DocPreview docId={d.id} filename={d.name} />
+                </span>
+                {d.replaces && (
+                  <span className="muted" style={{ display: 'block', fontSize: 'var(--fs-label)' }}>replaces {d.replaces}</span>
+                )}
               </span>
             ))}
           </span>,
