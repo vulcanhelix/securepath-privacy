@@ -184,6 +184,25 @@ def test_pipeline():
     t1 = rest(f'tracks?client_org_id=eq.{cid}&track_kind=eq.privacy&select=current_stage', tok)
     check('Stage 1: starting the assessment moves the privacy track 0->1',
           t1 and t1[0]['current_stage'] == 1, t1)
+    sess = rest(f'assessment_sessions?id=eq.{aid}&select=content_pack_id,org_scale', tok)
+    check('Stage 1: session pinned to a content pack', sess and sess[0].get('content_pack_id'), sess)
+    s11 = rest('assessment_questions?framework=eq.popia&section_id=eq.11&select=id&limit=1', tok)
+    check('Stage 1: staff (S1A) question rejected on advisor upsert',
+          s11 and err(rpc('upsert_response', {
+              'p_session_id': aid, 'p_question_id': s11[0]['id'], 'p_response': 'fully_compliant',
+              'p_findings': None, 'p_responsible_party': None, 'p_target_date': None,
+              'p_status': 'complete'}, tok)), s11)
+    sme_aid = rpc('create_assessment', {
+        'p_client_org_id': cid, 'p_framework': 'popia', 'p_title': 'SME branch',
+        'p_org_name': 'C', 'p_auditor_name': 'a', 'p_audit_date': '2026-01-01',
+        'p_audit_ref': 'sme', 'p_org_scale': 'sme'}, tok)
+    large_only = rest('assessment_questions?framework=eq.popia&applies_to=eq.large&active=eq.true&select=id&limit=1', tok)
+    check('Stage 1: SME session rejects large-only question',
+          large_only and err(rpc('upsert_response', {
+              'p_session_id': sme_aid, 'p_question_id': large_only[0]['id'],
+              'p_response': 'fully_compliant', 'p_findings': None,
+              'p_responsible_party': None, 'p_target_date': None,
+              'p_status': 'complete'}, tok)), large_only)
     qs = rest('assessment_questions?framework=eq.popia&active=eq.true&section_id=lte.6&select=id&limit=4', tok)
     for i, q in enumerate(qs):
         resp = ['fully_compliant', 'partial', 'non_compliant', 'fully_compliant'][i % 4]
