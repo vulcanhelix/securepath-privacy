@@ -76,16 +76,21 @@ export default async function ClientWorkspace({ params }: { params: Promise<{ id
   // scope the ledgers to this client: transitions via its tracks, approvals via its artifact ids
   const trackIds = new Set((tracks ?? []).map((t) => t.id));
   const clientTransitions = (transitions ?? []).filter((t) => trackIds.has(t.track_id));
-  const [{ data: manualIds }, { data: reportIds }] = await Promise.all([
+  const [{ data: manualIds }, { data: reportIds }, { data: assessmentReports }] = await Promise.all([
     supabase.from('manuals').select('id').eq('client_org_id', id),
     supabase.from('monthly_reports').select('id').eq('client_org_id', id),
+    supabase.from('assessment_reports').select('id, version, approval_status')
+      .eq('client_org_id', id).order('version', { ascending: false }),
   ]);
   const subjectIds = new Set<string>([
     ...(sessions ?? []).map((s) => s.id),
     ...(policies ?? []).map((p) => p.id),
     ...(manualIds ?? []).map((m) => m.id),
     ...(reportIds ?? []).map((r) => r.id),
+    ...(assessmentReports ?? []).map((r) => r.id),
   ]);
+  const latestReport = assessmentReports?.[0];
+  const issuedReports = (assessmentReports ?? []).filter((r) => ['issued', 'superseded'].includes(r.approval_status)).length;
   const clientApprovals = (approvals ?? []).filter((a) => subjectIds.has(a.subject_id)).slice(0, 8);
   const actorIds = [...new Set([...clientApprovals, ...clientTransitions].map((r) => r.actor).filter(Boolean))] as string[];
   const { data: actors } = actorIds.length
@@ -154,6 +159,18 @@ export default async function ClientWorkspace({ params }: { params: Promise<{ id
             <div className="sp-kpi-label">Remediation</div>
             <div className="sp-kpi-value">{tasksDone}/{tasks?.length ?? 0}</div>
             <div className="sp-kpi-sub">tasks complete</div>
+          </Card>
+        </Link>
+        <Link href={`/clients/${id}/assessment-report`} className="sp-kpi">
+          <Card pad={20}>
+            <div className="sp-kpi-label">Assessment report</div>
+            <div className="sp-kpi-value">{latestReport ? `v${latestReport.version}` : '—'}</div>
+            <div className="sp-kpi-sub">
+              {latestReport
+                ? ['draft_ai', 'draft_human', 'approved'].includes(latestReport.approval_status)
+                  ? 'working draft' : `${issuedReports} issued`
+                : 'not compiled yet'}
+            </div>
           </Card>
         </Link>
       </div>
