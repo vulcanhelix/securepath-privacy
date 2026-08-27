@@ -2,6 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
+
+const SWATCHES = ['#2b2644', '#1a5c46', '#1e3a5f', '#6f3149', '#3d3d3d', '#85681a'];
 
 export default function Branding() {
   const router = useRouter();
@@ -20,7 +27,7 @@ export default function Branding() {
     e.preventDefault();
     setBusy(true); setMsg({});
     if (f.accent_hex && !/^#[0-9a-fA-F]{6}$/.test(f.accent_hex)) {
-      setBusy(false); setMsg({ err: 'Accent must be a hex color like #2b8a5f' }); return;
+      setBusy(false); setMsg({ err: 'Accent must be a hex color like #2b2644' }); return;
     }
     const { error } = await supabase.from('practices').update({
       name: f.name, logo_url: f.logo_url || null, accent_hex: f.accent_hex || null,
@@ -32,20 +39,48 @@ export default function Branding() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 520 }}>
-      <h1>Practice branding</h1>
-      <p className="muted">Whitelabel your workspace: your name, logo and accent color are what your team and clients see.</p>
-      <form onSubmit={submit}>
-        <label>Display name</label>
-        <input required value={f.name} onChange={e => setF({ ...f, name: e.target.value })} />
-        <label>Logo URL</label>
-        <input value={f.logo_url} onChange={e => setF({ ...f, logo_url: e.target.value })} placeholder="https://…/logo.png" />
-        <label>Accent color (hex)</label>
-        <input value={f.accent_hex} onChange={e => setF({ ...f, accent_hex: e.target.value })} placeholder="#2b8a5f" />
-        <button disabled={busy}>{busy ? 'Saving…' : 'Save branding'}</button>
-      </form>
-      {msg.err && <p className="err">{msg.err}</p>}
-      {msg.ok && <p className="ok">{msg.ok}</p>}
-    </div>
+    <>
+      <PageHeader
+        title="Practice branding"
+        meta="Whitelabel your workspace: your name, logo and accent color are what your team and clients see."
+      />
+      <Card style={{ maxWidth: 'var(--form-max)' }}>
+        <form onSubmit={submit}>
+          <Field label="Display name">
+            <Input required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+          </Field>
+          <Field label="Logo URL">
+            <Input value={f.logo_url} onChange={(e) => setF({ ...f, logo_url: e.target.value })} placeholder="https://…/logo.png" />
+          </Field>
+          <Field label="Accent color" hint="Status colours (pass/warn/fail) and action buttons never change — only the accent does.">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {SWATCHES.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  aria-label={`Accent ${hex}`}
+                  onClick={() => setF({ ...f, accent_hex: hex })}
+                  style={{
+                    margin: 0, padding: 0, width: 28, height: 28, borderRadius: '50%', background: hex,
+                    border: f.accent_hex === hex ? '2px solid var(--text)' : '2px solid transparent',
+                    outlineOffset: 2, cursor: 'pointer',
+                  }}
+                />
+              ))}
+              <Input
+                value={f.accent_hex}
+                onChange={(e) => setF({ ...f, accent_hex: e.target.value })}
+                placeholder="#2b2644"
+                className="mono"
+                style={{ width: 120 }}
+              />
+            </div>
+          </Field>
+          <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save branding'}</Button>
+        </form>
+        {msg.err && <Alert tone="err">{msg.err}</Alert>}
+        {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+      </Card>
+    </>
   );
 }

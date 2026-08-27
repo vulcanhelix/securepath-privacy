@@ -1,15 +1,17 @@
+'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Icon } from './Icon';
 
 export type SidebarItem =
   | { heading: string }
-  | { label: string; href: string; icon?: string; active?: boolean; badge?: number | null };
+  | { label: string; href: string; icon?: string; badge?: number | null };
 
 export function BrandMark({ size = 24 }: { size?: number }) {
   return (
     <span className="sp-side-mark" aria-hidden="true">
-      <svg viewBox="0 0 256 256" width={size} height={size} style={{ color: 'var(--side-accent)' }}>
+      <svg viewBox="0 0 256 256" width={size} height={size}>
         <path
           d="M 128.005 191.173 C 128.448 156.208 156.93 128 192 128 L 192 64 L 128 64 C 128 99.346 99.346 128 64 128 L 64 192 L 128 192 Z M 192 256 L 64 256 C 28.654 256 0 227.346 0 192 L 0 64 L 64 64 L 64 0 L 192 0 C 227.346 0 256 28.654 256 64 L 256 192 L 192 192 Z"
           fill="currentColor"
@@ -30,6 +32,7 @@ export function Sidebar({
   items?: SidebarItem[];
   footer?: React.ReactNode;
 }) {
+  const pathname = usePathname();
   return (
     <aside className="sp-side">
       <div className="sp-side-brand">
@@ -43,7 +46,17 @@ export function Sidebar({
               {it.heading}
             </div>
           ) : (
-            <Link key={i} href={it.href} className={'sp-side-item' + (it.active ? ' is-active' : '')}>
+            <Link
+              key={i}
+              href={it.href}
+              className={
+                'sp-side-item' +
+                (pathname === it.href || (it.href !== '/dashboard' && pathname.startsWith(it.href + '/')) ||
+                (it.href === '/dashboard' && pathname.startsWith('/clients'))
+                  ? ' is-active'
+                  : '')
+              }
+            >
               {it.icon ? <Icon name={it.icon} size={16} /> : null}
               <span style={{ flex: 1 }}>{it.label}</span>
               {it.badge ? <span className="sp-side-count">{it.badge}</span> : null}

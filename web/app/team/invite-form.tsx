@@ -1,6 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
+import { Field, Input, Select } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 export default function InviteForm() {
   const router = useRouter();
@@ -24,17 +27,19 @@ export default function InviteForm() {
   }
 
   return (
-    <form onSubmit={submit}>
-      <label>Email</label>
-      <input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
-      <label>Role</label>
-      <select value={role} onChange={e => setRole(e.target.value)}>
-        <option value="practice_consultant">Consultant</option>
-        <option value="read_only">Read only</option>
-      </select>
-      <button disabled={busy}>{busy ? 'Sending…' : 'Send invite'}</button>
-      {msg.err && <p className="err">{msg.err}</p>}
-      {msg.ok && <p className="ok">{msg.ok}</p>}
+    <form onSubmit={submit} style={{ maxWidth: 'var(--form-max)' }}>
+      <Field label="Email">
+        <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+      </Field>
+      <Field label="Role">
+        <Select value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="practice_consultant">Consultant</option>
+          <option value="read_only">Read only</option>
+        </Select>
+      </Field>
+      <Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send invite'}</Button>
+      {msg.err && <Alert tone="err">{msg.err}</Alert>}
+      {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
     </form>
   );
 }

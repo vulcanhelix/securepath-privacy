@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { serverClient } from '@/lib/supabase';
 import AssessmentEditor from './AssessmentEditor';
 import Gate1 from './gate1';
@@ -32,10 +32,7 @@ export default async function AssessmentDetail({ params }: { params: Promise<{ i
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <Link href="/assessments" style={{ marginRight: '1rem'}}>← Back</Link>
-        <h1 style={{ flex: 1 }}>{assessment.title}</h1>
-      </div>
+      <PageHeader title={assessment.title} back="Assessments" backHref="/assessments" />
 
       <Gate1
         sessionId={id}

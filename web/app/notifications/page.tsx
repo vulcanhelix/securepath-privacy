@@ -1,6 +1,11 @@
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import MarkRead from './mark-read';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { DataTable } from '@/components/ui/DataTable';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,25 +18,28 @@ export default async function Notifications() {
     .from('notifications').select('id, at, kind, message, read')
     .order('at', { ascending: false }).limit(100);
 
+  const hasUnread = items?.some((n) => !n.read);
+
   return (
     <>
-      <h1>Notifications</h1>
-      <div className="card">
+      <PageHeader title="Notifications" actions={hasUnread ? <MarkRead /> : null} />
+      <Card pad={0}>
         {items?.length ? (
-          <table>
-            <tbody>
-              {items.map(n => (
-                <tr key={n.id} style={n.read ? { opacity: .55 } : undefined}>
-                  <td><span className="badge">{n.kind}</span></td>
-                  <td>{n.message}</td>
-                  <td className="muted">{new Date(n.at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : <p className="muted">Nothing yet.</p>}
-        {items?.some(n => !n.read) && <MarkRead />}
-      </div>
+          <DataTable
+            columns={[{ label: '' }, { label: 'Kind' }, { label: 'Message' }, { label: 'When', align: 'right' }]}
+            rows={items.map((n) => [
+              n.read ? '' : <span key="u" className="sp-dot sp-dot--fail"><span className="sp-dot-i" /></span>,
+              <Badge key="k" tone={n.read ? 'neutral' : 'accent'}>{n.kind}</Badge>,
+              <span key="m" style={n.read ? { opacity: 0.55 } : undefined}>{n.message}</span>,
+              <span key="t" className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+                {new Date(n.at).toLocaleString()}
+              </span>,
+            ])}
+          />
+        ) : (
+          <EmptyState icon="bell" message="Nothing yet." />
+        )}
+      </Card>
     </>
   );
 }

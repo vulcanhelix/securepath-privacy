@@ -1,8 +1,20 @@
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import InviteForm from './invite-form';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { DataTable } from '@/components/ui/DataTable';
+import { Badge } from '@/components/ui/Badge';
 
 export const dynamic = 'force-dynamic';
+
+const ROLE_LABEL: Record<string, string> = {
+  practice_owner: 'Owner',
+  practice_consultant: 'Consultant',
+  client_admin: 'Client admin',
+  client_contributor: 'Client contributor',
+  read_only: 'Read only',
+};
 
 export default async function Team() {
   const supabase = await serverClient();
@@ -22,37 +34,35 @@ export default async function Team() {
 
   return (
     <>
-      <h1>Team</h1>
-      <div className="card">
-        <h2>Members</h2>
-        <table>
-          <thead><tr><th>Email</th><th>Role</th></tr></thead>
-          <tbody>
-            {members?.map(m => (
-              <tr key={m.user_id}>
-                <td>{(m.users as any)?.email ?? m.user_id}</td>
-                <td><span className="badge">{m.role}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="card">
-        <h2>Pending invites</h2>
-        {invites?.length
-          ? <table><thead><tr><th>Email</th><th>Role</th><th>Expires</th></tr></thead><tbody>
-              {invites.map((i, k) => (
-                <tr key={k}><td>{i.email}</td><td><span className="badge">{i.role}</span></td>
-                  <td className="muted">{new Date(i.expires_at).toLocaleDateString()}</td></tr>
-              ))}
-            </tbody></table>
-          : <p className="muted">None.</p>}
-      </div>
-      <div className="card">
-        <h2>Invite a team member</h2>
-        <p className="muted">{seatsUsed}/5 team seats used (client-side users don&apos;t count).</p>
+      <PageHeader title="Team" meta={`${seatsUsed}/5 team seats used — consultants, read-only and pending invites count; client-side users don't.`} />
+      <Card title="Members" pad={0}>
+        <DataTable
+          columns={[{ label: 'Email' }, { label: 'Role' }]}
+          rows={(members ?? []).map((m) => [
+            (m.users as any)?.email ?? m.user_id,
+            <Badge key="r" tone={m.role === 'practice_owner' ? 'ink' : 'neutral'}>{ROLE_LABEL[m.role] ?? m.role}</Badge>,
+          ])}
+        />
+      </Card>
+      <Card title="Pending invites" pad={invites?.length ? 0 : 28} style={{ marginTop: 24 }}>
+        {invites?.length ? (
+          <DataTable
+            columns={[{ label: 'Email' }, { label: 'Role' }, { label: 'Expires' }]}
+            rows={invites.map((i) => [
+              i.email,
+              <Badge key="r">{ROLE_LABEL[i.role] ?? i.role}</Badge>,
+              <span key="e" className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+                {new Date(i.expires_at).toLocaleDateString()}
+              </span>,
+            ])}
+          />
+        ) : (
+          <p className="muted" style={{ margin: 0 }}>None.</p>
+        )}
+      </Card>
+      <Card title="Invite a team member" style={{ marginTop: 24 }}>
         <InviteForm />
-      </div>
+      </Card>
     </>
   );
 }
