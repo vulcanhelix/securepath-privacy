@@ -7,9 +7,23 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const framework = searchParams.get('framework') || 'popia';
+  const sessionId = searchParams.get('session_id');
+  let framework = searchParams.get('framework') || 'popia';
+  let orgScale: string | null = null;
 
-  const { data, error } = await supabase
+  if (sessionId) {
+    const { data: session, error: sessionErr } = await supabase
+      .from('assessment_sessions')
+      .select('framework, org_scale')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (sessionErr) return NextResponse.json({ error: sessionErr.message }, { status: 400 });
+    if (!session) return NextResponse.json({ error: 'assessment not found' }, { status: 404 });
+    framework = session.framework || framework;
+    orgScale = session.org_scale;
+  }
+
+  let query = supabase
     .from('assessment_questions')
     .select('*')
     .eq('framework', framework)
@@ -17,6 +31,14 @@ export async function GET(req: NextRequest) {
     .order('section_id', { ascending: true })
     .order('question_number', { ascending: true });
 
+  if (framework === 'popia') {
+    query = query
+      .gte('section_id', 1)
+      .lte('section_id', 6)
+      .in('applies_to', ['all', orgScale || 'large']);
+  }
+
+  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }

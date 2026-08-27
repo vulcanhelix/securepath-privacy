@@ -14,7 +14,7 @@ export async function GET(
   const { data, error } = await supabase
     .from('assessment_sessions')
     .select(`
-      id, title, framework, status, score_pct, rating, org_name, auditor_name, audit_date, audit_ref, created_at, updated_at,
+      id, title, framework, status, score_pct, rating, org_name, auditor_name, audit_date, audit_ref, org_scale, created_at, updated_at,
       client_orgs (name),
       assessment_scores (section_scores, overall_score, completion_pct, risk_summary, critical_gaps)
     `)

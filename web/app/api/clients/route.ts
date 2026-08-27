@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('client_orgs')
-    .select('id, name, industry, contact_name, contact_email, created_at')
+    .select('id, name, industry, contact_name, contact_email, org_scale, created_at')
     .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     p_industry: b.industry || null,
     p_contact_name: b.contact_name || null,
     p_contact_email: b.contact_email || null,
+    p_org_scale: b.org_scale === 'sme' ? 'sme' : 'large',
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 

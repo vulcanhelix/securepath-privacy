@@ -184,7 +184,7 @@ def test_pipeline():
     t1 = rest(f'tracks?client_org_id=eq.{cid}&track_kind=eq.privacy&select=current_stage', tok)
     check('Stage 1: starting the assessment moves the privacy track 0->1',
           t1 and t1[0]['current_stage'] == 1, t1)
-    qs = rest('assessment_questions?framework=eq.popia&select=id&limit=4', tok)
+    qs = rest('assessment_questions?framework=eq.popia&active=eq.true&section_id=lte.6&select=id&limit=4', tok)
     for i, q in enumerate(qs):
         resp = ['fully_compliant', 'partial', 'non_compliant', 'fully_compliant'][i % 4]
         rpc('upsert_response', {'p_session_id': aid, 'p_question_id': q['id'], 'p_response': resp,
