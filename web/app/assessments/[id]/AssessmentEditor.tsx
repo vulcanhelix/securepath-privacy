@@ -1,6 +1,13 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Field, Input, Select, Textarea } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
+import { ResponseOptions } from '@/components/ui/ResponseOptions';
+import { ScorePanel } from '@/components/ui/ScorePanel';
+import { SectionBars } from '@/components/ui/SectionBars';
 
 interface Question {
   id: string;
@@ -64,6 +71,11 @@ interface AssessmentEditorProps {
   assessmentId: string;
 }
 
+const RISK_TONE: Record<string, 'fail' | 'warn' | 'neutral'> = {
+  critical: 'fail',
+  high: 'warn',
+};
+
 export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps) {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -92,6 +104,7 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
 
       setAssessment(assessmentRes);
 
+      // questions come from the session's pinned content pack, not the live framework bank
       const questionsRes = await fetch(`/api/assessment/questions?session_id=${assessmentId}`)
         .then(r => { if (!r.ok) throw new Error('questions'); return r.json(); });
 
@@ -100,7 +113,6 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
       setResponses(responseMap);
       setScore(scoreRes);
 
-      // Initialize current section/question
       if (questionsRes.length > 0) {
         const firstQuestion = questionsRes[0];
         setCurrentSection(firstQuestion.section_id);
@@ -142,7 +154,6 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
         const err = await r.json();
         console.error('Failed to save response:', err);
       } else {
-        // Refresh score
         const scoreRes = await fetch(`/api/assessments/${assessmentId}/score`).then(r => r.json());
         setScore(scoreRes);
       }
@@ -179,7 +190,6 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
     updatedResponses.set(currentQuestionId, { ...existing, findings });
     setResponses(updatedResponses);
 
-    // Debounce save
     if (findingsTimer.current) clearTimeout(findingsTimer.current);
     findingsTimer.current = setTimeout(() => {
       saveResponse(currentQuestionId, { findings });
@@ -201,288 +211,229 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
   };
 
   const sectionQuestions = questions.filter(q => q.section_id === currentSection);
-
-  // Get distinct sections from questions
   const sections = [...new Set(questions.map(q => q.section_id))].sort((a, b) => a - b);
 
+  // Previous / Next across the whole ordered question list
+  const flatIndex = questions.findIndex(q => q.id === currentQuestionId);
+  function goTo(idx: number) {
+    const q = questions[idx];
+    if (!q) return;
+    setCurrentSection(q.section_id);
+    setCurrentQuestionId(q.id);
+  }
+
   if (loading) {
-    return <div className="card"><p>Loading assessment...</p></div>;
+    return <Card><p className="muted" style={{ margin: 0 }}>Loading assessment…</p></Card>;
   }
 
   if (error) {
-    return <div className="card"><p className="err">{error}</p></div>;
+    return <Alert tone="err">{error}</Alert>;
   }
 
   if (!currentQuestion) {
-    return <div className="card"><p>No questions found for this framework.</p></div>;
+    return <Card><p className="muted" style={{ margin: 0 }}>No questions found for this framework.</p></Card>;
   }
 
   return (
     <>
       {assessment && (
-        <div className="card" style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-            <div>
-              <label>Client</label>
-              <strong>{assessment.client_orgs?.name ?? '—'}</strong>
-            </div>
-            <div>
-              <label>Framework</label>
-              <span className="badge">{assessment.framework.toUpperCase()}</span>
-            </div>
-            <div>
-              <label>Scale</label>
-              <strong>{assessment.org_scale === 'sme' ? 'SME' : assessment.org_scale === 'large' ? 'Large' : '—'}</strong>
-            </div>
-            <div>
-              <label>Status</label>
-              <span className="badge">{assessment.status}</span>
-            </div>
-            <div>
-              <label>Score</label>
-              {assessment.score_pct !== null ? (
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: getScoreColor(assessment.score_pct) }}>
-                  {assessment.score_pct}%
-                </span>
-              ) : '—'}
-            </div>
-            <div>
-              <label>Rating</label>
-              <strong>{assessment.rating || 'In Progress'}</strong>
-            </div>
+        <Card style={{ marginBottom: 24 }} pad={20}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <strong>{assessment.client_orgs?.name ?? '—'}</strong>
+            <Badge><span className="mono">{assessment.framework.toUpperCase()}</span></Badge>
+            {assessment.org_scale && (
+              <Badge>{assessment.org_scale === 'sme' ? 'SME' : 'Large'}</Badge>
+            )}
+            <Badge tone={assessment.status === 'signed_off' ? 'pass' : 'neutral'} dot>
+              {assessment.status.replace(/_/g, ' ')}
+            </Badge>
+            <span style={{ flex: 1 }} />
+            <span className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
+              {saving ? 'Saving…' : assessment.rating || 'In Progress'}
+            </span>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1rem' }}>
-        {/* Left Panel - Navigation */}
-        <div className="card" style={{ padding: '1rem' }}>
-          <h3>Sections</h3>
-          {sections.map(sectionId => {
-            const sectionQuestions = questions.filter(q => q.section_id === sectionId);
-            const answeredCount = sectionQuestions.filter(q => {
-              const r = responses.get(q.id);
-              return r?.response && r.response !== 'na';
-            }).length;
-            const isActive = currentSection === sectionId;
-            return (
-              <button
-                key={sectionId}
-                onClick={() => setCurrentSection(sectionId)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '0.5rem',
-                  margin: '0.25rem 0',
-                  background: isActive ? 'var(--accent)' : 'transparent',
-                  color: isActive ? 'white' : 'var(--text)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: '0.85rem',
-                }}
-              >
-                <div>{sectionQuestions[0]?.section_name || `Section ${sectionId}`}</div>
-                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                  {answeredCount}/{sectionQuestions.length} answered
-                </div>
-              </button>
-            );
-          })}
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24, alignItems: 'start' }}>
+        {/* Left panel — section nav + live score */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, position: 'sticky', top: 24 }}>
+          <Card pad={16}>
+            <div className="sp-side-heading" style={{ color: 'var(--faint)', padding: '0 10px 8px' }}>Sections</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {sections.map(sectionId => {
+                const sq = questions.filter(q => q.section_id === sectionId);
+                const answeredCount = sq.filter(q => {
+                  const r = responses.get(q.id);
+                  return r?.response && r.response !== 'na';
+                }).length;
+                const isActive = currentSection === sectionId;
+                return (
+                  <button
+                    key={sectionId}
+                    onClick={() => setCurrentSection(sectionId)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%', margin: 0,
+                      padding: '9px 14px', borderRadius: 'var(--r-pill)', border: '1px solid transparent',
+                      background: isActive ? 'var(--inset)' : 'transparent',
+                      color: isActive ? 'var(--text)' : 'var(--muted)',
+                      fontSize: 'var(--fs-sm)', fontWeight: 500, cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ flex: 1 }}>{sq[0]?.section_name ?? `Section ${sectionId}`}</span>
+                    <span className="mono" style={{ fontSize: 'var(--fs-label)' }}>
+                      {answeredCount}/{sq.length}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-          <h3 style={{ marginTop: '1rem' }}>Questions</h3>
-          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            {sectionQuestions.map(q => {
-              const response = responses.get(q.id);
-              const isAnswered = response?.response && response.response !== 'na';
-              return (
-                <div
-                  key={q.id}
-                  onClick={() => setCurrentQuestionId(q.id)}
-                  style={{
-                    padding: '0.5rem',
-                    margin: '0.25rem 0',
-                    background: currentQuestionId === q.id ? 'var(--bg)' : 'transparent',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    borderLeft: `3px solid ${isAnswered ? 'var(--accent)' : 'var(--border)'}`,
-                  }}
-                >
-                  <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                    Q{q.question_number}
-                    {q.risk && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--muted)' }}>{q.risk}</span>}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                    {q.question.substring(0, 50)}...
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            <div className="sp-side-heading" style={{ color: 'var(--faint)', padding: '16px 10px 8px' }}>Questions</div>
+            <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {sectionQuestions.map(q => {
+                const response = responses.get(q.id);
+                const isAnswered = response?.response && response.response !== 'na';
+                const isCurrent = currentQuestionId === q.id;
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentQuestionId(q.id)}
+                    style={{
+                      display: 'block', width: '100%', margin: 0, padding: '8px 10px',
+                      background: isCurrent ? 'var(--inset)' : 'transparent',
+                      border: 'none', borderLeft: `3px solid ${isAnswered ? 'var(--pass)' : 'var(--border)'}`,
+                      borderRadius: 'var(--r-sm)', cursor: 'pointer', textAlign: 'left', color: 'inherit',
+                    }}
+                  >
+                    <span className="mono" style={{ fontSize: 'var(--fs-xs)', fontWeight: 500 }}>Q{q.question_number}</span>
+                    <span style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {q.question}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
 
           {score && (
-            <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg)', borderRadius: '4px' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: getScoreColor(score.overall?.pct || 0) }}>
-                {score.overall?.pct || 0}%
-              </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                {score.overall?.rating || 'In Progress'}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.5rem' }}>
-                {score.completion_pct || 0}% complete
-              </div>
-              {score.critical_gaps > 0 && (
-                <div style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '0.25rem' }}>
-                  {score.critical_gaps} critical gap(s)
-                </div>
+            <>
+              <ScorePanel
+                pct={score.overall?.pct || 0}
+                rating={score.overall?.rating || 'In Progress'}
+                completionPct={score.completion_pct || 0}
+                criticalGaps={score.critical_gaps || 0}
+              />
+              {Object.keys(score.section_scores ?? {}).length > 0 && (
+                <Card pad={20}>
+                  <SectionBars
+                    sections={Object.values(score.section_scores).map(s => ({ name: s.section_name, pct: s.pct }))}
+                  />
+                </Card>
               )}
-            </div>
+            </>
           )}
         </div>
 
-        {/* Right Panel - Question Detail */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <span className="badge" style={{ background: 'var(--accent)', color: 'white' }}>
-                Section {currentQuestion.section_id}
-                {currentQuestion.section_name ? ` — ${currentQuestion.section_name}` : ''}
-              </span>
-              <span style={{ marginLeft: '0.5rem', fontWeight: 600 }}>
-                Question {currentQuestion.question_number}
-              </span>
-              {currentQuestion.risk && (
-                <span className="badge" style={{ marginLeft: '0.5rem' }}>
-                  {currentQuestion.risk}
-                </span>
-              )}
-            </div>
-            {saving && <span className="muted">Saving...</span>}
-          </div>
-
-          <div style={{ marginTop: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-              {currentQuestion.question}
-            </h2>
-
-            {currentQuestion.why_matters && (
-              <div style={{ padding: '1rem', background: 'var(--bg)', borderRadius: '4px', margin: '1rem 0' }}>
-                <strong>Why This Matters:</strong>
-                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                  {currentQuestion.why_matters}
-                </p>
-              </div>
+        {/* Right panel — question workbench */}
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <Badge tone="ink">{currentQuestion.section_name || `Section ${currentQuestion.section_id}`}</Badge>
+            <span style={{ fontWeight: 500 }}>Question {currentQuestion.question_number}</span>
+            {currentQuestion.risk && (
+              <Badge tone={RISK_TONE[currentQuestion.risk.toLowerCase()] ?? 'neutral'} dot>{currentQuestion.risk}</Badge>
             )}
-
+            <span style={{ flex: 1 }} />
             {currentQuestion.regulatory_ref && (
-              <div style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '0.5rem 0' }}>
-                <strong>Reference:</strong> {currentQuestion.regulatory_ref}
-              </div>
+              <span className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>
+                {currentQuestion.regulatory_ref}
+              </span>
             )}
-
-            <div style={{ margin: '1.5rem 0' }}>
-              <label>Response</label>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {[
-                  { value: 'fully_compliant', label: 'Yes – Fully Compliant' },
-                  { value: 'partial', label: 'Yes – Partially Compliant' },
-                  { value: 'non_compliant', label: 'No – Non-Compliant' },
-                  { value: 'na', label: 'N/A – Not Applicable' },
-                ].map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => handleResponseChange(value)}
-                    style={{
-                      padding: '0.75rem 1rem',
-                      border: '2px solid',
-                      borderRadius: '6px',
-                      background: currentResponse?.response === value ? 'var(--accent)' : 'white',
-                      color: currentResponse?.response === value ? 'white' : 'var(--text)',
-                      borderColor: currentResponse?.response === value ? 'var(--accent)' : 'var(--border)',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {currentQuestion.evidence_req && (
-              <div style={{ margin: '1rem 0' }}>
-                <label>Evidence Required</label>
-                <div style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: '4px', fontSize: '0.9rem' }}>
-                  {currentQuestion.evidence_req}
-                </div>
-              </div>
-            )}
-
-            {currentQuestion.remediation && (
-              <div style={{ margin: '1rem 0' }}>
-                <label>Remediation Steps</label>
-                <div style={{ padding: '0.75rem', background: 'var(--bg)', borderRadius: '4px', fontSize: '0.9rem' }}>
-                  {currentQuestion.remediation}
-                </div>
-              </div>
-            )}
-
-            <div style={{ margin: '1rem 0' }}>
-              <label>Findings / Notes</label>
-              <textarea
-                value={currentResponse?.findings || ''}
-                onChange={e => handleFindingsChange(e.target.value)}
-                style={{ width: '100%', minHeight: '100px', padding: '0.5rem', border: '1px solid var(--border)', borderRadius: '4px' }}
-                placeholder="Enter your findings and observations..."
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label>Responsible Party</label>
-                <input
-                  type="text"
-                  value={currentResponse?.responsible_party || ''}
-                  onChange={e => handleFieldChange('responsible_party', e.target.value)}
-                  placeholder="Name or team"
-                  style={{ width: '100%' }}
-                />
-              </div>
-              <div>
-                <label>Target Date</label>
-                <input
-                  type="date"
-                  value={currentResponse?.target_date || ''}
-                  onChange={e => handleFieldChange('target_date', e.target.value)}
-                  style={{ width: '100%' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: '1rem' }}>
-              <label>Remediation Status</label>
-              <select
-                value={currentResponse?.status || 'not_started'}
-                onChange={e => handleFieldChange('status', e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <option value="not_started">Not Started</option>
-                <option value="in_progress">In Progress</option>
-                <option value="complete">Complete</option>
-                <option value="na">N/A</option>
-              </select>
-            </div>
           </div>
-        </div>
+
+          <h2 style={{ fontSize: 'var(--fs-lead)', letterSpacing: 'var(--ls-snug)', margin: '20px 0 8px' }}>
+            {currentQuestion.question}
+          </h2>
+
+          {currentQuestion.why_matters && (
+            <div style={{ padding: 16, background: 'var(--inset)', borderRadius: 'var(--r-ctl)', margin: '16px 0' }}>
+              <strong style={{ fontSize: 'var(--fs-xs)', textTransform: 'uppercase', letterSpacing: 'var(--ls-label)', color: 'var(--faint)', fontWeight: 500 }}>
+                Why this matters
+              </strong>
+              <p style={{ margin: '6px 0 0', fontSize: 'var(--fs-sm)', color: 'var(--text-2)' }}>
+                {currentQuestion.why_matters}
+              </p>
+            </div>
+          )}
+
+          <div style={{ margin: '24px 0' }}>
+            <ResponseOptions value={currentResponse?.response} onChange={handleResponseChange} />
+          </div>
+
+          {currentQuestion.evidence_req && (
+            <Field label="Evidence required">
+              <div style={{ padding: '12px 14px', background: 'var(--inset)', borderRadius: 'var(--r-ctl)', fontSize: 'var(--fs-sm)', color: 'var(--text-2)' }}>
+                {currentQuestion.evidence_req}
+              </div>
+            </Field>
+          )}
+
+          {currentQuestion.remediation && (
+            <Field label="Remediation steps">
+              <div style={{ padding: '12px 14px', background: 'var(--inset)', borderRadius: 'var(--r-ctl)', fontSize: 'var(--fs-sm)', color: 'var(--text-2)' }}>
+                {currentQuestion.remediation}
+              </div>
+            </Field>
+          )}
+
+          <Field label="Findings / notes">
+            <Textarea
+              value={currentResponse?.findings || ''}
+              onChange={e => handleFindingsChange(e.target.value)}
+              placeholder="Enter your findings and observations…"
+            />
+          </Field>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Field label="Responsible party">
+              <Input
+                type="text"
+                value={currentResponse?.responsible_party || ''}
+                onChange={e => handleFieldChange('responsible_party', e.target.value)}
+                placeholder="Name or team"
+              />
+            </Field>
+            <Field label="Target date">
+              <Input
+                type="date"
+                value={currentResponse?.target_date || ''}
+                onChange={e => handleFieldChange('target_date', e.target.value)}
+              />
+            </Field>
+          </div>
+
+          <Field label="Remediation status">
+            <Select
+              value={currentResponse?.status || 'not_started'}
+              onChange={e => handleFieldChange('status', e.target.value)}
+            >
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="complete">Complete</option>
+              <option value="na">N/A</option>
+            </Select>
+          </Field>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+            <Button variant="secondary" size="sm" disabled={flatIndex <= 0} onClick={() => goTo(flatIndex - 1)}>
+              Previous
+            </Button>
+            <Button variant="secondary" size="sm" disabled={flatIndex >= questions.length - 1} onClick={() => goTo(flatIndex + 1)}>
+              Next
+            </Button>
+          </div>
+        </Card>
       </div>
     </>
   );
-}
-
-function getScoreColor(score: number): string {
-  if (score >= 75) return 'var(--accent)';
-  if (score >= 50) return '#d97706';
-  return '#dc2626';
 }

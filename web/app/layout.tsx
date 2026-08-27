@@ -1,9 +1,15 @@
 import './globals.css';
 import Link from 'next/link';
 import { serverClient } from '@/lib/supabase';
+import { Sidebar, BrandMark } from '@/components/ui/Sidebar';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Icon } from '@/components/ui/Icon';
 
 export const metadata = { title: 'SecurePath', description: 'POPIA/GDPR compliance for MSPs' };
 export const dynamic = 'force-dynamic';
+
+// restore persisted theme before first paint
+const THEME_SCRIPT = `try{var t=localStorage.getItem('sp-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await serverClient();
@@ -19,28 +25,62 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     unread = count ?? 0;
   }
   const accent = practice?.accent_hex?.match(/^#[0-9a-fA-F]{6}$/) ? practice.accent_hex : null;
+  // sidebar shell only for a fully authenticated workspace session (aal2);
+  // pre-2FA screens (/mfa, /mfa/enroll) render in the centred auth column
+  let aal2 = false;
+  if (user) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    aal2 = aal?.currentLevel === 'aal2';
+  }
+  const shell = Boolean(user && practice && aal2);
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body style={accent ? ({ ['--accent' as string]: accent } as React.CSSProperties) : undefined}>
-        <nav>
-          <Link href="/dashboard" className="brand">
-            {practice?.logo_url ? <img src={practice.logo_url} alt="" /> : null}
-            {practice?.name ?? 'SecurePath'}
-          </Link>
-          {user && practice && (<>
-            <Link href="/dashboard">Clients</Link>
-            <Link href="/assessments">Assessments</Link>
-            <Link href="/team">Team</Link>
-            <Link href="/settings/branding">Branding</Link>
-            <Link href="/notifications">Notifications{unread ? ` (${unread})` : ''}</Link>
-          </>)}
-          <span className="spacer" />
-          {user
-            ? <form action="/auth/signout" method="post"><button style={{ margin: 0, background: 'var(--muted)' }}>Sign out</button></form>
-            : <Link href="/login">Sign in</Link>}
-        </nav>
-        <main>{children}</main>
+        {shell ? (
+          <div className="sp-shell">
+            <Sidebar
+              brandName={practice!.name}
+              logoSrc={practice!.logo_url}
+              items={[
+                { heading: 'Workspace' },
+                { label: 'Clients', href: '/dashboard', icon: 'building-2' },
+                { label: 'Assessments', href: '/assessments', icon: 'clipboard-check' },
+                { heading: 'Practice' },
+                { label: 'Team', href: '/team', icon: 'users' },
+                { label: 'Notifications', href: '/notifications', icon: 'bell', badge: unread },
+                { label: 'Settings', href: '/settings/branding', icon: 'settings' },
+              ]}
+              footer={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <form action="/auth/signout" method="post" style={{ margin: 0 }}>
+                    <button type="submit" className="sp-btn sp-btn--ghost sp-btn--sm" style={{ margin: 0 }}>
+                      <Icon name="log-out" size={14} />
+                      <span>Sign out</span>
+                    </button>
+                  </form>
+                  <ThemeToggle />
+                </div>
+              }
+            />
+            <div className="sp-content">
+              <main className="sp-main">{children}</main>
+            </div>
+          </div>
+        ) : (
+          <div className="sp-authwrap">
+            <Link href="/" className="sp-auth-brand" style={{ color: 'var(--text)' }}>
+              <span style={{ display: 'inline-flex', color: 'var(--text)' }}>
+                <BrandMark size={28} />
+              </span>
+              <span className="sp-auth-name">SecurePath</span>
+            </Link>
+            <main className="sp-authmain">{children}</main>
+          </div>
+        )}
       </body>
     </html>
   );

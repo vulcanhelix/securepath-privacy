@@ -29,7 +29,7 @@ flowchart LR
         R[Resend API<br/>mail.securepathconsulting.co.za]
         N[ntfy.sh<br/>securepath-ops-d2e6906f]
     end
-    subgraph VPS [VPS 91.107.216.190]
+    subgraph VPS [VPS VulcanVPS-ZA 102.211.205.237]
         C[Caddy :443<br/>auto-TLS securepath.dev]
         subgraph next [systemd securepath-web]
             W[Next.js 15<br/>127.0.0.1:3200]

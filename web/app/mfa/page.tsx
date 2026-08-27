@@ -2,6 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 // Verify an existing TOTP factor at sign-in (aal1 -> aal2).
 export default function MfaVerify() {
@@ -33,16 +37,16 @@ export default function MfaVerify() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: '3rem auto' }}>
-      <h1>Two-factor authentication</h1>
-      <p className="muted">Enter the 6-digit code from your authenticator app.</p>
+    <Card title="Two-factor authentication">
+      <p className="muted" style={{ marginTop: 0 }}>Enter the 6-digit code from your authenticator app.</p>
       <form onSubmit={submit}>
-        <label>Code</label>
-        <input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code}
-               onChange={e => setCode(e.target.value)} autoFocus />
-        <button disabled={busy || !factorId}>{busy ? 'Verifying…' : 'Verify'}</button>
+        <Field label="Code">
+          <Input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code}
+                 onChange={(e) => setCode(e.target.value)} autoFocus className="mono" />
+        </Field>
+        <Button type="submit" disabled={busy || !factorId}>{busy ? 'Verifying…' : 'Verify'}</Button>
       </form>
-      {err && <p className="err">{err}</p>}
-    </div>
+      {err && <Alert tone="err">{err}</Alert>}
+    </Card>
   );
 }

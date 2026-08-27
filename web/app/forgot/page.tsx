@@ -1,6 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 export default function Forgot() {
   const [email, setEmail] = useState('');
@@ -19,16 +23,20 @@ export default function Forgot() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: '3rem auto' }}>
-      <h1>Reset your password</h1>
+    <Card title="Reset your password">
       <form onSubmit={submit}>
-        <label>Email</label>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
-        <button disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</button>
+        <Field label="Email">
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Button type="submit" disabled={busy}>
+          {busy ? 'Sending…' : 'Send reset link'}
+        </Button>
       </form>
-      {msg.err && <p className="err">{msg.err}</p>}
-      {msg.ok && <p className="ok">{msg.ok}</p>}
-      <p className="muted"><a href="/login">Back to sign in</a></p>
-    </div>
+      {msg.err && <Alert tone="err">{msg.err}</Alert>}
+      {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+      <p className="muted" style={{ marginTop: 20 }}>
+        <a href="/login" style={{ color: 'var(--text)' }}>Back to sign in</a>
+      </p>
+    </Card>
   );
 }

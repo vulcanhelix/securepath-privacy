@@ -1,6 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -22,17 +26,20 @@ export default function Signup() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: '3rem auto' }}>
-      <h1>Create your account</h1>
+    <Card title="Create your account">
       <form onSubmit={submit}>
-        <label>Work email</label>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
-        <label>Password</label>
-        <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} />
-        <button disabled={busy}>{busy ? 'Creating…' : 'Sign up'}</button>
+        <Field label="Work email">
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field label="Password" hint="At least 8 characters.">
+          <Input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        <Button type="submit" disabled={busy} cta>
+          {busy ? 'Creating…' : 'Sign up'}
+        </Button>
       </form>
-      {msg.err && <p className="err">{msg.err}</p>}
-      {msg.ok && <p className="ok">{msg.ok}</p>}
-    </div>
+      {msg.err && <Alert tone="err">{msg.err}</Alert>}
+      {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+    </Card>
   );
 }

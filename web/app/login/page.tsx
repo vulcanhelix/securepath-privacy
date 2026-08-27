@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 function LoginForm() {
   const router = useRouter();
@@ -38,23 +42,30 @@ function LoginForm() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: '3rem auto' }}>
-      <h1>Sign in</h1>
+    <Card title="Sign in">
       <form onSubmit={submit}>
-        <label>Email</label>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
-        <label>Password</label>
-        <input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
-        <button disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <Field label="Email">
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field label="Password">
+          <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        <Button type="submit" disabled={busy} cta>
+          {busy ? 'Signing in…' : 'Sign in'}
+        </Button>
       </form>
-      {err && <p className="err">{err}</p>}
-      {sent && <p className="ok">{sent}</p>}
-      <button type="button" disabled={busy} onClick={magicLink}
-              style={{ background: 'transparent', color: 'var(--accent)', border: '1px solid var(--border)' }}>
-        Email me a magic link instead
-      </button>
-      <p className="muted"><a href="/forgot">Forgot password?</a> · No account? <a href="/signup">Sign up</a></p>
-    </div>
+      {err && <Alert tone="err">{err}</Alert>}
+      {sent && <Alert tone="ok">{sent}</Alert>}
+      <div style={{ marginTop: 16 }}>
+        <Button type="button" variant="outline" size="sm" disabled={busy} onClick={magicLink}>
+          Email me a magic link instead
+        </Button>
+      </div>
+      <p className="muted" style={{ marginTop: 20 }}>
+        <a href="/forgot" style={{ color: 'var(--text)' }}>Forgot password?</a> · No account?{' '}
+        <a href="/signup" style={{ color: 'var(--text)' }}>Sign up</a>
+      </p>
+    </Card>
   );
 }
 

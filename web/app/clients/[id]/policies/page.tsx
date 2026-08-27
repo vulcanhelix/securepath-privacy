@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import { trackKindFor } from '@/lib/track';
 import Workbench from './workbench';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,13 +53,19 @@ export default async function ClientPolicies(
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/documents${qs}`}>Stage 2 — Documents</Link> · <Link href={`/clients/${id}/manual${qs}`}>Stage 4 — Manual →</Link></p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
-        <h1 style={{ flex: 1 }}>{client.name} — Policy workbench</h1>
-        <span className="badge">Stage 3</span>
-      </div>
-      <p className="muted">Draft the policies that close the gaps from Stage 2, then approve each one.
-        <strong> {approved}/{policies?.length ?? 0} policies approved.</strong></p>
+      <PageHeader
+        title={`${client.name} — Policy workbench`}
+        back="Workspace"
+        backHref={`/clients/${id}`}
+        meta={<>Draft the policies that close the gaps from Stage 2, then approve each one. <strong>{approved}/{policies?.length ?? 0} policies approved.</strong></>}
+        actions={
+          <>
+            <Badge><span className="mono">{framework.toUpperCase()}</span></Badge>
+            <Badge tone={track?.current_stage === 3 ? 'accent' : 'neutral'} dot>Stage 3</Badge>
+            <Link href={`/clients/${id}/manual${qs}`}><Button variant="secondary" size="sm">Stage 4 — Manual</Button></Link>
+          </>
+        }
+      />
 
       <Workbench clientOrgId={id} canEdit={canEdit} isAdvisor={isAdvisor} draftable={draftable}
                  policies={policies ?? []} trackId={track?.id ?? null} trackStage={track?.current_stage ?? null}

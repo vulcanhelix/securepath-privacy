@@ -2,6 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 // Compulsory TOTP enrolment: first sign-in lands here until a factor is verified.
 export default function MfaEnroll() {
@@ -43,18 +47,28 @@ export default function MfaEnroll() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 460, margin: '3rem auto' }}>
-      <h1>Set up two-factor authentication</h1>
-      <p className="muted">2FA is required. Scan the QR code with Google Authenticator (or any TOTP app), then enter the 6-digit code.</p>
-      {qr && <p style={{ textAlign: 'center' }}><img src={qr} alt="TOTP QR code" style={{ width: 180 }} /></p>}
-      {secret && <p className="muted" style={{ wordBreak: 'break-all' }}>Manual key: <code>{secret}</code></p>}
+    <Card title="Set up two-factor authentication">
+      <p className="muted" style={{ marginTop: 0 }}>
+        2FA is required. Scan the QR code with Google Authenticator (or any TOTP app), then enter the 6-digit code.
+      </p>
+      {qr && (
+        <p style={{ textAlign: 'center' }}>
+          <img src={qr} alt="TOTP QR code" style={{ width: 180, borderRadius: 'var(--r-ctl)', background: '#fff', padding: 8 }} />
+        </p>
+      )}
+      {secret && (
+        <p className="muted" style={{ wordBreak: 'break-all' }}>
+          Manual key: <code>{secret}</code>
+        </p>
+      )}
       <form onSubmit={submit}>
-        <label>Code from your app</label>
-        <input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code}
-               onChange={e => setCode(e.target.value)} />
-        <button disabled={busy || !factorId}>{busy ? 'Verifying…' : 'Activate 2FA'}</button>
+        <Field label="Code from your app">
+          <Input required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code}
+                 onChange={(e) => setCode(e.target.value)} className="mono" />
+        </Field>
+        <Button type="submit" disabled={busy || !factorId}>{busy ? 'Verifying…' : 'Activate 2FA'}</Button>
       </form>
-      {err && <p className="err">{err}</p>}
-    </div>
+      {err && <Alert tone="err">{err}</Alert>}
+    </Card>
   );
 }

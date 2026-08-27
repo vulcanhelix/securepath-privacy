@@ -2,6 +2,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 export default function Reset() {
   const router = useRouter();
@@ -21,15 +25,17 @@ export default function Reset() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 420, margin: '3rem auto' }}>
-      <h1>Choose a new password</h1>
+    <Card title="Choose a new password">
       <form onSubmit={submit}>
-        <label>New password</label>
-        <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} />
-        <button disabled={busy}>{busy ? 'Saving…' : 'Set password'}</button>
+        <Field label="New password" hint="At least 8 characters.">
+          <Input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        <Button type="submit" disabled={busy}>
+          {busy ? 'Saving…' : 'Set password'}
+        </Button>
       </form>
-      {msg.err && <p className="err">{msg.err}</p>}
-      {msg.ok && <p className="ok">{msg.ok}</p>}
-    </div>
+      {msg.err && <Alert tone="err">{msg.err}</Alert>}
+      {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+    </Card>
   );
 }

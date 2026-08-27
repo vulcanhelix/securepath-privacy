@@ -2,6 +2,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 export default function Onboarding() {
   const router = useRouter();
@@ -21,15 +25,17 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 480, margin: '3rem auto' }}>
-      <h1>Set up your practice</h1>
-      <p className="muted">Your MSP practice is the reseller account. You can brand it and invite up to 5 team members.</p>
+    <Card title="Set up your practice">
+      <p className="muted" style={{ marginTop: 0 }}>
+        Your MSP practice is the reseller account. You can brand it and invite up to 5 team members.
+      </p>
       <form onSubmit={submit}>
-        <label>Practice name</label>
-        <input required value={name} onChange={e => setName(e.target.value)} placeholder="Acme MSP (Pty) Ltd" />
-        <button disabled={busy}>{busy ? 'Creating…' : 'Create practice'}</button>
+        <Field label="Practice name">
+          <Input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme MSP (Pty) Ltd" />
+        </Field>
+        <Button type="submit" disabled={busy} cta>{busy ? 'Creating…' : 'Create practice'}</Button>
       </form>
-      {err && <p className="err">{err}</p>}
-    </div>
+      {err && <Alert tone="err">{err}</Alert>}
+    </Card>
   );
 }

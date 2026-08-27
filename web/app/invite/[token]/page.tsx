@@ -2,6 +2,10 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/forms';
+import { Alert } from '@/components/ui/Alert';
 
 export default function AcceptInvite({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -41,25 +45,28 @@ export default function AcceptInvite({ params }: { params: Promise<{ token: stri
   }
 
   return (
-    <div className="card" style={{ maxWidth: 440, margin: '3rem auto' }}>
-      <h1>Accept your invite</h1>
-      <p className="muted">
+    <Card title="Accept your invite">
+      <p className="muted" style={{ marginTop: 0 }}>
         {mode === 'signup' ? 'Create an account with the email the invite was sent to.' : 'Sign in with the invited email to join.'}
       </p>
       <form onSubmit={submit}>
-        <label>Email</label>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
-        <label>Password</label>
-        <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} />
-        <button disabled={busy}>{busy ? 'Working…' : mode === 'signup' ? 'Sign up & accept' : 'Sign in & accept'}</button>
+        <Field label="Email">
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field label="Password">
+          <Input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        <Button type="submit" disabled={busy}>
+          {busy ? 'Working…' : mode === 'signup' ? 'Sign up & accept' : 'Sign in & accept'}
+        </Button>
       </form>
-      <p className="muted">
+      <p className="muted" style={{ marginTop: 16 }}>
         {mode === 'signup'
-          ? <>Already have an account? <a onClick={() => setMode('login')} style={{ cursor: 'pointer' }}>Sign in instead</a></>
-          : <>New here? <a onClick={() => setMode('signup')} style={{ cursor: 'pointer' }}>Sign up instead</a></>}
+          ? <>Already have an account? <a onClick={() => setMode('login')} style={{ cursor: 'pointer', color: 'var(--text)' }}>Sign in instead</a></>
+          : <>New here? <a onClick={() => setMode('signup')} style={{ cursor: 'pointer', color: 'var(--text)' }}>Sign up instead</a></>}
       </p>
-      {msg.err && <p className="err">{msg.err}</p>}
-      {msg.ok && <p className="ok">{msg.ok}</p>}
-    </div>
+      {msg.err && <Alert tone="err">{msg.err}</Alert>}
+      {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+    </Card>
   );
 }

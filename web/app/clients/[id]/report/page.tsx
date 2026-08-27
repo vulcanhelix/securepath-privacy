@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import Studio from './studio';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,12 +35,18 @@ export default async function ClientReport({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/tasks`}>Stage 5 — Implementation</Link></p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
-        <h1 style={{ flex: 1 }}>{client.name} — Monthly report studio</h1>
-        <span className="badge">Stage 6{track ? ` · track stage ${track.current_stage}` : ''}</span>
-      </div>
-      <p className="muted">The managed-service steady state. Each period, compile a report showing movement against the Stage 1 baseline, then approve and issue it to an immutable archive.</p>
+      <PageHeader
+        title={`${client.name} — Monthly report studio`}
+        back="Workspace"
+        backHref={`/clients/${id}`}
+        meta="The managed-service steady state. Each period, compile a report showing movement against the Stage 1 baseline, then approve and issue it to an immutable archive."
+        actions={
+          <>
+            <Badge tone={track?.current_stage === 6 ? 'accent' : 'neutral'} dot>Stage 6</Badge>
+            <Link href={`/clients/${id}/tasks`}><Button variant="secondary" size="sm">Stage 5 — Implementation</Button></Link>
+          </>
+        }
+      />
 
       <Studio clientOrgId={id} isAdvisor={isAdvisor} canIssue={canIssue} draft={draft} issued={issued} />
     </>

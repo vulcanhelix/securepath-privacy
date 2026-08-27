@@ -3,6 +3,10 @@ import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import { trackKindFor } from '@/lib/track';
 import Builder from './builder';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,23 +38,38 @@ export default async function ClientManual(
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies${qs}`}>Stage 3 — Policies</Link> · <Link href={`/clients/${id}/tasks${qs}`}>Stage 5 — Implementation →</Link></p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
-        <h1 style={{ flex: 1 }}>{client.name} — PIMS manual</h1>
-        <span className="badge">Stage 4{track ? ` · track stage ${track.current_stage}` : ''}</span>
-      </div>
-      <p className="muted">Compile the Privacy Information Management System manual from the approved policies and registers, ISO/IEC 27701-aligned, then have the Information Officer sign it off and publish the PAIA s.51 manual.</p>
+      <PageHeader
+        title={`${client.name} — PIMS manual`}
+        back="Workspace"
+        backHref={`/clients/${id}`}
+        meta="Compile the Privacy Information Management System manual from the approved policies and registers, ISO/IEC 27701-aligned, then have the Information Officer sign it off and publish the PAIA s.51 manual."
+        actions={
+          <>
+            <Badge><span className="mono">{framework.toUpperCase()}</span></Badge>
+            <Badge tone={track?.current_stage === 4 ? 'accent' : 'neutral'} dot>Stage 4</Badge>
+            <Link href={`/clients/${id}/tasks${qs}`}><Button variant="secondary" size="sm">Stage 5 — Implementation</Button></Link>
+          </>
+        }
+      />
 
-      <div className="card">
-        <h2>Manual outline</h2>
-        <ol style={{ margin: 0 }}>
-          {(outline ?? []).map(ch => (
-            <li key={ch.chapter_key}>{ch.title} {ch.clause_ref ? <span className="muted">· {ch.clause_ref}</span> : null}</li>
-          ))}
-        </ol>
-      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'start' }}>
+        <Card title="Outline" pad={20} style={{ position: 'sticky', top: 24 }}>
+          <ol style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {(outline ?? []).map(ch => (
+              <li key={ch.chapter_key} style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-2)' }}>
+                {ch.title}
+                {ch.clause_ref ? (
+                  <span className="mono" style={{ display: 'block', fontSize: 'var(--fs-label)', color: 'var(--faint)' }}>
+                    {ch.clause_ref}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        </Card>
 
-      <Builder clientOrgId={id} framework={framework} isAdvisor={isAdvisor} canSignOff={canSignOff} manual={manual ?? null} />
+        <Builder clientOrgId={id} framework={framework} isAdvisor={isAdvisor} canSignOff={canSignOff} manual={manual ?? null} />
+      </div>
     </>
   );
 }
