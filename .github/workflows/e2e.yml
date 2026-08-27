@@ -19,6 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: POPIA 2026 pack parity (zip vs migration)
+        run: python3 app/tests/test_popia_2026_pack_parity.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20

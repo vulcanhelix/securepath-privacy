@@ -21,11 +21,12 @@ export default async function Dashboard() {
   const [{ data: clients }, { data: tracks }] = await Promise.all([
     supabase
       .from('client_orgs')
-      .select('id, name, industry, contact_name, contact_email, created_at')
+      .select('id, name, industry, contact_name, contact_email, org_scale, created_at')
       .order('created_at', { ascending: false }),
     supabase.from('tracks').select('client_org_id, track_kind, current_stage').eq('track_kind', 'privacy'),
   ]);
   const stageOf = (cid: string) => tracks?.find((t) => t.client_org_id === cid)?.current_stage ?? 0;
+  const scaleLabel = (s: string | null) => (s === 'sme' ? 'SME' : s === 'large' ? 'Large' : '—');
 
   const isOwner = membership.role === 'practice_owner';
 
@@ -45,7 +46,7 @@ export default async function Dashboard() {
       <Card pad={0}>
         {clients?.length ? (
           <DataTable
-            columns={[{ label: 'Name' }, { label: 'Pipeline' }, { label: 'Industry' }, { label: 'Contact' }, { label: 'Created', align: 'right' }]}
+            columns={[{ label: 'Name' }, { label: 'Pipeline' }, { label: 'Scale' }, { label: 'Industry' }, { label: 'Contact' }, { label: 'Created', align: 'right' }]}
             rows={clients.map((c) => [
               <Link key="n" href={`/clients/${c.id}`} style={{ fontWeight: 500, color: 'var(--text)' }}>
                 {c.name}
@@ -54,6 +55,7 @@ export default async function Dashboard() {
                 <StagePips stage={stageOf(c.id)} />
                 <span className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>S{stageOf(c.id)}</span>
               </Link>,
+              scaleLabel(c.org_scale),
               c.industry ?? '—',
               <span key="c">
                 {c.contact_name ?? '—'} <span className="muted">{c.contact_email ?? ''}</span>

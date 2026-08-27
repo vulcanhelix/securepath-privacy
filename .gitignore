@@ -6,6 +6,9 @@ node_modules/
 # Testing
 coverage/
 *.lcov
+__pycache__/
+*.pyc
+*.pyo
 
 # Next.js
 .next/
@@ -63,4 +66,5 @@ Thumbs.db
 
 # Large documentation files
 *.zip
+!docs/assessment-sheets/assessment_popi_2026_1.zip
 *.docx

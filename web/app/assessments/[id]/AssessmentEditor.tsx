@@ -41,6 +41,7 @@ interface Assessment {
   status: string;
   score_pct: number | null;
   rating: string | null;
+  org_scale: string | null;
   client_orgs: { name: string } | null;
 }
 
@@ -103,8 +104,8 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
 
       setAssessment(assessmentRes);
 
-      const framework = assessmentRes.framework || 'popia';
-      const questionsRes = await fetch(`/api/assessment/questions?framework=${framework}`)
+      // questions come from the session's pinned content pack, not the live framework bank
+      const questionsRes = await fetch(`/api/assessment/questions?session_id=${assessmentId}`)
         .then(r => { if (!r.ok) throw new Error('questions'); return r.json(); });
 
       setQuestions(questionsRes);
@@ -240,6 +241,9 @@ export default function AssessmentEditor({ assessmentId }: AssessmentEditorProps
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <strong>{assessment.client_orgs?.name ?? '—'}</strong>
             <Badge><span className="mono">{assessment.framework.toUpperCase()}</span></Badge>
+            {assessment.org_scale && (
+              <Badge>{assessment.org_scale === 'sme' ? 'SME' : 'Large'}</Badge>
+            )}
             <Badge tone={assessment.status === 'signed_off' ? 'pass' : 'neutral'} dot>
               {assessment.status.replace(/_/g, ' ')}
             </Badge>
