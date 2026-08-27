@@ -25,6 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     headers: {
       'Content-Type': doc.mime || obj.contentType,
       'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${safe}"`,
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }
@@ -38,6 +39,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  // NULL path = another document row still shares this content-addressed object; keep the bytes
   const { data: path, error } = await supabase.rpc('delete_document', { p_document_id: id });
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 

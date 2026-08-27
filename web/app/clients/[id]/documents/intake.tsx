@@ -45,6 +45,13 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
+    // a slot holds ONE current document — with a type pre-selected, take a single file
+    // so several drops can't each supersede the same predecessor (Devin review, PR #6)
+    if (uploadSlot && files.length > 1) {
+      setMsg({ err: 'One file at a time when a document type is selected — a slot has a single current document.' });
+      e.target.value = '';
+      return;
+    }
     setBusy(true); setMsg({});
     for (const file of Array.from(files)) {
       const fd = new FormData();
@@ -154,7 +161,7 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
                 : 'Drop files or click to upload — a slot will be auto-suggested for you to confirm'}
           </span>
           <input
-            type="file" multiple onChange={upload} disabled={busy} style={{ display: 'none' }}
+            type="file" multiple={!uploadSlot} onChange={upload} disabled={busy} style={{ display: 'none' }}
             accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.txt,.csv"
           />
         </label>
