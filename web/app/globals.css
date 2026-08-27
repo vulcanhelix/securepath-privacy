@@ -227,7 +227,7 @@ td { color: var(--text-2); }
 .sp-btn--outline{background:transparent;color:var(--text);border-color:var(--border-strong)}
 .sp-btn--outline:hover{background:var(--surface);border-color:var(--text)}
 .sp-btn--ghost{background:transparent;color:var(--muted)}
-.sp-btn--ghost:hover{color:var(--text)}
+.sp-btn--ghost:hover{color:var(--text);background:var(--inset)}
 .sp-btn--danger{background:var(--fail);color:#fff}
 .sp-btn--danger:hover{filter:brightness(.94)}
 .sp-btn--cta{gap:12px}
