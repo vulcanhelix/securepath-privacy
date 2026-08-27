@@ -3,6 +3,12 @@ import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import { trackKindFor } from '@/lib/track';
 import Intake from './intake';
+import GapMap from './gapmap';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { StatusDot } from '@/components/ui/StatusDot';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,15 +51,47 @@ export default async function ClientDocuments(
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/policies${qs}`}>Stage 3 — Policies →</Link></p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
-        <h1 style={{ flex: 1 }}>{client.name} — Document intake</h1>
-        <span className="badge">{framework === 'popia' ? 'POPIA' : framework} · Stage 2{track ? ` · track stage ${track.current_stage}` : ''}</span>
-      </div>
-      <p className="muted">
-        Bring in the client&rsquo;s existing paperwork, map it to the expected-document checklist, and see the gaps.
-        <strong> {filledRequired}/{requiredSlots.length} required documents in place.</strong>
-      </p>
+      <PageHeader
+        title={`${client.name} — Document intake`}
+        back="Workspace"
+        backHref={`/clients/${id}`}
+        meta="Bring in the client's existing paperwork, map it to the expected-document checklist, and see the gaps."
+        actions={
+          <>
+            <Badge><span className="mono">{framework.toUpperCase()}</span></Badge>
+            <Badge tone={track?.current_stage === 2 ? 'accent' : 'neutral'} dot>Stage 2</Badge>
+          </>
+        }
+      />
+
+      {/* gap summary */}
+      <Card pad={24} style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <div className="sp-kpi-label">Required documents in place</div>
+            <div className="sp-kpi-value">{filledRequired}/{requiredSlots.length}</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {requiredSlots.map(s => (
+                <span
+                  key={s.id}
+                  title={s.name}
+                  style={{
+                    flex: 1, height: 6, borderRadius: 3,
+                    background: s.fills.length > 0 ? 'var(--pass)' : 'var(--fail-border)',
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+              <StatusDot tone="pass" label="in place" />
+              <StatusDot tone="fail" label="gap" />
+              <StatusDot tone="neutral" label="optional" />
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Intake
         clientOrgId={client.id}
@@ -64,26 +102,17 @@ export default async function ClientDocuments(
         links={links ?? []}
       />
 
-      <div className="card">
-        <h2>Gap map</h2>
-        <table>
-          <thead><tr><th>Expected document</th><th>Category</th><th>Status</th><th>Satisfied by</th></tr></thead>
-          <tbody>
-            {slots.map(s => (
-              <tr key={s.id}>
-                <td><strong>{s.name}</strong>{s.required ? '' : <span className="muted"> (optional)</span>}
-                  {s.description ? <div className="muted" style={{ fontSize: '.8rem' }}>{s.description}</div> : null}</td>
-                <td><span className="badge">{s.category}</span></td>
-                <td>{s.fills.length > 0
-                  ? <span style={{ color: 'var(--accent)', fontWeight: 600 }}>✓ In place</span>
-                  : <span style={{ color: s.required ? '#b23a3a' : 'var(--muted)', fontWeight: 600 }}>{s.required ? 'Gap' : '—'}</span>}</td>
-                <td>{s.fills.map((d: any) => (
-                  <a key={d.id} href={`/api/documents/${d.id}`} style={{ display: 'block' }}>{d.original_filename}</a>
-                ))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <GapMap
+        slots={slots.map(s => ({
+          id: s.id, name: s.name, description: s.description, category: s.category, required: s.required,
+          fills: s.fills.map((d: any) => ({ id: d.id, name: d.original_filename })),
+        }))}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+        <Link href={`/clients/${id}/policies${qs}`}>
+          <Button cta>Continue to Stage 3 — Policies</Button>
+        </Link>
       </div>
     </>
   );

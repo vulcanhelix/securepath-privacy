@@ -2,6 +2,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Alert } from '@/components/ui/Alert';
+import { GatePanel } from '@/components/ui/GatePanel';
+import { Input, Textarea } from '@/components/ui/forms';
+import { DataTable } from '@/components/ui/DataTable';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 type Policy = { id: string; checklist_id: string | null; title: string; body: string; approval_status: string; updated_at: string };
 type Draftable = { checklist_id: string; slot_key: string; name: string; template_id: string };
@@ -65,83 +73,93 @@ export default function Workbench({ clientOrgId, canEdit, isAdvisor, draftable, 
   }
 
   const isDraft = (s: string) => s === 'draft_ai' || s === 'draft_human';
-  const statusBadge = (s: string) => s === 'issued'
-    ? <span className="badge" style={{ color: 'var(--accent)' }}>✓ Issued</span>
-    : s === 'approved'
-      ? <span className="badge" style={{ color: 'var(--accent)' }}>✓ Approved</span>
-      : <span className="badge">{s === 'draft_ai' ? 'Draft (AI)' : 'Draft'}</span>;
+  const statusBadge = (s: string) =>
+    s === 'issued' ? <Badge tone="ink">Issued</Badge>
+    : s === 'approved' ? <Badge tone="pass" dot>Approved</Badge>
+    : s === 'draft_ai' ? <Badge tone="warn" dot>Draft (AI)</Badge>
+    : <Badge tone="neutral" dot>Draft</Badge>;
 
   return (
     <>
       {gate2Ready && trackStage !== null && trackStage < 4 && (
-        <div className="card" style={{ borderLeft: '3px solid var(--accent)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap' }}>
-            <strong>Gate 2 — policy suite approved</strong>
-            <span className="muted">All required policies are approved. Advancing moves this client into Stage 4 (manual compile).</span>
-            <span className="spacer" style={{ flex: 1 }} />
-            {isAdvisor
-              ? <button style={{ margin: 0 }} disabled={busy} onClick={advanceToStage4}>Advance to Stage 4 →</button>
-              : <span className="muted">An advisor advances the stage.</span>}
-          </div>
-          {msg.err && <p className="err">{msg.err}</p>}
-        </div>
+        <GatePanel
+          title="Gate 2 — policy suite approved"
+          action={
+            isAdvisor
+              ? <Button size="sm" disabled={busy} onClick={advanceToStage4} cta>Advance to Stage 4</Button>
+              : <span className="muted">An advisor advances the stage.</span>
+          }
+        >
+          All required policies are approved. Advancing moves this client into Stage 4 (manual compile). The transition is logged.
+        </GatePanel>
       )}
-      {canEdit && draftable.length > 0 && (
-        <div className="card">
-          <h2>Gaps needing a policy</h2>
-          <table>
-            <tbody>
-              {draftable.map(d => (
-                <tr key={d.checklist_id}>
-                  <td><strong>{d.name}</strong></td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button style={{ margin: 0, padding: '.35rem .8rem', fontSize: '.85rem' }}
-                            disabled={busy} onClick={() => createFromTemplate(d)}>Draft from template</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {trackStage !== null && trackStage >= 4 && (
+        <GatePanel title="Gate 2 — policy suite approved" passed>
+          Passed — this client is at Stage {trackStage}.
+        </GatePanel>
       )}
 
-      <div className="card">
-        <h2>Policies</h2>
-        {msg.err && <p className="err">{msg.err}</p>}
-        {msg.ok && <p className="ok">{msg.ok}</p>}
-        {policies.length === 0 && <p className="muted">No policies drafted yet.</p>}
+      {msg.err && <Alert tone="err">{msg.err}</Alert>}
+      {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+
+      {canEdit && draftable.length > 0 && (
+        <Card title="Gaps needing a policy" pad={0} style={{ marginBottom: 24 }}>
+          <DataTable
+            columns={[{ label: 'Missing document' }, { label: '', align: 'right' }]}
+            rows={draftable.map(d => [
+              <span key="n" style={{ color: 'var(--text)', fontWeight: 500 }}>{d.name}</span>,
+              <Button key="b" size="sm" variant="secondary" disabled={busy} onClick={() => createFromTemplate(d)}>
+                Draft from template
+              </Button>,
+            ])}
+          />
+        </Card>
+      )}
+
+      <Card title="Policies" pad={0}>
+        {policies.length === 0 && <EmptyState icon="file-text" message="No policies drafted yet." />}
         {policies.map(p => (
-          <div key={p.id} style={{ borderTop: '1px solid var(--border)', paddingTop: '.75rem', marginTop: '.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
-              <strong>{p.title}</strong>
+          <div key={p.id} style={{ borderTop: '1px solid var(--border)', padding: '20px 28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <strong style={{ fontWeight: 500 }}>{p.title}</strong>
               {statusBadge(p.approval_status)}
-              <span className="spacer" style={{ flex: 1 }} />
-              {canEdit && isDraft(p.approval_status) && open !== p.id &&
-                <button style={{ margin: 0, padding: '.3rem .7rem', fontSize: '.85rem' }} onClick={() => edit(p)}>Edit</button>}
-              {canEdit && isDraft(p.approval_status) &&
-                <button style={{ margin: 0, padding: '.3rem .7rem', fontSize: '.85rem', background: 'var(--accent)' }}
-                        disabled={busy} onClick={() => approve(p.id)}>Approve</button>}
-              {canEdit && p.approval_status === 'approved' &&
-                <button style={{ margin: 0, padding: '.3rem .7rem', fontSize: '.85rem', background: 'var(--accent)' }}
-                        disabled={busy} onClick={() => issue(p.id)}>Issue &amp; close gap</button>}
+              <span style={{ flex: 1 }} />
+              {canEdit && isDraft(p.approval_status) && open !== p.id && (
+                <Button size="sm" variant="secondary" onClick={() => edit(p)}>Edit</Button>
+              )}
+              {canEdit && isDraft(p.approval_status) && (
+                <Button size="sm" disabled={busy} onClick={() => approve(p.id)}>Approve</Button>
+              )}
+              {canEdit && p.approval_status === 'approved' && (
+                <Button size="sm" disabled={busy} onClick={() => issue(p.id)}>Issue &amp; close gap</Button>
+              )}
             </div>
             {open === p.id ? (
-              <div style={{ marginTop: '.6rem' }}>
-                <input value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} />
-                <textarea value={draft.body} onChange={e => setDraft({ ...draft, body: e.target.value })}
-                          rows={16} style={{ width: '100%', marginTop: '.5rem', fontFamily: 'ui-monospace, monospace', fontSize: '.85rem' }} />
-                <div style={{ display: 'flex', gap: '.5rem' }}>
-                  <button style={{ margin: '.5rem 0 0' }} disabled={busy} onClick={() => save(p.id)}>Save draft</button>
-                  <button style={{ margin: '.5rem 0 0', background: 'var(--muted)' }} onClick={() => setOpen(null)}>Close</button>
+              <div style={{ marginTop: 14 }}>
+                <Input value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} />
+                <Textarea
+                  value={draft.body} onChange={e => setDraft({ ...draft, body: e.target.value })}
+                  rows={16} style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-xs)' }}
+                />
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <Button size="sm" disabled={busy} onClick={() => save(p.id)}>Save draft</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setOpen(null)}>Close</Button>
                 </div>
               </div>
             ) : (
-              <pre style={{ whiteSpace: 'pre-wrap', fontSize: '.82rem', color: 'var(--muted)', marginTop: '.4rem',
-                            maxHeight: open ? 'none' : '4.5rem', overflow: 'hidden' }}>{p.body.slice(0, 400)}{p.body.length > 400 ? '…' : ''}</pre>
+              <pre
+                className="mono"
+                style={{
+                  whiteSpace: 'pre-wrap', fontSize: 'var(--fs-xs)', color: 'var(--muted)', marginTop: 10, marginBottom: 0,
+                  maxHeight: '4.5rem', overflow: 'hidden',
+                }}
+              >
+                {p.body.slice(0, 400)}{p.body.length > 400 ? '…' : ''}
+              </pre>
             )}
           </div>
         ))}
-      </div>
+      </Card>
     </>
   );
 }

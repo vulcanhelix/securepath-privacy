@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import { trackKindFor } from '@/lib/track';
 import Board from './board';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,12 +42,19 @@ export default async function ClientTasks(
 
   return (
     <>
-      <p className="muted"><Link href="/dashboard">← Clients</Link> · <Link href={`/clients/${id}/manual${qs}`}>Stage 4 — Manual</Link> · <Link href={`/clients/${id}/report`}>Stage 6 — Monthly report →</Link></p>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '.75rem' }}>
-        <h1 style={{ flex: 1 }}>{client.name} — Implementation board</h1>
-        <span className="badge">Stage 5{track ? ` · track stage ${track.current_stage}` : ''}</span>
-      </div>
-      <p className="muted">Work the remediation plan against the Stage 1 baseline. Gate 4 opens once all critical and high items are done.</p>
+      <PageHeader
+        title={`${client.name} — Implementation board`}
+        back="Workspace"
+        backHref={`/clients/${id}`}
+        meta="Work the remediation plan against the Stage 1 baseline. Gate 4 opens once all critical and high items are done."
+        actions={
+          <>
+            <Badge><span className="mono">{framework.toUpperCase()}</span></Badge>
+            <Badge tone={track?.current_stage === 5 ? 'accent' : 'neutral'} dot>Stage 5</Badge>
+            <Link href={`/clients/${id}/report`}><Button variant="secondary" size="sm">Stage 6 — Report</Button></Link>
+          </>
+        }
+      />
 
       <Board
         clientOrgId={id} framework={framework} isAdvisor={isAdvisor} canEdit={canEdit}

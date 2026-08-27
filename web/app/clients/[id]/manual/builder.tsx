@@ -1,6 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Alert } from '@/components/ui/Alert';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 type Manual = { id: string; title: string; body: string; approval_status: string; s51_published: boolean; version: number; updated_at: string };
 
@@ -35,28 +40,50 @@ export default function Builder({ clientOrgId, framework, isAdvisor, canSignOff,
   }
 
   return (
-    <>
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0 }}>Compiled manual</h2>
-          {manual && (isIssued
-            ? <span className="badge" style={{ color: 'var(--accent)' }}>✓ Issued{manual.s51_published ? ' · s.51 published' : ''}</span>
-            : <span className="badge">Draft v{manual.version}</span>)}
-          <span className="spacer" style={{ flex: 1 }} />
-          {isAdvisor && !isIssued &&
-            <button style={{ margin: 0 }} disabled={busy} onClick={compile}>{manual ? 'Re-compile' : 'Compile manual'}</button>}
-          {canSignOff && isDraft &&
-            <button style={{ margin: 0, background: 'var(--accent)' }} disabled={busy} onClick={signOff}>
-              Sign off & publish (Gate 3)
-            </button>}
-        </div>
-        {msg.err && <p className="err">{msg.err}</p>}
-        {msg.ok && <p className="ok">{msg.ok}</p>}
-        {manual
-          ? <pre style={{ whiteSpace: 'pre-wrap', fontSize: '.82rem', marginTop: '.75rem',
-                          borderTop: '1px solid var(--border)', paddingTop: '.75rem' }}>{manual.body}</pre>
-          : <p className="muted" style={{ marginTop: '.5rem' }}>No manual compiled yet. Compile pulls the approved policies and confirmed registers into a 27701-aligned draft.</p>}
+    <Card
+      title="Compiled manual"
+      pad={0}
+      action={
+        <span style={{ display: 'inline-flex', gap: 10, alignItems: 'center' }}>
+          {isAdvisor && !isIssued && (
+            <Button size="sm" variant="secondary" disabled={busy} onClick={compile}>
+              {manual ? 'Re-compile' : 'Compile manual'}
+            </Button>
+          )}
+          {canSignOff && isDraft && (
+            <Button size="sm" disabled={busy} onClick={signOff} cta>
+              Sign off &amp; publish (Gate 3)
+            </Button>
+          )}
+        </span>
+      }
+    >
+      <div style={{ padding: '16px 28px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', borderBottom: manual ? '1px solid var(--border)' : 'none' }}>
+        {manual ? (
+          <>
+            {isIssued ? <Badge tone="ink">Issued</Badge> : <Badge tone={manual.approval_status === 'draft_ai' ? 'warn' : 'neutral'} dot>{manual.approval_status === 'draft_ai' ? 'Draft (AI)' : 'Draft'}</Badge>}
+            {manual.s51_published && <Badge tone="pass" dot>s.51 published</Badge>}
+            <span className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--muted)' }}>v{manual.version}</span>
+            <span className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--faint)' }}>
+              updated {new Date(manual.updated_at).toLocaleString()}
+            </span>
+          </>
+        ) : null}
       </div>
-    </>
+      <div style={{ padding: manual ? '0 28px 24px' : 0 }}>
+        {msg.err && <Alert tone="err">{msg.err}</Alert>}
+        {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+        {manual ? (
+          <pre className="mono" style={{ whiteSpace: 'pre-wrap', fontSize: 'var(--fs-xs)', lineHeight: 1.6, color: 'var(--text-2)', marginTop: 16 }}>
+            {manual.body}
+          </pre>
+        ) : (
+          <EmptyState
+            icon="book-open"
+            message="No manual compiled yet. Compile pulls the approved policies and confirmed registers into a 27701-aligned draft."
+          />
+        )}
+      </div>
+    </Card>
   );
 }
