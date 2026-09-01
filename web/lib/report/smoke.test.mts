@@ -89,6 +89,12 @@ assert.equal(row.cls, 'C');
 assert.equal(row.cls_source, 'advisor');
 assert.equal(row.owner, 'IT');
 
+// residual exposures must explain the exposure, never restate it
+for (const exposure of p2.residual_risk ?? []) {
+  assert.notEqual(exposure.why_it_matters.trim(), exposure.exposure.trim());
+  assert.ok(exposure.why_it_matters.trim().length > 0);
+}
+
 // render: deterministic, escaped, sections present/excluded as configured
 const brand = { practiceName: 'Test Practice', accentHex: '#123456', logo: null };
 const html1 = renderReportHtml(p2, { narratives: { exec_summary: 'ADVISOR <b>SUMMARY</b>' } }, brand);

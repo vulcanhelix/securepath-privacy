@@ -320,12 +320,20 @@ export function buildReportPayload(inputs: CompileInputs, overrides: ReportOverr
       governing_document: documents[0]?.original_filename ?? '—',
     };
   });
+  const rowByUid = new Map(rows.map(row => [row.uid, row]));
+  const residualRationale = (row: ClassRegisterRow): string => {
+    const control = rowByUid.get(row.uid);
+    const rationale = [control?.findings, row.evidence_required, control?.remediation]
+      .find(candidate => candidate?.trim() && candidate.trim() !== row.item.trim());
+    return rationale?.trim()
+      ?? `${row.severity} inherent risk remains until implementation evidence is produced.`;
+  };
   const defaultResidual: ResidualExposure[] = generatedRegister
     .filter(row => row.cls !== 'A')
     .slice(0, 10)
     .map(row => ({
       exposure: row.item,
-      why_it_matters: row.control_area || 'The control remains open pending implementation and evidence.',
+      why_it_matters: residualRationale(row),
       closed_by: row.ref,
     }));
 
