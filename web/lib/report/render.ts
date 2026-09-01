@@ -42,6 +42,19 @@ export function renderReportHtml(payload: ReportPayload, overrides: ReportOverri
     overrides.narratives?.[key] ?? payload.sections[key]?.narrative_default ?? null;
   const accent = /^#[0-9a-fA-F]{6}$/.test(brand.accentHex ?? '') ? brand.accentHex! : '#1f3a5f';
   const docRef = payload.cover.audit_ref || `${payload.meta.framework.toUpperCase()}-ASSESSMENT`;
+  // Advisor A–D decisions saved after the last compile live only in overrides; merge them
+  // here (same rule as compile) so preview and issued bytes always show the saved classes.
+  const mergedRegister = payload.classification_register?.map(r => {
+    const ov = overrides.classification?.[r.uid];
+    return ov ? {
+      ...r,
+      cls: ov.cls ?? r.cls,
+      cls_source: 'advisor' as const,
+      evidence_required: ov.evidence_required ?? r.evidence_required,
+      owner: ov.owner ?? r.owner,
+    } : r;
+  }) ?? null;
+  const mergedResidual = mergedRegister?.filter(r => r.cls !== 'A') ?? null;
 
   // function declarations below are hoisted; keys not in this map fall back to a plain
   // narrative section (a pack can add a prose-only section with zero code change)
@@ -235,7 +248,7 @@ ${parts.join('\n')}
   }
 
   function classificationSection(p: ReportPayload, n: (k: string) => string | null): string | null {
-    const reg = p.classification_register;
+    const reg = mergedRegister;
     if (!reg?.length) return null;
     const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
     reg.forEach(r => { counts[r.cls] += 1; });
@@ -255,7 +268,7 @@ ${parts.join('\n')}
   }
 
   function residualSection(p: ReportPayload): string | null {
-    const rr = p.residual_risk;
+    const rr = mergedResidual;
     if (!rr?.length) return null;
     return `<p>Until the programme is delivered, the following exposures remain live (classes B, C and D — a written control is not an operating one).</p>` +
       table(['Ref', 'Exposure', 'Class', 'Risk', 'Closed by'],

@@ -23,9 +23,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!client) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
   // chain: every report for this client+framework (prior payload summaries feed movement)
-  const { data: chain } = await supabase.from('assessment_reports')
+  const { data: chain, error: chainErr } = await supabase.from('assessment_reports')
     .select('id, version, kind, title, approval_status, issued_at, overrides, session_id, content_pack_id, payload')
     .eq('client_org_id', id).eq('framework_key', framework).order('version');
+  if (chainErr) return NextResponse.json({ error: chainErr.message }, { status: 500 });
   let report = (chain ?? []).find(r => ['draft_ai', 'draft_human'].includes(r.approval_status));
 
   if (!report) {
@@ -46,11 +47,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const trackKind = await trackKindFor(supabase, framework);
 
-  const [
-    { data: session }, { data: pack }, { data: practice }, { data: track },
-    { data: responses }, { data: issuedDocs }, { data: uploads },
-    { data: checklist }, { data: links },
-  ] = await Promise.all([
+  // a failed source query must fail the compile — silently-empty data would snapshot
+  // an approvable report where every control reads "not assessed"
+  const results = await Promise.all([
     supabase.from('assessment_sessions')
       .select('org_name, auditor_name, audit_date, audit_ref, org_scale')
       .eq('id', report.session_id).maybeSingle(),
@@ -68,6 +67,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     supabase.from('document_checklists').select('id, required').eq('framework_key', framework),
     supabase.from('document_links').select('checklist_id, status').eq('client_org_id', id),
   ]);
+  const dbErr = results.map(r => r.error).find(Boolean);
+  if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
+  const [
+    { data: session }, { data: pack }, { data: practice }, { data: track },
+    { data: responses }, { data: issuedDocs }, { data: uploads },
+    { data: checklist }, { data: links },
+  ] = results;
 
   // questions of the report's pinned pack, scoped like assessment_question_in_scope():
   // popia always excludes the staff section (11); org-scale filters the large-only extras
@@ -79,7 +85,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: questions } = await qq;
   if (!questions?.length) return NextResponse.json({ error: 'no questions in the report pack' }, { status: 500 });
 
-  const { data: score } = await supabase.rpc('calculate_assessment_score', { p_session_id: report.session_id });
+  const { data: score, error: scoreErr } = await supabase.rpc('calculate_assessment_score', { p_session_id: report.session_id });
+  if (scoreErr) return NextResponse.json({ error: scoreErr.message }, { status: 500 });
 
   // awareness is optional machinery — any error (including function-not-yet-deployed) = no section
   let awareness: unknown = null;

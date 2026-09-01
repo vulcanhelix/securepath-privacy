@@ -41,6 +41,8 @@ CREATE TABLE public.awareness_cohorts (
     interviewed_on  date,
     score_pct       int  CHECK (score_pct BETWEEN 0 AND 100),   -- snapshot at complete
     rating          text CHECK (rating IN ('low','medium','high')),
+    results         jsonb,   -- full results snapshot frozen at complete — completed-cohort
+                             -- evidence must not change when question content is later updated
     notes           text,
     created_by      uuid,
     created_at      timestamptz NOT NULL DEFAULT now(),
@@ -125,13 +127,15 @@ LANGUAGE sql IMMUTABLE AS $$
               ELSE 'high' END
 $$;
 
+-- VOLATILE + FOR UPDATE: writers serialize on the cohort row, so no response can land
+-- after complete_awareness_cohort has frozen the results snapshot
 CREATE FUNCTION public.assert_awareness_cohort_writable(p_cohort_id uuid)
-RETURNS public.awareness_cohorts LANGUAGE plpgsql STABLE SECURITY DEFINER
+RETURNS public.awareness_cohorts LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
 DECLARE v public.awareness_cohorts%ROWTYPE;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
-  SELECT * INTO v FROM awareness_cohorts WHERE id = p_cohort_id;
+  SELECT * INTO v FROM awareness_cohorts WHERE id = p_cohort_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'cohort not found'; END IF;
   IF v.client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN
     RAISE EXCEPTION 'Access denied to cohort';
@@ -209,7 +213,14 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $
         'pct', CASE WHEN answered > 0 THEN round(100.0 * aligned / answered) END,
         'rating', awareness_rating(CASE WHEN answered > 0 THEN 100.0 * aligned / answered END))
         ORDER BY respondent_no)
-      FROM per_r), '[]'::jsonb)
+      FROM per_r), '[]'::jsonb),
+    -- every per-question row (not just the high-risk subset) so a completion-time
+    -- snapshot is self-sufficient for later pooled aggregation
+    'questions', COALESCE((SELECT jsonb_agg(jsonb_build_object(
+        'code', code, 'domain_code', domain_code, 'domain_name', domain_name,
+        'question', question, 'good_answer', good_answer, 'regulatory_ref', regulatory_ref,
+        'qn', qn, 'answered', answered, 'aligned', aligned) ORDER BY qn)
+      FROM per_q), '[]'::jsonb)
   ) FROM cohort c
 $$;
 REVOKE EXECUTE ON FUNCTION public.awareness_cohort_results(uuid) FROM anon, public;
@@ -330,6 +341,9 @@ BEGIN
   IF public.current_role_name() NOT IN ('practice_owner','practice_consultant') THEN
     RAISE EXCEPTION 'only advisors may view raw interview results';
   END IF;
+  -- completed cohorts serve the frozen snapshot — later question-content updates
+  -- must never change locked evidence
+  IF v.status <> 'in_progress' AND v.results IS NOT NULL THEN RETURN v.results; END IF;
   RETURN public.awareness_cohort_results(p_cohort_id);
 END $$;
 
@@ -351,17 +365,18 @@ BEGIN
     RAISE EXCEPTION 'every respondent needs at least one substantive answer before completion';
   END IF;
 
-  res := public.awareness_cohort_results(p_cohort_id);
+  res := jsonb_set(public.awareness_cohort_results(p_cohort_id), '{status}', '"complete"');
   v_pct := (res->'overall'->>'pct')::int;
   UPDATE awareness_cohorts
-     SET status = 'complete', score_pct = v_pct, rating = awareness_rating(v_pct), updated_at = now()
+     SET status = 'complete', score_pct = v_pct, rating = awareness_rating(v_pct),
+         results = res, updated_at = now()
    WHERE id = p_cohort_id;
   PERFORM public.record_approval('awareness_cohort', p_cohort_id, 'approved',
     'Awareness interview cohort completed — results locked (' || v.department || ')');
   INSERT INTO audit_log (user_id, practice_id, action, detail)
     VALUES (auth.uid(), current_practice(), 'awareness.cohort_completed',
             jsonb_build_object('cohort_id', p_cohort_id, 'score_pct', v_pct));
-  RETURN public.awareness_cohort_results(p_cohort_id);
+  RETURN res;
 END $$;
 
 -- consultants scope the programme but client_orgs writes are owner-only at RLS — hence an RPC
@@ -403,29 +418,28 @@ BEGIN
    ORDER BY cp.version DESC LIMIT 1;
 
   WITH done AS (
-    SELECT id, department FROM awareness_cohorts
+    SELECT id, department, results FROM awareness_cohorts
     WHERE client_org_id = p_client_org_id AND framework_key = v_framework AND status = 'complete'
   ),
   in_prog AS (
     SELECT count(*) AS n FROM awareness_cohorts
     WHERE client_org_id = p_client_org_id AND framework_key = v_framework AND status = 'in_progress'
   ),
-  -- pooled per-question over completed cohorts (each response joins its own cohort's pack)
-  ans AS (
-    SELECT q.code, q.domain_code, q.domain_name, q.question, q.good_answer,
-           q.regulatory_ref, q.question_number,
-           (a.answer = q.good_answer) AS aligned, r.id AS respondent_id
-    FROM done d
-    JOIN awareness_respondents r ON r.cohort_id = d.id
-    JOIN awareness_responses a ON a.respondent_id = r.id
-    JOIN awareness_questions q ON q.id = a.question_id
-    WHERE a.answer <> 'na'
+  -- pooled per-question over completed cohorts, from each cohort's FROZEN snapshot —
+  -- never the live question tables, so locked evidence cannot change retroactively
+  snap_q AS (
+    SELECT (q->>'code') AS code, (q->>'domain_code') AS domain_code,
+           (q->>'domain_name') AS domain_name, (q->>'question') AS question,
+           (q->>'good_answer') AS good_answer, (q->>'regulatory_ref') AS regulatory_ref,
+           (q->>'qn')::int AS qn,
+           (q->>'answered')::bigint AS answered, (q->>'aligned')::bigint AS aligned
+    FROM done d, jsonb_array_elements(COALESCE(d.results->'questions', '[]'::jsonb)) q
   ),
   per_q AS (
     SELECT code, domain_code, domain_name, question, good_answer, regulatory_ref,
-           min(question_number) AS qn,
-           count(*) AS answered, count(*) FILTER (WHERE aligned) AS aligned
-    FROM ans GROUP BY code, domain_code, domain_name, question, good_answer, regulatory_ref
+           min(qn) AS qn,
+           sum(answered) AS answered, sum(aligned) AS aligned
+    FROM snap_q GROUP BY code, domain_code, domain_name, question, good_answer, regulatory_ref
   ),
   per_d AS (
     SELECT domain_code, domain_name, min(qn) AS dn,
@@ -433,7 +447,7 @@ BEGIN
     FROM per_q GROUP BY domain_code, domain_name
   ),
   totals AS (
-    SELECT (SELECT count(DISTINCT respondent_id) FROM ans) AS respondents,
+    SELECT (SELECT COALESCE(sum((d.results->'overall'->>'respondents')::int), 0) FROM done d) AS respondents,
            COALESCE(sum(answered), 0) AS answered, COALESCE(sum(aligned), 0) AS aligned
     FROM per_q
   )
@@ -471,7 +485,7 @@ BEGIN
         'pct', round(100.0 * aligned / answered), 'regulatory_ref', regulatory_ref)
         ORDER BY round(100.0 * aligned / answered), qn)
       FROM per_q WHERE answered > 0 AND 100.0 * aligned / answered < 50), '[]'::jsonb),
-    'cohorts', COALESCE((SELECT jsonb_agg(public.awareness_cohort_results(d.id)) FROM done d), '[]'::jsonb)
+    'cohorts', COALESCE((SELECT jsonb_agg(d.results ORDER BY d.department) FROM done d), '[]'::jsonb)
   ) INTO result;
   RETURN result;
 END $$;

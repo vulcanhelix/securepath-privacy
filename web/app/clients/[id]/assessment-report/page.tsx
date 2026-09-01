@@ -34,7 +34,9 @@ export default async function AssessmentReport({ params, searchParams }:
 
   const role = membership?.role ?? '';
   const isAdvisor = ['practice_owner', 'practice_consultant'].includes(role);
-  const canIssue = ['practice_owner', 'practice_consultant', 'client_admin'].includes(role);
+  // advisor-only: RLS hides non-issued reports from client roles, so a client_admin
+  // can never load the approved row the issue flow needs — the RPC guard matches
+  const canIssue = isAdvisor;
 
   const all = reports ?? [];
   // RLS already hides drafts from client roles; for advisors, split working vs archive

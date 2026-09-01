@@ -42,6 +42,8 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
   const isDraft = !!working && ['draft_ai', 'draft_human'].includes(working.approval_status);
   const hasIssued = archive.some(r => r.approval_status === 'issued' || r.approval_status === 'superseded');
   const [kind, setKind] = useState(hasIssued ? 'post_documentation' : 'gap_assessment');
+  // v1 must be a gap assessment — later kinds only make sense once a report has been issued
+  const kindOptions = Object.entries(KIND_LABEL).filter(([k]) => hasIssued || k === 'gap_assessment');
 
   const excluded = useMemo(() => new Set(overrides.sections_excluded ?? []), [overrides]);
 
@@ -102,7 +104,7 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
               </span>
               <span style={{ flex: 1 }} />
               <Select value={kind} onChange={e => setKind(e.target.value)} style={{ width: 'auto' }}>
-                {Object.entries(KIND_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                {kindOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </Select>
               <Button size="sm" disabled={busy} onClick={compile} cta>Compile report</Button>
             </div>
@@ -119,6 +121,22 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
 
   return (
     <>
+      {isAdvisor && !working && (
+        <Card pad={20} style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ color: 'var(--muted)', fontSize: 'var(--fs-sm)' }}>
+              No working draft — compile the next version.
+            </span>
+            <span style={{ flex: 1 }} />
+            <Select value={kind} onChange={e => setKind(e.target.value)} style={{ width: 'auto' }}>
+              {kindOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </Select>
+            <Button size="sm" disabled={busy} onClick={compile} cta>Compile next version</Button>
+          </div>
+          {msg.err && <Alert tone="err">{msg.err}</Alert>}
+          {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+        </Card>
+      )}
       {isAdvisor && working && (
         <Card pad={20} style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

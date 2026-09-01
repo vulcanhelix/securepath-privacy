@@ -21,6 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle(),
     supabase.from('tasks').select('title, priority, status').eq('client_org_id', id),
     supabase.from('documents').select('original_filename, created_at').eq('client_org_id', id)
+      .neq('source', 'upload') // evidence uploads are not platform-issued documents
       .order('created_at', { ascending: false }),
   ]);
 

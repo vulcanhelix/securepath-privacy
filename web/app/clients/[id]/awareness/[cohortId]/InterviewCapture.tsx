@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
 import { Card } from '@/components/ui/Card';
@@ -25,6 +25,10 @@ export default function InterviewCapture({ cohortId, locked, questions, responde
   const [label, setLabel] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
+  // answer saves run through one promise chain so they commit in click order —
+  // concurrent RPCs could otherwise persist a stale choice (older request finishing last)
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const [pendingSaves, setPendingSaves] = useState(0);
   // local answer state seeded from server rows; key = respondent_id + ':' + question_id
   const [answers, setAnswers] = useState<Record<string, string>>(() => {
     const m: Record<string, string> = {};
@@ -66,13 +70,19 @@ export default function InterviewCapture({ cohortId, locked, questions, responde
     setLabel(''); setActive((data as { id: string })?.id ?? ''); router.refresh();
   }
 
-  async function setAnswer(questionId: string, answer: string) {
+  function setAnswer(questionId: string, answer: string) {
     if (locked || !active) return;
-    setAnswers(a => ({ ...a, [active + ':' + questionId]: answer }));
-    const { error } = await browserClient().rpc('record_awareness_responses', {
-      p_respondent_id: active, p_answers: [{ question_id: questionId, answer }],
-    });
-    if (error) setMsg({ err: error.message });
+    const rid = active; // capture — switching respondent mid-flight must not re-key the RPC
+    setAnswers(a => ({ ...a, [rid + ':' + questionId]: answer }));
+    setPendingSaves(p => p + 1);
+    saveQueue.current = saveQueue.current
+      .then(async () => {
+        const { error } = await browserClient().rpc('record_awareness_responses', {
+          p_respondent_id: rid, p_answers: [{ question_id: questionId, answer }],
+        });
+        if (error) setMsg({ err: error.message });
+      })
+      .finally(() => setPendingSaves(p => p - 1));
   }
 
   async function complete() {
@@ -106,7 +116,7 @@ export default function InterviewCapture({ cohortId, locked, questions, responde
             {stats.aligned}/{stats.answered} aligned{stats.pct != null ? ' (' + stats.pct + '%)' : ''}
           </span>
           {!locked && respondents.length > 0 && (
-            <Button size="sm" disabled={busy} onClick={complete} cta>Complete cohort</Button>
+            <Button size="sm" disabled={busy || pendingSaves > 0} onClick={complete} cta>Complete cohort</Button>
           )}
         </div>
         {msg.err && <Alert tone="err">{msg.err}</Alert>}

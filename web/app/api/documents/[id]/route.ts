@@ -26,6 +26,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       'Content-Type': doc.mime || obj.contentType,
       'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${safe}"`,
       'X-Content-Type-Options': 'nosniff',
+      // inline-rendered stored HTML (issued reports) must never execute script at app origin
+      ...(inline ? { 'Content-Security-Policy': "script-src 'none'" } : {}),
     },
   });
 }

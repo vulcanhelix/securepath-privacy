@@ -93,6 +93,13 @@ assert.ok(!html1.includes('id="delivery'), 'no stray markup');
 assert.ok(html1.includes('--accent: #123456'));
 // no awareness data -> section dropped
 assert.ok(!html1.includes('Awareness — People Risk</h2>'));
+// classification overrides saved AFTER the last compile still render (payload holds the
+// proposal, overrides carry the decision — preview and issue must show the decision)
+const p3 = buildReportPayload(inputs as never, {});
+assert.notEqual(p3.classification_register!.find(r => r.uid === 't.s1.q01')!.cls, 'D');
+const staleHtml = renderReportHtml(p3, { classification: { 't.s1.q01': { cls: 'D', owner: 'CEO' } } }, brand);
+assert.ok(staleHtml.includes('<b>D</b>'), 'post-compile class override must render in the register');
+assert.ok(staleHtml.includes('CEO'), 'post-compile owner override must render');
 // generic spec renders for a pack with no report_spec (CE degradation path)
 const ceP = buildReportPayload({ ...inputs, spec: DEFAULT_REPORT_SPEC, framework: 'cyber_essentials', kind: 'gap_assessment', version: 1 } as never, {});
 const ceHtml = renderReportHtml(ceP, {}, brand);

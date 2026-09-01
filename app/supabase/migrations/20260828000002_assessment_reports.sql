@@ -92,6 +92,11 @@ BEGIN
     WHERE client_org_id = p_client_org_id AND framework_key = p_framework AND approval_status = 'issued'
     ORDER BY version DESC LIMIT 1;
 
+  -- lifecycle: the first report of a chain is always the gap assessment
+  IF v_head.id IS NULL AND p_kind <> 'gap_assessment' THEN
+    RAISE EXCEPTION 'first report must be a gap assessment — no issued report to follow';
+  END IF;
+
   INSERT INTO assessment_reports
       (client_org_id, track_id, framework_key, session_id, content_pack_id,
        version, supersedes, kind, title, overrides, created_by)
@@ -184,8 +189,10 @@ BEGIN
   SELECT * INTO v FROM assessment_reports WHERE id = p_report_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'report not found'; END IF;
   IF v.client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN RAISE EXCEPTION 'Access denied to report'; END IF;
-  IF public.current_role_name() NOT IN ('practice_owner','practice_consultant','client_admin') THEN
-    RAISE EXCEPTION 'only advisors or the client admin may issue the report';
+  -- advisor-only: RLS hides non-issued reports from client roles, so a client_admin
+  -- could never legitimately reach an approved report to issue it
+  IF public.current_role_name() NOT IN ('practice_owner','practice_consultant') THEN
+    RAISE EXCEPTION 'only advisors may issue the report';
   END IF;
   IF v.approval_status <> 'approved' THEN RAISE EXCEPTION 'only an approved report can be issued'; END IF;
 

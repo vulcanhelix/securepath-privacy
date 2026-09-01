@@ -8,6 +8,21 @@ import type { ReportOverrides, ReportPayload } from '@/lib/report/types';
 // Issue an approved assessment report: render the final self-contained HTML, freeze it in
 // object storage, and let the RPC create the immutable evidence document + supersede the
 // predecessor. Version+id in the key — re-issues can never collide.
+
+// SSRF guard: logo_url is practice-owner-controlled and fetched server-side, and the
+// staging services bind loopback — require https and refuse loopback/private/link-local
+// hosts. ponytail: hostname checks don't stop DNS rebinding; resolve-and-check the IP
+// before connecting if logo hosting ever becomes untrusted-multi-tenant.
+function isSafeLogoUrl(raw: string): boolean {
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  if (u.protocol !== 'https:') return false;
+  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h.endsWith('.localhost')) return false;
+  if (/^(127\.|10\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.)/.test(h)) return false;
+  if (h === '::1' || /^f[cd]/.test(h) || h.startsWith('fe80:')) return false;
+  return true;
+}
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await serverClient();
@@ -26,9 +41,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   // inline the practice logo so the archived artifact is fully self-contained
   let logo: string | null = practice?.logo_url ?? null;
+  if (logo && !isSafeLogoUrl(logo)) logo = null;
   if (logo) {
     try {
-      const res = await fetch(logo, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(logo, { signal: AbortSignal.timeout(5000), redirect: 'error' });
       const type = res.headers.get('content-type') ?? '';
       if (res.ok && type.startsWith('image/')) {
         const buf = Buffer.from(await res.arrayBuffer());

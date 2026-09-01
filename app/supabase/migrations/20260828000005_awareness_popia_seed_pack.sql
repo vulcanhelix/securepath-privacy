@@ -2,7 +2,8 @@
 -- 41 behavioural questions across 7 domains, modelled on William's Puris engagement
 -- instrument (ISO 27001:2022 Annex A / NIST CSF 2.0 / POPIA). Question wording is a
 -- faithful draft pending William's source workbook — pack metadata carries the flag;
--- refining wording later is an UPDATE, never a schema change.
+-- refining wording later is an UPDATE, never a schema change. Completed cohorts are
+-- unaffected: they serve the results snapshot frozen at completion (awareness_cohorts.results).
 --
 -- Ships as the next global popia content-pack version. create_assessment was hardened in
 -- 20260828000004 to skip packs without assessment questions, so this cannot capture new

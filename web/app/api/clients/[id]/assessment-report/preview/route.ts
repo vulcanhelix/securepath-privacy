@@ -29,6 +29,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     { practiceName: practice?.name ?? '', accentHex: practice?.accent_hex ?? null, logo: practice?.logo_url ?? null },
   );
   return new NextResponse(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Content-Type-Options': 'nosniff' },
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
+      // defense in depth: the report is styled HTML with zero scripts — an escaping bug
+      // must not become app-origin code execution
+      'Content-Security-Policy': "script-src 'none'",
+    },
   });
 }
