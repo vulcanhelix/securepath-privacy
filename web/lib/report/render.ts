@@ -97,13 +97,13 @@ export function renderReportHtml(payload: ReportPayload, overrides: ReportOverri
   .st { font: 600 11px Helvetica, Arial, sans-serif; }
   .st.ok { color: #2f6b2f; } .st.warn { color: #a16207; } .st.bad { color: #b3261e; } .st.mut { color: #777; }
   .cover { min-height: 85vh; display: flex; flex-direction: column; justify-content: center; }
-  .conf { display: inline-block; background: #b3261e; color: #fff; font: 700 11px/1 Helvetica, Arial, sans-serif;
+  .conf { display: inline-block; background: #b3261e; color: #fff; font: 600 11px/1 Helvetica, Arial, sans-serif;
           letter-spacing: 2px; padding: 6px 12px; border-radius: 3px; margin-bottom: 22px; align-self: flex-start; }
   .cover .sub { color: #555; font-size: 15px; margin: 8px 0 26px; }
-  .cover .meta td:first-child { font-weight: 700; width: 32%; background: #f2f2ef; }
+  .cover .meta td:first-child { font-weight: 600; width: 32%; background: #f2f2ef; }
   .scorebox { display: flex; gap: 26px; align-items: center; border: 2px solid var(--accent);
               border-radius: 6px; padding: 14px 20px; margin: 10px 0 14px; }
-  .scorebox .pct { font: 700 44px/1 Helvetica, Arial, sans-serif; color: var(--accent); }
+  .scorebox .pct { font: 600 44px/1 Helvetica, Arial, sans-serif; }
   .scorebox .lab { font: 600 15px Helvetica, Arial, sans-serif; }
   .logo { max-height: 56px; max-width: 220px; margin-bottom: 18px; }
   .foot { color: #999; font: 10px Helvetica, Arial, sans-serif; text-align: right; margin-top: 30px; }
