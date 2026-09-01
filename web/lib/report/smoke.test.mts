@@ -4,6 +4,7 @@ import assert from 'node:assert';
 import { buildReportPayload } from './compile';
 import { renderReportHtml } from './render';
 import { DEFAULT_REPORT_SPEC, resolveSpec } from './spec';
+import { validateReportOverrides } from './validate';
 
 const q = (n: number, section: number, risk: string, extra: Partial<Record<string, unknown>> = {}) => ({
   id: `q${section}-${n}`, uid: `t.s${section}.q${String(n).padStart(2, '0')}`,
@@ -97,6 +98,7 @@ assert.ok(html1.includes('ADVISOR &lt;b&gt;SUMMARY&lt;/b&gt;'), 'narrative overr
 assert.ok(html1.includes('CONFIDENTIAL'));
 assert.ok(html1.includes('Consolidated Risk Register'));
 assert.ok(html1.includes('What Documentation Cannot Close'));
+assert.ok(html1.includes('Inherent risk across all 5 in-scope controls:'));
 assert.ok(!html1.includes('id="delivery'), 'no stray markup');
 assert.ok(html1.includes('--accent: #123456'));
 // Declared sections remain visible even when evidence is absent.
@@ -114,5 +116,56 @@ const ceP = buildReportPayload({ ...inputs, spec: DEFAULT_REPORT_SPEC, framework
 const ceHtml = renderReportHtml(ceP, {}, brand);
 assert.ok(ceHtml.includes('Executive Summary'));
 assert.ok(!ceHtml.includes('What Documentation Cannot Close'), 'v1 must not include v2 sections');
+
+const programmePayload = buildReportPayload({
+  ...inputs,
+  spec: {
+    ...DEFAULT_REPORT_SPEC,
+    implementation_workstreams: [{
+      number: 2,
+      title: 'Records foundation',
+      themes: ['registers', 'records'],
+      default_window: '30–90 days',
+      default_owner: 'Outsourced DIO with IT',
+      description: 'Build accountable records of processing and assets.',
+    }],
+  },
+  tasks: [{
+    theme: '2. Data Mapping & Asset Register',
+    title: 'For each asset record, document owner, data type, location and access rights',
+    description: 'Build the Information Asset Register and classify personal information.',
+    responsible: 'IT',
+    output: 'Completed Asset Register',
+    priority: 'high',
+    owner: null,
+    due_date: null,
+    status: 'todo',
+  }],
+} as never, {});
+assert.deepEqual(
+  programmePayload.implementation_programme?.[0].actions,
+  ['For each asset record, document owner, data type, location and access rights'],
+);
+
+assert.throws(
+  () => validateReportOverrides({ structured: { company_profile: { legal_name: 42 } } }),
+  /company_profile\.legal_name must be a string/,
+);
+assert.throws(
+  () => validateReportOverrides({
+    risk_register: [{
+      uid: 'bad',
+      ref: '1.1',
+      control_area: null,
+      finding: 'Malformed severity',
+      severity: 'Urgent',
+      recommended_action: null,
+      owner: null,
+      target_window: '0–30 days',
+      source_type: 'assessment',
+    }],
+  }),
+  /unsupported value/,
+);
 
 console.log('report smoke: all assertions passed');

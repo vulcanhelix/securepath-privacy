@@ -216,7 +216,7 @@ ${parts.join('\n')}
         ${summary.counts.partial} Partially Compliant (${statusPct(summary.counts.partial)}) ·
         ${summary.counts.fully_compliant} Compliant (${statusPct(summary.counts.fully_compliant)})</div></div>
       </div>
-      <p><b>Risk population:</b> ${summary.risk_counts.Critical} Critical · ${summary.risk_counts.High} High ·
+      <p><b>Inherent risk across all ${summary.counts.total} in-scope controls:</b> ${summary.risk_counts.Critical} Critical · ${summary.risk_counts.High} High ·
       ${summary.risk_counts.Medium} Medium · ${summary.risk_counts.Low} Low.</p>
       ${baseline}<h3>Assessment dashboard</h3>${dashboard}${actions}`;
   }

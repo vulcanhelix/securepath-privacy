@@ -3,6 +3,7 @@ import { serverClient } from '@/lib/supabase';
 import { trackKindFor } from '@/lib/track';
 import { resolveSpec } from '@/lib/report/spec';
 import { buildReportPayload, type QuestionRow, type ResponseRow } from '@/lib/report/compile';
+import { validateReportOverrides } from '@/lib/report/validate';
 import type { ReportOverrides } from '@/lib/report/types';
 
 // Compile (or recompile) the working assessment report for a client+framework.
@@ -101,6 +102,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (data && (data as { available?: boolean }).available) awareness = data;
   } catch { /* not installed */ }
 
+  let overrides: ReportOverrides;
+  try {
+    overrides = validateReportOverrides(report.overrides ?? {});
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Report overrides are malformed.',
+    }, { status: 400 });
+  }
+
   const payload = buildReportPayload({
     spec,
     kind: report.kind, version: report.version, framework,
@@ -128,7 +138,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     tasks: tasks ?? [],
     frameworkLegend: (pack?.metadata as { framework_legend?: unknown } | null)?.framework_legend ?? null,
     awareness,
-  }, (report.overrides ?? {}) as ReportOverrides);
+  }, overrides);
 
   const { error: setErr } = await supabase.rpc('set_assessment_report_payload', {
     p_report_id: report.id, p_payload: payload,

@@ -153,6 +153,261 @@ END $$;
 REVOKE EXECUTE ON FUNCTION public.get_awareness_report(uuid, text) FROM anon, public;
 GRANT EXECUTE ON FUNCTION public.get_awareness_report(uuid, text) TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.calculate_assessment_score(p_session_id UUID)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  result JSONB;
+  v_client_org_id UUID;
+  v_framework TEXT;
+  v_org_scale TEXT;
+  v_pack UUID;
+  v_report_sections INT[];
+  v_total_questions INTEGER;
+  v_answered INTEGER;
+  v_overall_achieved INTEGER;
+  v_overall_total INTEGER;
+  v_completion_pct INTEGER;
+  v_section_scores JSONB;
+  v_risk_summary JSONB;
+  v_critical_gaps INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+
+  SELECT s.client_org_id, s.framework, s.org_scale, s.content_pack_id,
+         (
+           SELECT array_agg(section.value::int)
+           FROM jsonb_array_elements_text(
+             COALESCE(cp.metadata #> '{report_spec,assessment_scope,section_ids}', '[]'::jsonb)
+           ) AS section(value)
+         )
+    INTO v_client_org_id, v_framework, v_org_scale, v_pack, v_report_sections
+  FROM public.assessment_sessions s
+  LEFT JOIN public.content_packs cp ON cp.id = s.content_pack_id
+  WHERE s.id = p_session_id;
+
+  IF v_client_org_id IS NULL THEN RAISE EXCEPTION 'assessment session not found'; END IF;
+  IF v_client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN
+    RAISE EXCEPTION 'Access denied to assessment session';
+  END IF;
+
+  SELECT COUNT(*) INTO v_total_questions
+  FROM public.assessment_questions q
+  WHERE q.content_pack_id = v_pack
+    AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+    AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale);
+
+  SELECT COUNT(*) INTO v_answered
+  FROM public.assessment_responses r
+  JOIN public.assessment_questions q ON r.question_id = q.id
+  WHERE r.session_id = p_session_id
+    AND q.content_pack_id = v_pack
+    AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+    AND r.response IS NOT NULL AND r.response <> ''
+    AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale);
+
+  v_completion_pct := CASE
+    WHEN v_total_questions > 0
+    THEN ROUND(v_answered::numeric / v_total_questions * 100)
+    ELSE 0
+  END;
+
+  SELECT
+    SUM(CASE WHEN r.response = 'fully_compliant' THEN 2
+             WHEN r.response = 'partial' THEN 1
+             ELSE 0 END) INTO v_overall_achieved
+  FROM public.assessment_questions q
+  LEFT JOIN public.assessment_responses r
+    ON r.question_id = q.id AND r.session_id = p_session_id
+  WHERE q.content_pack_id = v_pack
+    AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+    AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale);
+
+  SELECT COUNT(*) * 2 INTO v_overall_total
+  FROM public.assessment_questions q
+  LEFT JOIN public.assessment_responses r
+    ON r.question_id = q.id AND r.session_id = p_session_id
+  WHERE q.content_pack_id = v_pack
+    AND r.response IS DISTINCT FROM 'na'
+    AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+    AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale);
+
+  SELECT COALESCE(jsonb_object_agg(
+    'S' || sec.section_id,
+    jsonb_build_object(
+      'section_name', sec.section_name,
+      'score', sec.achieved_points,
+      'total', sec.total_points,
+      'pct', CASE WHEN sec.total_points > 0
+                  THEN ROUND(sec.achieved_points::numeric / sec.total_points * 100)
+                  ELSE 0 END
+    )
+  ), '{}'::jsonb) INTO v_section_scores
+  FROM (
+    SELECT
+      q.section_id,
+      MAX(q.section_name) as section_name,
+      SUM(CASE WHEN r.response = 'fully_compliant' THEN 2
+               WHEN r.response = 'partial' THEN 1
+               ELSE 0 END) as achieved_points,
+      COUNT(CASE WHEN r.response IS DISTINCT FROM 'na' THEN 1 END) * 2 as total_points
+    FROM public.assessment_questions q
+    LEFT JOIN public.assessment_responses r
+      ON r.question_id = q.id AND r.session_id = p_session_id
+    WHERE q.content_pack_id = v_pack
+      AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+      AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale)
+    GROUP BY q.section_id
+  ) sec;
+
+  SELECT COALESCE(jsonb_object_agg(risk_level, cnt), '{}'::jsonb) INTO v_risk_summary
+  FROM (
+    SELECT q.risk as risk_level, COUNT(*) as cnt
+    FROM public.assessment_responses r
+    JOIN public.assessment_questions q ON r.question_id = q.id
+    WHERE r.session_id = p_session_id
+      AND r.response IN ('non_compliant', 'under_review')
+      AND q.content_pack_id = v_pack
+      AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+      AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale)
+    GROUP BY q.risk
+  ) rs;
+
+  SELECT COUNT(*) INTO v_critical_gaps
+  FROM public.assessment_responses r
+  JOIN public.assessment_questions q ON r.question_id = q.id
+  WHERE r.session_id = p_session_id
+    AND r.response IN ('non_compliant', 'under_review')
+    AND q.risk = 'Critical'
+    AND q.content_pack_id = v_pack
+    AND (v_report_sections IS NULL OR q.section_id = ANY(v_report_sections))
+    AND public.assessment_question_in_scope(q.framework, q.section_id, q.applies_to, v_org_scale);
+
+  result := jsonb_build_object(
+    'section_scores', v_section_scores,
+    'overall', jsonb_build_object(
+      'score', COALESCE(v_overall_achieved, 0),
+      'total', COALESCE(v_overall_total, 0),
+      'pct', CASE WHEN v_overall_total > 0
+                  THEN ROUND(v_overall_achieved::numeric / v_overall_total * 100)
+                  ELSE 0 END,
+      'rating', CASE
+        WHEN v_overall_total = 0 THEN 'significant_gaps'
+        WHEN v_overall_achieved::numeric / v_overall_total >= 0.75 THEN 'satisfactory'
+        WHEN v_overall_achieved::numeric / v_overall_total >= 0.50 THEN 'requires_improvement'
+        ELSE 'significant_gaps'
+      END
+    ),
+    'completion_pct', v_completion_pct,
+    'risk_summary', v_risk_summary,
+    'critical_gaps', v_critical_gaps
+  );
+  RETURN result;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.calculate_assessment_score(uuid) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.calculate_assessment_score(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.create_assessment_report(
+    p_client_org_id uuid, p_framework text, p_kind text, p_title text,
+    p_session_id uuid DEFAULT NULL)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_session public.assessment_sessions%ROWTYPE;
+  v_head public.assessment_reports%ROWTYPE;
+  v_track uuid;
+  v_overrides jsonb := '{}'::jsonb;
+  rid uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  IF p_client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN
+    RAISE EXCEPTION 'Access denied to client organisation';
+  END IF;
+  IF public.current_role_name() NOT IN ('practice_owner','practice_consultant') THEN
+    RAISE EXCEPTION 'only advisors may create assessment reports';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.frameworks WHERE key = p_framework) THEN
+    RAISE EXCEPTION 'unknown framework %', p_framework;
+  END IF;
+  IF p_kind NOT IN ('gap_assessment','post_documentation','reassessment') THEN
+    RAISE EXCEPTION 'unknown report kind %', p_kind;
+  END IF;
+
+  IF p_session_id IS NOT NULL THEN
+    SELECT * INTO v_session FROM public.assessment_sessions
+      WHERE id = p_session_id AND client_org_id = p_client_org_id AND framework = p_framework;
+    IF NOT FOUND THEN RAISE EXCEPTION 'assessment session not found for this client and framework'; END IF;
+    IF v_session.approval_status <> 'approved' THEN RAISE EXCEPTION 'assessment is not signed off'; END IF;
+  ELSE
+    SELECT * INTO v_session FROM public.assessment_sessions
+      WHERE client_org_id = p_client_org_id AND framework = p_framework AND approval_status = 'approved'
+      ORDER BY updated_at DESC LIMIT 1;
+    IF NOT FOUND THEN RAISE EXCEPTION 'no signed-off assessment to report on'; END IF;
+  END IF;
+
+  SELECT t.id INTO v_track FROM public.tracks t JOIN public.frameworks f ON f.track_kind = t.track_kind
+    WHERE t.client_org_id = p_client_org_id AND f.key = p_framework;
+
+  SELECT * INTO v_head FROM public.assessment_reports
+    WHERE client_org_id = p_client_org_id AND framework_key = p_framework AND approval_status = 'issued'
+    ORDER BY version DESC LIMIT 1
+    FOR UPDATE;
+
+  IF v_head.id IS NULL AND p_kind <> 'gap_assessment' THEN
+    RAISE EXCEPTION 'first report must be a gap assessment — no issued report to follow';
+  END IF;
+
+  IF v_head.id IS NOT NULL THEN
+    v_overrides := jsonb_strip_nulls(jsonb_build_object(
+      'narratives', v_head.overrides->'narratives',
+      'sections_excluded', v_head.overrides->'sections_excluded'
+    ));
+  END IF;
+
+  INSERT INTO public.assessment_reports
+      (client_org_id, track_id, framework_key, session_id, content_pack_id,
+       version, supersedes, kind, title, overrides, created_by)
+    VALUES
+      (p_client_org_id, v_track, p_framework, v_session.id, v_session.content_pack_id,
+       COALESCE(v_head.version, 0) + 1, v_head.id, p_kind, p_title, v_overrides, auth.uid())
+    RETURNING id INTO rid;
+
+  INSERT INTO public.audit_log (user_id, practice_id, action, detail)
+    VALUES (auth.uid(), public.current_practice(), 'assessment_report.created',
+            jsonb_build_object('report_id', rid, 'client_org_id', p_client_org_id,
+                               'framework', p_framework, 'kind', p_kind,
+                               'version', COALESCE(v_head.version, 0) + 1));
+  RETURN rid;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.set_assessment_report_payload(p_report_id uuid, p_payload jsonb)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v public.assessment_reports%ROWTYPE;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT * INTO v FROM public.assessment_reports WHERE id = p_report_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'report not found'; END IF;
+  IF v.client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN
+    RAISE EXCEPTION 'Access denied to report';
+  END IF;
+  IF public.current_role_name() NOT IN ('practice_owner','practice_consultant') THEN
+    RAISE EXCEPTION 'only advisors may compile assessment reports';
+  END IF;
+
+  UPDATE public.assessment_reports
+     SET payload = p_payload, compiled_at = now(), updated_at = now()
+   WHERE id = p_report_id
+     AND approval_status IN ('draft_ai','draft_human');
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'report is approved/issued — create the next version instead';
+  END IF;
+
+  INSERT INTO public.audit_log (user_id, practice_id, action, detail)
+    VALUES (auth.uid(), public.current_practice(), 'assessment_report.compiled',
+            jsonb_build_object('report_id', p_report_id, 'version', v.version));
+END $$;
+
 CREATE OR REPLACE FUNCTION public.update_assessment_report_overrides(
   p_report_id uuid,
   p_overrides jsonb
@@ -162,7 +417,7 @@ DECLARE
   v public.assessment_reports%ROWTYPE;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
-  SELECT * INTO v FROM public.assessment_reports WHERE id = p_report_id;
+  SELECT * INTO v FROM public.assessment_reports WHERE id = p_report_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'report not found'; END IF;
   IF v.client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN
     RAISE EXCEPTION 'Access denied to report';
@@ -178,7 +433,11 @@ BEGIN
      SET overrides = p_overrides,
          compiled_at = NULL,
          updated_at = now()
-   WHERE id = p_report_id;
+   WHERE id = p_report_id
+     AND approval_status IN ('draft_ai', 'draft_human');
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'report is approved/issued — create the next version instead';
+  END IF;
   INSERT INTO public.audit_log (user_id, practice_id, action, detail)
   VALUES (
     auth.uid(), public.current_practice(), 'assessment_report.edited',
@@ -191,9 +450,10 @@ CREATE OR REPLACE FUNCTION public.approve_assessment_report(
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v public.assessment_reports%ROWTYPE;
+  v_proposed_classifications integer;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
-  SELECT * INTO v FROM public.assessment_reports WHERE id = p_report_id;
+  SELECT * INTO v FROM public.assessment_reports WHERE id = p_report_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'report not found'; END IF;
   IF v.client_org_id NOT IN (SELECT public.allowed_client_orgs()) THEN
     RAISE EXCEPTION 'Access denied to report';
@@ -208,7 +468,21 @@ BEGIN
   IF COALESCE((v.overrides->>'accuracy_confirmed')::boolean, false) IS NOT TRUE THEN
     RAISE EXCEPTION 'advisor accuracy confirmation is required before approval';
   END IF;
-  IF COALESCE((v.payload->'quality'->>'proposed_classifications')::int, 0) > 0 THEN
+
+  SELECT COUNT(*) INTO v_proposed_classifications
+  FROM jsonb_array_elements(
+    CASE WHEN jsonb_typeof(v.payload->'classification_register') = 'array'
+      THEN v.payload->'classification_register'
+      ELSE '[]'::jsonb
+    END
+  ) AS item(value)
+  WHERE item.value->>'cls_source' = 'proposed';
+
+  IF COALESCE((v.payload->'quality'->>'accuracy_confirmed')::boolean, false) IS NOT TRUE THEN
+    RAISE EXCEPTION 'recompile the report after completing the accuracy review';
+  END IF;
+  IF v_proposed_classifications > 0
+     OR COALESCE((v.payload->'quality'->>'proposed_classifications')::int, 0) > 0 THEN
     RAISE EXCEPTION 'all remediation classifications must be advisor-confirmed before approval';
   END IF;
   IF COALESCE((v.payload->'quality'->>'ready')::boolean, false) IS NOT TRUE THEN
@@ -217,7 +491,12 @@ BEGIN
 
   UPDATE public.assessment_reports
      SET approval_status = 'approved', updated_at = now()
-   WHERE id = p_report_id;
+   WHERE id = p_report_id
+     AND approval_status IN ('draft_ai', 'draft_human')
+     AND compiled_at IS NOT NULL;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'report changed before approval — reload and review the latest draft';
+  END IF;
   PERFORM public.record_approval(
     'assessment_report', p_report_id, 'approved',
     COALESCE(p_note, 'Assessment report v' || v.version || ' approved after advisor accuracy review')

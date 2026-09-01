@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { buildReportPayload } from './compile';
 import { renderReportHtml } from './render';
+import { validateReportOverrides } from './validate';
 import type { CompileInputs } from './compile';
 import type { RegisterClass, ReportOverrides, ReportSpec, Severity } from './types';
 
@@ -42,7 +43,7 @@ const inputs: CompileInputs = {
   spec: fixture.report_spec,
   confirmedChecklistIds: new Set(fixture.inputs.confirmedChecklistIds),
 };
-const payload = buildReportPayload(inputs, fixture.overrides);
+const payload = buildReportPayload(inputs, validateReportOverrides(fixture.overrides));
 
 test('Puris source control population, status distribution and risk population are exact', () => {
   assert.equal(payload.summary.counts.total, fixture.expected.control_total);

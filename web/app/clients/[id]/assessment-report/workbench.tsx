@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
 import { Card } from '@/components/ui/Card';
@@ -9,8 +9,9 @@ import { Alert } from '@/components/ui/Alert';
 import { Select, Textarea } from '@/components/ui/forms';
 import { DataTable } from '@/components/ui/DataTable';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { validateRiskRegister, validateStructuredReportData } from '@/lib/report/validate';
 import type {
-  ClassRegisterRow, Finding, RegisterClass, ReportOverrides, ReportPayload, StructuredReportData,
+  ClassRegisterRow, RegisterClass, ReportOverrides, ReportPayload,
 } from '@/lib/report/types';
 
 type ReportRow = {
@@ -57,17 +58,28 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
 
   const excluded = useMemo(() => new Set(overrides.sections_excluded ?? []), [overrides]);
 
+  useEffect(() => {
+    if (dirty) return;
+    const nextOverrides = working?.overrides ?? {};
+    const nextPayload = working?.payload ?? null;
+    setOverrides(nextOverrides);
+    setStructuredText(JSON.stringify(nextOverrides.structured ?? nextPayload?.structured ?? {}, null, 2));
+    setRiskRegisterText(JSON.stringify(nextOverrides.risk_register ?? nextPayload?.risk_register ?? [], null, 2));
+    setStructuredError(null);
+    setRiskRegisterError(null);
+  }, [dirty, working?.id, working?.updated_at, working?.compiled_at, working?.overrides, working?.payload]);
+
   function edit(next: ReportOverrides) { setOverrides(next); setDirty(true); }
 
   function editStructured(value: string) {
     setStructuredText(value);
     setDirty(true);
     try {
-      const structured = JSON.parse(value) as Partial<StructuredReportData>;
+      const structured = validateStructuredReportData(JSON.parse(value));
       setOverrides(current => ({ ...current, structured }));
       setStructuredError(null);
-    } catch {
-      setStructuredError('Structured report data must be valid JSON.');
+    } catch (error) {
+      setStructuredError(error instanceof Error ? error.message : 'Structured report data must be valid JSON.');
     }
   }
 
@@ -75,12 +87,11 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
     setRiskRegisterText(value);
     setDirty(true);
     try {
-      const risk_register = JSON.parse(value) as Finding[];
-      if (!Array.isArray(risk_register)) throw new Error('not an array');
+      const risk_register = validateRiskRegister(JSON.parse(value));
       setOverrides(current => ({ ...current, risk_register }));
       setRiskRegisterError(null);
-    } catch {
-      setRiskRegisterError('Risk register must be a valid JSON array.');
+    } catch (error) {
+      setRiskRegisterError(error instanceof Error ? error.message : 'Risk register must be a valid JSON array.');
     }
   }
 
@@ -116,7 +127,7 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
     });
     setBusy(false);
     if (error) { setMsg({ err: error.message }); return; }
-    setDirty(false); setMsg({ ok: 'Edits saved — recompile to refresh data, or approve when ready.' });
+    setDirty(false); setMsg({ ok: 'Edits saved — recompile before approval.' });
     router.refresh();
   }
 
@@ -205,7 +216,12 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
             {isDraft && working.compiled_at && !dirty &&
               <Button
                 size="sm"
-                disabled={busy || !overrides.accuracy_confirmed || (payload?.quality?.proposed_classifications ?? 0) > 0}
+                disabled={
+                  busy ||
+                  !overrides.accuracy_confirmed ||
+                  payload?.quality?.ready !== true ||
+                  (payload?.quality?.proposed_classifications ?? 0) > 0
+                }
                 onClick={approve}
               >
                 Approve

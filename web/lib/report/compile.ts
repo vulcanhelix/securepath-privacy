@@ -100,6 +100,20 @@ const scoreRows = (rows: DomainRow[]): number | null => {
   return Math.round((achieved / (scorable.length * 2)) * 1000) / 10;
 };
 
+const tokensFor = (text: string | null | undefined): Set<string> => {
+  const tokens = new Set<string>();
+  (text ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).forEach(token => {
+    tokens.add(token);
+    if (token.endsWith('s') && token.length > 3) tokens.add(token.slice(0, -1));
+  });
+  return tokens;
+};
+
+const containsWorkstreamTheme = (text: string, themes: string[]): boolean => {
+  const haystack = tokensFor(text);
+  return themes.some(theme => [...tokensFor(theme)].some(token => haystack.has(token)));
+};
+
 const awarenessFindings = (awareness: unknown): Finding[] => {
   const data = awareness as AwarenessData | null;
   return (data?.high_risk_questions ?? []).map(question => ({
@@ -121,10 +135,12 @@ const defaultProgramme = (
   register: ClassRegisterRow[],
 ): ImplementationWorkstream[] =>
   (spec.implementation_workstreams ?? []).map(workstream => {
-    const matchingTasks = tasks.filter(task => workstream.themes.includes(task.theme));
+    const matchingTasks = tasks.filter(task => containsWorkstreamTheme(
+      `${task.theme} ${task.title} ${task.description ?? ''} ${task.output ?? ''}`,
+      workstream.themes,
+    ));
     const matchingItems = register.filter(item =>
-      workstream.themes.some(theme =>
-        `${item.item} ${item.control_area ?? ''} ${item.workstream}`.toLowerCase().includes(theme.toLowerCase())));
+      containsWorkstreamTheme(`${item.item} ${item.control_area ?? ''} ${item.workstream}`, workstream.themes));
     return {
       number: workstream.number,
       title: workstream.title,
