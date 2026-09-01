@@ -1,88 +1,107 @@
-import type { ReportBrand, ReportOverrides, ReportPayload, Severity } from './types';
+import type {
+  ClassRegisterRow, ReportBrand, ReportOverrides, ReportPayload, Severity,
+} from './types';
 import { STATUS_LABELS } from './spec';
 
-// Deterministic template-literal renderer: same payload + overrides + brand in, same bytes
-// out (the issued document is sha256'd — no React, no timestamps, no randomness here).
-// Print-styled, fully self-contained HTML; browser print = the PDF.
-
-const esc = (s: unknown): string =>
-  String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+const esc = (value: unknown): string =>
+  String(value ?? '').replace(/[&<>"']/g, char =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 
 const SEV_COLOR: Record<Severity, string> = {
   Critical: '#b3261e', High: '#c2410c', Medium: '#a16207', Low: '#3f6212',
 };
-const sevChip = (s: Severity | string | null) => {
-  if (!s) return '—';
-  const c = SEV_COLOR[s as Severity] ?? '#555';
-  return `<span class="chip" style="color:${c};border-color:${c}">${esc(s)}</span>`;
+const sevChip = (severity: Severity | string | null) => {
+  if (!severity) return '—';
+  const color = SEV_COLOR[severity as Severity] ?? '#555';
+  return `<span class="chip" style="color:${color};border-color:${color}">${esc(severity)}</span>`;
 };
-const statusCell = (s: string) => {
-  const label = STATUS_LABELS[s] ?? s;
-  const cls = s === 'fully_compliant' ? 'ok' : s === 'partial' ? 'warn' : s === 'non_compliant' ? 'bad' : 'mut';
+const statusCell = (status: string) => {
+  const label = STATUS_LABELS[status] ?? status;
+  const cls = status === 'fully_compliant'
+    ? 'ok'
+    : status === 'partial' ? 'warn'
+      : status === 'under_review' ? 'review'
+        : status === 'non_compliant' ? 'bad' : 'mut';
   return `<span class="st ${cls}">${esc(label)}</span>`;
 };
 const para = (text: string | null) =>
-  text ? text.split(/\n{2,}/).map(p => `<p>${esc(p).replace(/\n/g, '<br/>')}</p>`).join('') : '';
+  text ? text.split(/\n{2,}/).map(part => `<p>${esc(part).replace(/\n/g, '<br/>')}</p>`).join('') : '';
 const table = (heads: string[], rows: string[][], cls = '') =>
-  `<table class="${cls}"><thead><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead>` +
-  `<tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-const fmtDate = (d: string | null) => (d ? String(d).slice(0, 10) : '—');
+  `<table class="${cls}"><thead><tr>${heads.map(head => `<th>${head}</th>`).join('')}</tr></thead>` +
+  `<tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+const fmtDate = (date: string | null) => (date ? String(date).slice(0, 10) : '—');
+const list = (items: string[]) =>
+  items.length ? `<ul>${items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p><i>None recorded.</i></p>';
 
 type AwarenessData = {
-  coverage?: { cohorts_completed?: number; departments_planned?: number | null; departments_covered?: string[]; limitation?: boolean };
+  coverage?: {
+    cohorts_completed?: number; departments_planned?: number | null;
+    departments_covered?: string[]; limitation?: boolean;
+  };
   overall?: { respondents?: number; pct?: number; rating?: string };
-  domains?: { code: string; name: string; answered: number; aligned: number; pct: number | null; rating: string }[];
-  high_risk_questions?: { code: string; question: string; pct: number | null; answered: number; aligned: number }[];
-  cohorts?: { department: string; interviewed_on: string | null; respondents?: { respondent_no: number; answered: number; pct: number; rating: string }[] }[];
+  domains?: {
+    code: string; name: string; questions?: number; answered: number; aligned: number;
+    pct: number | null; rating: string;
+  }[];
+  high_risk_questions?: {
+    code: string; question: string; pct: number | null; answered: number; aligned: number;
+  }[];
 };
 
-export function renderReportHtml(payload: ReportPayload, overrides: ReportOverrides, brand: ReportBrand): string {
+export function renderReportHtml(
+  payload: ReportPayload,
+  overrides: ReportOverrides,
+  brand: ReportBrand,
+): string {
   const excluded = new Set(overrides.sections_excluded ?? []);
   const narrative = (key: string) =>
     overrides.narratives?.[key] ?? payload.sections[key]?.narrative_default ?? null;
   const accent = /^#[0-9a-fA-F]{6}$/.test(brand.accentHex ?? '') ? brand.accentHex! : '#1f3a5f';
   const docRef = payload.cover.audit_ref || `${payload.meta.framework.toUpperCase()}-ASSESSMENT`;
-  // Advisor A–D decisions saved after the last compile live only in overrides; merge them
-  // here (same rule as compile) so preview and issued bytes always show the saved classes.
-  const mergedRegister = payload.classification_register?.map(r => {
-    const ov = overrides.classification?.[r.uid];
-    return ov ? {
-      ...r,
-      cls: ov.cls ?? r.cls,
+  const logo = brand.logo?.startsWith('data:image/') ? brand.logo : null;
+  const mergedRegister = payload.classification_register?.map(row => {
+    const override = overrides.classification?.[row.uid];
+    return override ? {
+      ...row,
+      item: override.item ?? row.item,
+      cls: override.cls,
       cls_source: 'advisor' as const,
-      evidence_required: ov.evidence_required ?? r.evidence_required,
-      owner: ov.owner ?? r.owner,
-    } : r;
+      documents_covering: override.documents_covering ?? row.documents_covering,
+      evidence_required: override.evidence_required ?? row.evidence_required,
+      owner: override.owner ?? row.owner,
+      workstream: override.workstream ?? row.workstream,
+    } : row;
   }) ?? null;
-  const mergedResidual = mergedRegister?.filter(r => r.cls !== 'A') ?? null;
 
-  // function declarations below are hoisted; keys not in this map fall back to a plain
-  // narrative section (a pack can add a prose-only section with zero code change)
-  const RENDERERS: Record<string, () => string | null> = {
+  const renderers: Record<string, () => string | null> = {
     cover: () => coverSection(payload),
-    exec_summary: () => execSummary(payload, narrative),
-    company_profile: () => para(narrative('company_profile')) || null,
-    scope_methodology: () => scopeSection(payload, narrative),
+    exec_summary: () => execSummary(payload),
+    company_profile: () => companyProfileSection(payload),
+    scope_methodology: () => scopeSection(payload),
     alignment: () => alignmentSection(payload),
-    domains: () => domainsSection(payload, narrative),
+    domains: () => domainsSection(payload),
     awareness: () => awarenessSection(payload),
     risk_register: () => riskRegisterSection(payload),
     roadmap: () => roadmapSection(payload),
     documentation_issued: () => documentationSection(payload),
-    classification_register: () => classificationSection(payload, narrative),
-    residual_risk: () => residualSection(payload),
+    classification_register: () => classificationSection(payload),
+    implementation_programme: () => implementationProgrammeSection(payload),
     delivery_options: () => deliverySection(payload),
+    residual_risk: () => residualSection(payload),
     conclusion: () => para(narrative('conclusion')) || null,
     appendices: () => appendicesSection(payload),
   };
 
   const parts: string[] = [];
-  for (const s of payload.section_order) {
-    if (excluded.has(s.key)) continue;
-    const body = (RENDERERS[s.key] ?? (() => para(narrative(s.key)) || null))();
-    if (!body) continue;   // section with no data (e.g. awareness not conducted) is silently dropped
-    if (s.key === 'cover') { parts.push(body); continue; }
-    parts.push(`<section class="sec"><h2>${esc(s.title)}</h2>${body}</section>`);
+  for (const section of payload.section_order) {
+    if (excluded.has(section.key)) continue;
+    const body = (renderers[section.key] ?? (() => para(narrative(section.key)) || null))();
+    const rendered = body || '<p><i>No evidence or advisor content was recorded for this section.</i></p>';
+    if (section.key === 'cover') {
+      parts.push(rendered);
+    } else {
+      parts.push(`<section class="sec"><h2>${esc(section.title)}</h2>${rendered}</section>`);
+    }
   }
 
   return `<!doctype html>
@@ -98,20 +117,23 @@ export function renderReportHtml(payload: ReportPayload, overrides: ReportOverri
        padding-bottom: 4px; margin: 0 0 12px; break-after: avoid; }
   h3 { font-size: 14px; margin: 14px 0 6px; break-after: avoid; }
   p { margin: 0 0 8px; }
+  ul, ol { margin: 6px 0 12px 22px; }
+  li { margin-bottom: 4px; }
   .sec { margin-top: 26px; }
-  .sec.major { break-before: page; }
-  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-family: Helvetica, Arial, sans-serif;
-          font-size: 11.5px; page-break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px;
+          font-family: Helvetica, Arial, sans-serif; font-size: 11.5px; page-break-inside: avoid; }
   th { background: var(--accent); color: #fff; text-align: left; padding: 5px 7px; font-weight: 600; }
   td { border: 1px solid #d8d8d8; padding: 5px 7px; vertical-align: top; }
   tr:nth-child(even) td { background: #f7f7f5; }
   .chip { display: inline-block; border: 1px solid; border-radius: 3px; padding: 0 5px;
           font: 600 10px/1.6 Helvetica, Arial, sans-serif; white-space: nowrap; }
   .st { font: 600 11px Helvetica, Arial, sans-serif; }
-  .st.ok { color: #2f6b2f; } .st.warn { color: #a16207; } .st.bad { color: #b3261e; } .st.mut { color: #777; }
+  .st.ok { color: #2f6b2f; } .st.warn { color: #a16207; } .st.review { color: #1d4ed8; }
+  .st.bad { color: #b3261e; } .st.mut { color: #777; }
   .cover { min-height: 85vh; display: flex; flex-direction: column; justify-content: center; }
-  .conf { display: inline-block; background: #b3261e; color: #fff; font: 600 11px/1 Helvetica, Arial, sans-serif;
-          letter-spacing: 2px; padding: 6px 12px; border-radius: 3px; margin-bottom: 22px; align-self: flex-start; }
+  .conf { display: inline-block; background: #b3261e; color: #fff;
+          font: 600 11px/1 Helvetica, Arial, sans-serif; letter-spacing: 2px;
+          padding: 6px 12px; border-radius: 3px; margin-bottom: 22px; align-self: flex-start; }
   .cover .sub { color: #555; font-size: 15px; margin: 8px 0 26px; }
   .cover .meta td:first-child { font-weight: 600; width: 32%; background: #f2f2ef; }
   .scorebox { display: flex; gap: 26px; align-items: center; border: 2px solid var(--accent);
@@ -120,7 +142,6 @@ export function renderReportHtml(payload: ReportPayload, overrides: ReportOverri
   .scorebox .lab { font: 600 15px Helvetica, Arial, sans-serif; }
   .logo { max-height: 56px; max-width: 220px; margin-bottom: 18px; }
   .foot { color: #999; font: 10px Helvetica, Arial, sans-serif; text-align: right; margin-top: 30px; }
-  ol.actions li { margin-bottom: 5px; }
   @page { size: A4; margin: 16mm 14mm; }
   @media print { body { padding: 0; max-width: none; } .cover { min-height: 92vh; } }
 </style></head><body>
@@ -128,188 +149,320 @@ ${parts.join('\n')}
 <div class="foot">${esc(docRef)} · v${payload.meta.version} · CONFIDENTIAL</div>
 </body></html>`;
 
-  // ---- section renderers (closures over nothing; pure) ----
-  function coverSection(p: ReportPayload): string {
+  function coverSection(report: ReportPayload): string {
+    const structured = report.structured.cover;
     const rows = [
-      ['Prepared for', esc(p.cover.org_name || p.cover.client_name)],
+      ['Prepared for', esc(report.cover.org_name || report.cover.client_name)],
       ['Document reference', esc(docRef)],
-      ['Version', `v${p.meta.version} — ${esc(p.meta.kind.replace(/_/g, ' '))}`],
-      ['Date', esc(fmtDate(p.meta.compiled_at))],
-      ['Prepared by', esc(p.cover.auditor_name || p.cover.practice_name || '—')],
+      ['Version', `v${report.meta.version} — ${esc(report.meta.kind.replace(/_/g, ' '))}`],
+      ['Date', esc(fmtDate(report.meta.compiled_at))],
+      ['Prepared by', esc(structured.prepared_by || report.cover.auditor_name || report.cover.practice_name || '—')],
+      ['For the attention of', esc(structured.attention || '—')],
+      ['Scope of version', esc(structured.scope_of_version || '—')],
     ];
-    const history = p.cover.history.length
-      ? `<h3>Document control</h3>` + table(
-          ['Version', 'Type', 'Status', 'Issued'],
-          p.cover.history.map(h => [
-            `v${h.version}`, esc(h.kind.replace(/_/g, ' ')), esc(h.status), esc(fmtDate(h.issued_at)),
-          ]))
+    const history = report.cover.history.length
+      ? `<h3>Document control</h3>${table(
+        ['Version', 'Type', 'Status', 'Issued'],
+        report.cover.history.map(item => [
+          `v${item.version}`, esc(item.kind.replace(/_/g, ' ')),
+          esc(item.status), esc(fmtDate(item.issued_at)),
+        ]))}`
       : '';
+    const confidentiality = structured.confidentiality_statement ||
+      `This document contains information that is confidential and proprietary to ` +
+      `${report.cover.org_name || report.cover.client_name}. It shall not be disclosed, transmitted ` +
+      `or duplicated without explicit written permission. This report reflects the evidence available ` +
+      `at the assessment date and does not constitute legal advice.`;
+    const frameworkTitle = report.spec.alignment_table?.length
+      ? `${report.meta.framework.toUpperCase()} & ISO/IEC 27701`
+      : report.meta.framework.toUpperCase();
     return `<div class="cover">
-      ${brand.logo ? `<img class="logo" src="${esc(brand.logo)}" alt=""/>` : ''}
+      ${logo ? `<img class="logo" src="${esc(logo)}" alt=""/>` : ''}
       <span class="conf">CONFIDENTIAL</span>
-      <h1>${esc(p.meta.framework.toUpperCase())} Compliance Assessment Report</h1>
-      <div class="sub">${esc(p.cover.client_name)}${p.cover.audit_date ? ' · ' + esc(fmtDate(p.cover.audit_date)) : ''}</div>
-      <table class="meta"><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>
-      ${history}
-      <p style="margin-top:16px;color:#555;font-size:11.5px">This document contains information that is confidential
-      and proprietary to ${esc(p.cover.org_name || p.cover.client_name)}. It shall not be disclosed, transmitted or
-      duplicated without explicit written permission. This report reflects the state of the systems, documents and
-      personnel assessed at the time of the assessment and does not constitute legal advice.</p>
+      <h1>${esc(frameworkTitle)} Compliance Assessment Report</h1>
+      <div class="sub">${esc(report.cover.client_name)}${report.cover.audit_date ? ` · ${esc(fmtDate(report.cover.audit_date))}` : ''}</div>
+      <table class="meta"><tbody>${rows.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join('')}</tbody></table>
+      ${history}<p style="margin-top:16px;color:#555;font-size:11.5px">${esc(confidentiality)}</p>
     </div>`;
   }
 
-  function execSummary(p: ReportPayload, n: (k: string) => string | null): string {
-    const s = p.summary;
-    const dash = table(
-      ['Assessment domain', 'Score', 'Open critical', 'Worst open risk'],
-      s.dashboard.map(d => [
-        esc(d.section_name), d.pct != null ? `${d.pct}%` : '—', String(d.open_critical), sevChip(d.worst),
+  function execSummary(report: ReportPayload): string {
+    const summary = report.summary;
+    const statusPct = (count: number) => summary.counts.total
+      ? `${Math.round((count / summary.counts.total) * 1000) / 10}%`
+      : '—';
+    const dashboard = table(
+      ['Assessment domain', 'Compliant', 'Partial', 'Under Review', 'Non-Compliant', 'Rating'],
+      summary.dashboard.map(domain => [
+        esc(domain.section_name),
+        String(domain.counts.fully_compliant),
+        String(domain.counts.partial),
+        String(domain.counts.under_review),
+        String(domain.counts.non_compliant),
+        sevChip(domain.worst),
       ]));
-    const actions = s.top_actions.length
-      ? `<h3>Top priority actions</h3><ol class="actions">${s.top_actions.map(a => `<li>${esc(a)}</li>`).join('')}</ol>`
+    const actions = summary.top_actions.length
+      ? `<h3>Top priority actions</h3><ol>${summary.top_actions.map(action => `<li>${esc(action)}</li>`).join('')}</ol>`
       : '';
-    const baseline = s.baseline
-      ? `<p>Stage 1 baseline: <b>${s.baseline.pct ?? '—'}%</b> (${esc(fmtDate(s.baseline.at))}).` +
-        (s.prior ? ` Previous report (v${s.prior.version}): <b>${s.prior.overall_pct ?? '—'}%</b>.` : '') + `</p>`
+    const baseline = summary.baseline
+      ? `<p>Stage 1 baseline: <b>${summary.baseline.pct ?? '—'}%</b> (${esc(fmtDate(summary.baseline.at))}).` +
+        (summary.prior ? ` Previous report (v${summary.prior.version}): <b>${summary.prior.overall_pct ?? '—'}%</b>.` : '') + '</p>'
       : '';
-    return `${para(n('exec_summary'))}
-      <div class="scorebox"><div class="pct">${s.overall_pct ?? '—'}%</div>
-        <div><div class="lab">${esc(s.maturity_label)}</div>
-        <div>${s.counts.non_compliant} of ${s.counts.total} controls Non-Compliant · ${s.critical_count} Critical findings · assessment ${s.completion_pct ?? '—'}% complete</div></div>
+    return `${para(narrative('exec_summary'))}
+      <div class="scorebox"><div class="pct">${summary.overall_pct ?? '—'}%</div>
+        <div><div class="lab">${esc(summary.maturity_label)}</div>
+        <div>${summary.counts.non_compliant} Non-Compliant (${statusPct(summary.counts.non_compliant)}) ·
+        ${summary.counts.under_review} Under Review (${statusPct(summary.counts.under_review)}) ·
+        ${summary.counts.partial} Partially Compliant (${statusPct(summary.counts.partial)}) ·
+        ${summary.counts.fully_compliant} Compliant (${statusPct(summary.counts.fully_compliant)})</div></div>
       </div>
-      ${baseline}<h3>Assessment dashboard</h3>${dash}${actions}`;
+      <p><b>Risk population:</b> ${summary.risk_counts.Critical} Critical · ${summary.risk_counts.High} High ·
+      ${summary.risk_counts.Medium} Medium · ${summary.risk_counts.Low} Low.</p>
+      ${baseline}<h3>Assessment dashboard</h3>${dashboard}${actions}`;
   }
 
-  function domainsSection(p: ReportPayload, n: (k: string) => string | null): string {
-    return p.domains.map(d => {
-      const hasIso = d.rows.some(r => r.ref_b);
+  function companyProfileSection(report: ReportPayload): string {
+    const profile = report.structured.company_profile;
+    return `${para(narrative('company_profile'))}${table(['Profile field', 'Assessment context'], [
+      ['Legal entity', esc(profile.legal_name)],
+      ['Registration number', esc(profile.registration_number || '—')],
+      ['Location', esc(profile.location || '—')],
+      ['Industry', esc(profile.industry || '—')],
+      ['Principal activities', esc(profile.activities || '—')],
+      ['Personal information categories', esc(profile.personal_information_categories.join(', ') || '—')],
+    ])}`;
+  }
+
+  function scopeSection(report: ReportPayload): string {
+    const scope = report.structured.scope;
+    const scale = report.spec.rating_scale;
+    const rating = scale
+      ? `<h3>Rating scale</h3>${table(
+        ['Status', 'Definition'], scale.statuses.map(status => [esc(status.label), esc(status.definition)]))}` +
+        table(['Risk priority', 'Definition'], scale.risks.map(risk => [esc(risk.key), esc(risk.definition)]))
+      : '';
+    return `${para(narrative('scope_methodology'))}
+      <h3>Objectives</h3>${list(scope.objectives)}
+      <h3>Methodology</h3>${list(scope.methodology)}
+      <h3>Scope limitations</h3>${list(scope.limitations)}
+      <h3>Out-of-scope domains</h3>${list(scope.out_of_scope_domains)}
+      ${rating}`;
+  }
+
+  function alignmentSection(report: ReportPayload): string | null {
+    const alignment = report.spec.alignment_table;
+    if (!alignment?.length) return null;
+    return table(
+      ['POPIA condition', 'Reference', 'ISO/IEC 27701 clause', 'ISO title'],
+      alignment.map(row => [
+        esc(row.condition), esc(row.reference), esc(row.iso_clause), esc(row.iso_title),
+      ]));
+  }
+
+  function domainsSection(report: ReportPayload): string | null {
+    if (!report.domains.length) return null;
+    return report.domains.map(domain => {
+      const hasIso = domain.rows.some(row => row.ref_b);
       const heads = hasIso
-        ? ['Ref', 'Control area', 'Reference', 'ISO 27701', 'Status', 'Risk']
+        ? ['Ref', 'Control area', 'POPIA reference', 'ISO 27701', 'Status', 'Risk']
         : ['Ref', 'Control area', 'Reference', 'Status', 'Risk'];
-      const rows = d.rows.map(r => {
-        const base = [r.ref, esc(r.control_area ?? '—') + `<br/><span style="color:#666">${esc(r.question)}</span>`, esc(r.ref_a)];
-        if (hasIso) base.push(esc(r.ref_b ?? '—'));
-        return [...base, statusCell(r.status), sevChip(r.risk)];
+      const rows = domain.rows.map(row => {
+        const base = [
+          esc(row.ref),
+          `${esc(row.control_area ?? '—')}<br/><span style="color:#666">${esc(row.question)}</span>`,
+          esc(row.ref_a),
+        ];
+        if (hasIso) base.push(esc(row.ref_b ?? '—'));
+        return [...base, statusCell(row.status), sevChip(row.risk)];
       });
-      const obs = n(`domain_obs:${d.section_id}`);
-      return `<h3>${esc(d.section_name)}${d.pct != null ? ` — ${d.pct}%` : ''}</h3>
-        ${table(heads, rows)}${obs ? `<p><b>Key observations.</b> ${esc(obs)}</p>` : ''}`;
+      const observations = narrative(`domain_obs:${domain.section_id}`);
+      return `<h3>${esc(domain.section_name)} — ${domain.rows.length} controls</h3>
+        ${table(heads, rows)}
+        ${observations ? `<p><b>Key observations.</b> ${esc(observations)}</p>` : ''}`;
     }).join('');
   }
 
-  function awarenessSection(p: ReportPayload): string | null {
-    const a = p.awareness as AwarenessData | null;
-    if (!a?.overall) return null;
-    const cov = a.coverage;
-    const lim = cov?.limitation
-      ? `<p><i>Coverage limitation: ${cov.cohorts_completed ?? 0} of ${cov.departments_planned ?? 'an unconfirmed number of'} departmental cohorts have been interviewed to date. These findings should be treated as indicative of organisation-wide risk rather than conclusive.</i></p>`
+  function awarenessSection(report: ReportPayload): string | null {
+    const awareness = report.awareness as AwarenessData | null;
+    if (!awareness?.overall) return null;
+    const coverage = awareness.coverage;
+    const limitation = coverage?.limitation
+      ? `<p><i>Coverage limitation: ${coverage.cohorts_completed ?? 0} of ` +
+        `${coverage.departments_planned ?? 'an unconfirmed number of'} departmental cohorts were completed. ` +
+        `The findings are indicative rather than conclusive for the whole organisation.</i></p>`
       : '';
-    const domains = a.domains?.length
-      ? table(['Domain', 'Answered', '% aligned', 'Risk'],
-          a.domains.map(d => [esc(d.name), String(d.answered), d.pct != null ? `${d.pct}%` : '—', sevChip((d.rating ?? '').replace(/^./, c => c.toUpperCase()) as Severity)]))
+    const domains = awareness.domains?.length
+      ? table(
+        ['Domain', 'Questions', '% aligned', 'Rating'],
+        awareness.domains.map(domain => [
+          esc(domain.name), String(domain.questions ?? domain.answered),
+          domain.pct != null ? `${domain.pct}%` : '—', esc(domain.rating),
+        ]))
       : '';
-    const hr = a.high_risk_questions?.length
-      ? `<h3>High-risk behaviours</h3>` + table(['Code', 'Behaviour', 'Aligned'],
-          a.high_risk_questions.map(q => [esc(q.code), esc(q.question), `${q.aligned}/${q.answered} (${q.pct ?? 0}%)`]))
+    const highRisk = awareness.high_risk_questions?.length
+      ? `<h3>High-risk behaviours</h3>${table(
+        ['Code', 'Behaviour', 'Aligned'],
+        awareness.high_risk_questions.map(question => [
+          esc(question.code), esc(question.question),
+          `${question.aligned}/${question.answered} (${question.pct ?? 0}%)`,
+        ]))}`
       : '';
-    const resp = (a.cohorts ?? []).map(c =>
-      `<h3>Cohort: ${esc(c.department)}${c.interviewed_on ? ` (${esc(fmtDate(c.interviewed_on))})` : ''}</h3>` +
-      table(['Respondent', 'Answered', '% aligned', 'Rating'],
-        (c.respondents ?? []).map(r => [`Respondent ${r.respondent_no}`, String(r.answered), `${r.pct}%`, esc(r.rating)]))
-    ).join('');
-    return `<p>Overall alignment: <b>${a.overall.pct ?? '—'}%</b> across ${a.overall.respondents ?? '—'} respondents (${esc(a.overall.rating ?? '—')} risk).</p>
-      ${lim}${domains}${hr}${resp}`;
+    return `<p>Overall alignment: <b>${awareness.overall.pct ?? '—'}%</b> across
+      ${awareness.overall.respondents ?? '—'} respondents (${esc(awareness.overall.rating ?? '—')}).</p>
+      ${limitation}${domains}${highRisk}`;
   }
 
-  function riskRegisterSection(p: ReportPayload): string | null {
-    if (!p.risk_register.length) return null;
-    return table(['#', 'Finding', 'Ref', 'Risk', 'Recommended action', 'Target'],
-      p.risk_register.map((f, i) => [
-        String(i + 1), esc(f.finding), f.ref, sevChip(f.severity),
-        esc(f.recommended_action ?? '—'), esc(f.target_window),
+  function riskRegisterSection(report: ReportPayload): string | null {
+    if (!report.risk_register.length) return null;
+    return table(
+      ['#', 'Finding', 'Source ref', 'Risk', 'Recommended action / target'],
+      report.risk_register.map((finding, index) => [
+        String(index + 1),
+        esc(finding.finding),
+        esc(finding.ref),
+        sevChip(finding.severity),
+        `${esc(finding.recommended_action ?? '—')} (${esc(finding.target_window)})`,
       ]));
   }
 
-  function roadmapSection(p: ReportPayload): string | null {
-    if (!p.roadmap.length) return null;
-    return p.roadmap.map(ph =>
-      `<h3>${esc(ph.window)}</h3><ul>${ph.items.map(i =>
-        `<li>${sevChip(i.severity)} <b>${i.ref}</b> — ${esc(i.action)}</li>`).join('')}</ul>`
+  function roadmapSection(report: ReportPayload): string | null {
+    if (!report.roadmap.length) return null;
+    return report.roadmap.map(phase =>
+      `<h3>${esc(phase.window)}</h3><ul>${phase.items.map(item =>
+        `<li>${sevChip(item.severity)} <b>${esc(item.ref)}</b> — ${esc(item.action)}</li>`).join('')}</ul>`
     ).join('');
   }
 
-  function documentationSection(p: ReportPayload): string | null {
-    const d = p.documentation_issued;
-    if (!d) return null;
-    const rows = d.rows.length
-      ? table(['Document', 'Type', 'Issued'], d.rows.map(r => [esc(r.title), esc(r.source), esc(fmtDate(r.issued_at))]))
-      : '<p><i>No documents have been issued from the platform yet.</i></p>';
-    return `<p>${d.slots_filled} of ${d.slots_required} required checklist slots are filled with confirmed documents.</p>${rows}`;
+  function documentationSection(report: ReportPayload): string | null {
+    const documentation = report.documentation_issued;
+    if (!documentation) return null;
+    const suites = documentation.suites.length
+      ? table(
+        ['Suite', 'Documents', 'Governing document'],
+        documentation.suites.map(suite => [
+          esc(suite.suite), esc(suite.documents), esc(suite.governing_document),
+        ]))
+      : '<p><i>No document-suite summary has been recorded.</i></p>';
+    const issued = documentation.rows.length
+      ? `<h3>Issued document inventory</h3>${table(
+        ['Document', 'Type', 'Issued'],
+        documentation.rows.map(row => [
+          esc(row.title), esc(row.source), esc(fmtDate(row.issued_at)),
+        ]))}`
+      : '';
+    return `<p><b>${documentation.total_documents}</b> controlled documents are represented in this report;
+      <b>${documentation.open_remediation_items}</b> remediation items remain open.</p>${suites}${issued}`;
   }
 
-  function classificationSection(p: ReportPayload, n: (k: string) => string | null): string | null {
-    const reg = mergedRegister;
-    if (!reg?.length) return null;
+  function classificationSection(report: ReportPayload): string | null {
+    if (!mergedRegister?.length) return null;
     const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
-    reg.forEach(r => { counts[r.cls] += 1; });
+    mergedRegister.forEach(row => { counts[row.cls] += 1; });
     const legend = table(['Class', 'Meaning', 'Items'], [
-      ['A', 'Closed by documentation — nothing further beyond formal approval.', String(counts.A)],
+      ['A', 'Closed by documentation — formal approval is the remaining evidence.', String(counts.A)],
       ['B', 'Documented — implementation required; the control is not yet operating.', String(counts.B)],
-      ['C', 'Implementation only — no document closes it.', String(counts.C)],
-      ['D', 'Further documentation and implementation both required.', String(counts.D)],
+      ['C', 'Implementation only — no document closes the item.', String(counts.C)],
+      ['D', 'Further documentation and implementation are both required.', String(counts.D)],
     ]);
-    return `${para(n('classification_register'))}${legend}` + table(
-      ['Ref', 'Control area', 'Class', 'Risk', 'Evidence required to close', 'Owner'],
-      reg.map(r => [
-        r.ref, esc(r.control_area ?? '—'),
-        `<b>${r.cls}</b>${r.cls_source === 'proposed' ? '<span style="color:#999">*</span>' : ''}`,
-        sevChip(r.severity), esc(r.evidence_required ?? '—'), esc(r.owner ?? '—'),
-      ])) + `<p style="color:#777;font-size:11px">* proposed classification — pending advisor confirmation.</p>`;
-  }
-
-  function residualSection(p: ReportPayload): string | null {
-    const rr = mergedResidual;
-    if (!rr?.length) return null;
-    return `<p>Until the programme is delivered, the following exposures remain live (classes B, C and D — a written control is not an operating one).</p>` +
-      table(['Ref', 'Exposure', 'Class', 'Risk', 'Closed by'],
-        rr.map(r => [r.ref, esc(r.control_area ?? '—'), r.cls, sevChip(r.severity), esc(r.evidence_required ?? '—')]));
-  }
-
-  function alignmentSection(p: ReportPayload): string | null {
-    const at = p.spec.alignment_table;
-    if (!at?.length) return null;
-    return table(['Condition', 'Reference', 'ISO/IEC 27701 clause', ''],
-      at.map(r => [esc(r.condition), esc(r.reference), esc(r.iso_clause), esc(r.iso_title)]));
-  }
-
-  function deliverySection(p: ReportPayload): string | null {
-    const opts = p.spec.delivery_options;
-    if (!opts?.length) return null;
-    return table(['Route', 'Scope it can carry', 'Strength', 'Limitation'],
-      opts.map(o => [esc(o.route), esc(o.scope), esc(o.strength), esc(o.limitation)]));
-  }
-
-  function scopeSection(p: ReportPayload, n: (k: string) => string | null): string {
-    const rs = p.spec.rating_scale;
-    const legend = rs
-      ? `<h3>Rating scale</h3>` +
-        table(['Status', 'Definition'], rs.statuses.map(s => [esc(s.label), esc(s.definition)])) +
-        table(['Risk priority', 'Definition'], rs.risks.map(r => [esc(r.key), esc(r.definition)]))
+    const register = table(
+      ['Ref', 'Item', 'Class', 'Document now covering it', 'Evidence required to close', 'Owner', 'Workstream'],
+      mergedRegister.map(row => [
+        esc(row.ref),
+        esc(row.item),
+        `<b>${row.cls}</b>${row.cls_source === 'proposed' ? '<span style="color:#999">*</span>' : ''}`,
+        esc(row.documents_covering.join(', ') || 'None'),
+        esc(row.evidence_required ?? '—'),
+        esc(row.owner ?? '—'),
+        esc(row.workstream),
+      ]));
+    const outstanding = report.outstanding_documents?.length
+      ? `<h3>Further documentation required</h3>${table(
+        ['Document', 'Current position', 'Ref'],
+        report.outstanding_documents.map(item => [
+          esc(item.document), esc(item.position), esc(item.ref),
+        ]))}`
       : '';
-    return `${para(n('scope_methodology'))}${legend}`;
+    return `${para(narrative('classification_register'))}${legend}${register}${outstanding}
+      ${mergedRegister.some(row => row.cls_source === 'proposed')
+        ? '<p style="color:#777;font-size:11px">* proposed classification — approval is blocked pending advisor confirmation.</p>'
+        : ''}`;
   }
 
-  function appendicesSection(p: ReportPayload): string {
-    const docs = p.appendices.documents_reviewed.length
-      ? `<h3>Appendix A: Documents reviewed</h3>` +
-        table(['Document', 'Uploaded'], p.appendices.documents_reviewed.map(d => [esc(d.filename), esc(fmtDate(d.uploaded_at))]))
+  function implementationProgrammeSection(report: ReportPayload): string | null {
+    const programme = report.implementation_programme;
+    if (!programme?.length) return null;
+    return programme.map(workstream =>
+      `<h3>Workstream ${workstream.number}: ${esc(workstream.title)}</h3>
+       ${table(['Items', 'Window', 'Owner'], [[
+         esc(workstream.item_refs.join(', ') || 'To be assigned'),
+         esc(workstream.window),
+         esc(workstream.owner),
+       ]])}
+       <h3>Actions</h3>${list(workstream.actions)}
+       ${workstream.dependencies ? `<p><b>Dependencies.</b> ${esc(workstream.dependencies)}</p>` : ''}`
+    ).join('');
+  }
+
+  function deliverySection(report: ReportPayload): string | null {
+    const options = report.structured.delivery_options;
+    const cadence = report.structured.delivery_cadence;
+    if (!options.length && !cadence.length) return null;
+    const optionTable = options.length
+      ? table(
+        ['Route', 'Scope it can carry', 'Strength', 'Limitation'],
+        options.map(option => [
+          esc(option.route), esc(option.scope), esc(option.strength), esc(option.limitation),
+        ]))
       : '';
-    const legend = Array.isArray(p.appendices.framework_legend)
-      ? `<h3>Appendix B: Standards referenced</h3>` +
-        table(['Framework', 'Applicability', ''],
-          (p.appendices.framework_legend as { framework?: string; applicability?: string; description?: string }[])
-            .map(l => [esc(l.framework), esc(l.applicability), esc(l.description)]))
+    const cadenceTable = cadence.length
+      ? `<h3>Standing cadence</h3>${table(
+        ['Cycle', 'Activity', 'Evidence produced'],
+        cadence.map(item => [esc(item.cycle), esc(item.activity), esc(item.evidence)]))}`
       : '';
-    return docs + legend || '<p><i>No appendices.</i></p>';
+    return optionTable + cadenceTable;
+  }
+
+  function residualSection(report: ReportPayload): string | null {
+    const exposures = report.residual_risk;
+    if (!exposures?.length) return null;
+    return `<p>These exposures remain live until the identified implementation evidence is produced.</p>${table(
+      ['Exposure', 'Why it matters now', 'Closed by'],
+      exposures.map(exposure => [
+        esc(exposure.exposure), esc(exposure.why_it_matters), esc(exposure.closed_by),
+      ]))}`;
+  }
+
+  function appendicesSection(report: ReportPayload): string {
+    const documents = report.appendices.documents_reviewed.length
+      ? `<h3>Appendix A: Documents reviewed</h3>${table(
+        ['Document', 'Version / date'],
+        report.appendices.documents_reviewed.map(document => [
+          esc(document.document), esc(document.version_date || '—'),
+        ]))}`
+      : '<h3>Appendix A: Documents reviewed</h3><p><i>No reviewed documents recorded.</i></p>';
+    const respondents = report.appendices.awareness_respondents.length
+      ? `<h3>Appendix B: Awareness respondents</h3>${table(
+        ['Respondent', 'Questions answered', '% aligned', 'Rating'],
+        report.appendices.awareness_respondents.map(respondent => [
+          esc(respondent.respondent), String(respondent.questions_answered),
+          `${respondent.pct_aligned}%`, esc(respondent.rating),
+        ]))}`
+      : '<h3>Appendix B: Awareness respondents</h3><p><i>No awareness cohort recorded.</i></p>';
+    const legend = Array.isArray(report.appendices.framework_legend)
+      ? `<h3>Appendix C: Standards referenced</h3>${table(
+        ['Framework', 'Applicability', 'Description'],
+        (report.appendices.framework_legend as {
+          framework?: string; applicability?: string; description?: string;
+        }[]).map(item => [
+          esc(item.framework), esc(item.applicability), esc(item.description),
+        ]))}`
+      : '';
+    return documents + respondents + legend;
   }
 }
+
+export const reportRegisterCounts = (register: ClassRegisterRow[]) =>
+  register.reduce<Record<string, number>>((counts, row) => {
+    counts[row.cls] = (counts[row.cls] ?? 0) + 1;
+    return counts;
+  }, {});

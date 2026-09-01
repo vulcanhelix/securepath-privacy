@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "next dev -p 3100",
     "build": "next build",
+    "test:report": "tsx --test lib/report/*.test.mts",
     "start": "next start"
   },
   "dependencies": {
@@ -18,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
+    "tsx": "4.23.12",
     "typescript": "^5.8.0"
   }
 }

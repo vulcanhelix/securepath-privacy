@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 
-const validResponses = ['fully_compliant', 'partial', 'non_compliant', 'na'];
+const validResponses = ['fully_compliant', 'partial', 'under_review', 'non_compliant', 'na'];
 const validStatuses = ['not_started', 'in_progress', 'complete', 'na'];
 
 export async function GET(

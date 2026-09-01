@@ -49,7 +49,15 @@ const payload = buildReportPayload(inputs as never, {});
 // counts: 1 nc, 1 partial, 1 fc, 1 na, 1 not_assessed
 assert.deepEqual(
   { ...payload.summary.counts },
-  { fully_compliant: 1, partial: 1, non_compliant: 1, na: 1, not_assessed: 1, total: 5 });
+  {
+    fully_compliant: 1,
+    partial: 1,
+    under_review: 0,
+    non_compliant: 1,
+    na: 1,
+    not_assessed: 1,
+    total: 5,
+  });
 // severity matrix: Critical x non_compliant = Critical finding; Critical x na = closed
 assert.equal(payload.summary.critical_count, 1);
 assert.equal(payload.domains.length, 2);
@@ -91,8 +99,9 @@ assert.ok(html1.includes('Consolidated Risk Register'));
 assert.ok(html1.includes('What Documentation Cannot Close'));
 assert.ok(!html1.includes('id="delivery'), 'no stray markup');
 assert.ok(html1.includes('--accent: #123456'));
-// no awareness data -> section dropped
-assert.ok(!html1.includes('Awareness — People Risk</h2>'));
+// Declared sections remain visible even when evidence is absent.
+assert.ok(html1.includes('Awareness — People Risk</h2>'));
+assert.ok(html1.includes('No evidence or advisor content was recorded for this section.'));
 // classification overrides saved AFTER the last compile still render (payload holds the
 // proposal, overrides carry the decision — preview and issue must show the decision)
 const p3 = buildReportPayload(inputs as never, {});

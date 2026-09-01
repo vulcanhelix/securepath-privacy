@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const framework: string = body?.framework || 'popia';
 
   const { data: client } = await supabase.from('client_orgs')
-    .select('name, org_scale').eq('id', id).maybeSingle();
+    .select('name, registration_no, industry, contact_name, org_scale').eq('id', id).maybeSingle();
   if (!client) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
   // chain: every report for this client+framework (prior payload summaries feed movement)
@@ -66,27 +66,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .eq('client_org_id', id).eq('source', 'upload').order('created_at'),
     supabase.from('document_checklists').select('id, required').eq('framework_key', framework),
     supabase.from('document_links').select('checklist_id, status').eq('client_org_id', id),
+    supabase.from('tasks')
+      .select('theme, title, description, responsible, output, priority, owner, due_date, status')
+      .eq('client_org_id', id).order('created_at'),
   ]);
   const dbErr = results.map(r => r.error).find(Boolean);
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
   const [
     { data: session }, { data: pack }, { data: practice }, { data: track },
     { data: responses }, { data: issuedDocs }, { data: uploads },
-    { data: checklist }, { data: links },
+    { data: checklist }, { data: links }, { data: tasks },
   ] = results;
 
-  // questions of the report's pinned pack, scoped like assessment_question_in_scope():
-  // popia always excludes the staff section (11); org-scale filters the large-only extras
+  const spec = resolveSpec(pack?.metadata ?? null);
+
+  // Questions are pinned to the report pack and filtered by the report spec. The same
+  // exact population is used by the compiler for domain and overall calculations.
   let qq = supabase.from('assessment_questions')
     .select('id, uid, section_id, section_name, subsection, question_number, question, regulatory_ref, risk, evidence_req, remediation')
     .eq('content_pack_id', report.content_pack_id)
     .in('applies_to', ['all', session?.org_scale ?? client.org_scale ?? 'sme']);
-  if (framework === 'popia') qq = qq.neq('section_id', 11);
+  if (spec.assessment_scope?.section_ids.length) {
+    qq = qq.in('section_id', spec.assessment_scope.section_ids);
+  } else if (framework === 'popia') {
+    qq = qq.neq('section_id', 11);
+  }
   const { data: questions } = await qq;
   if (!questions?.length) return NextResponse.json({ error: 'no questions in the report pack' }, { status: 500 });
-
-  const { data: score, error: scoreErr } = await supabase.rpc('calculate_assessment_score', { p_session_id: report.session_id });
-  if (scoreErr) return NextResponse.json({ error: scoreErr.message }, { status: 500 });
 
   // awareness is optional machinery — any error (including function-not-yet-deployed) = no section
   let awareness: unknown = null;
@@ -96,14 +102,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch { /* not installed */ }
 
   const payload = buildReportPayload({
-    spec: resolveSpec(pack?.metadata ?? null),
+    spec,
     kind: report.kind, version: report.version, framework,
-    clientName: client.name, practiceName: practice?.name ?? null,
+    clientName: client.name,
+    registrationNumber: client.registration_no,
+    industry: client.industry,
+    contactName: client.contact_name,
+    practiceName: practice?.name ?? null,
     session: {
       org_name: session?.org_name ?? null, auditor_name: session?.auditor_name ?? null,
       audit_date: session?.audit_date ?? null, audit_ref: session?.audit_ref ?? null,
     },
-    score: score ?? null,
+    score: null,
     questions: (questions ?? []) as QuestionRow[],
     responses: (responses ?? []) as ResponseRow[],
     track: track ?? null,
@@ -115,6 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     checklist: checklist ?? [],
     confirmedChecklistIds: new Set((links ?? []).filter(l => l.status === 'confirmed').map(l => l.checklist_id)),
     uploads: uploads ?? [],
+    tasks: tasks ?? [],
     frameworkLegend: (pack?.metadata as { framework_legend?: unknown } | null)?.framework_legend ?? null,
     awareness,
   }, (report.overrides ?? {}) as ReportOverrides);

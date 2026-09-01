@@ -9,7 +9,9 @@ import { Alert } from '@/components/ui/Alert';
 import { Select, Textarea } from '@/components/ui/forms';
 import { DataTable } from '@/components/ui/DataTable';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { ClassRegisterRow, RegisterClass, ReportOverrides, ReportPayload } from '@/lib/report/types';
+import type {
+  ClassRegisterRow, Finding, RegisterClass, ReportOverrides, ReportPayload, StructuredReportData,
+} from '@/lib/report/types';
 
 type ReportRow = {
   id: string; version: number; kind: string; title: string; approval_status: string;
@@ -36,9 +38,17 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
-  const [overrides, setOverrides] = useState<ReportOverrides>(working?.overrides ?? {});
-  const [dirty, setDirty] = useState(false);
   const payload = working?.payload ?? null;
+  const [overrides, setOverrides] = useState<ReportOverrides>(working?.overrides ?? {});
+  const [structuredText, setStructuredText] = useState(
+    JSON.stringify(working?.overrides?.structured ?? payload?.structured ?? {}, null, 2),
+  );
+  const [riskRegisterText, setRiskRegisterText] = useState(
+    JSON.stringify(working?.overrides?.risk_register ?? payload?.risk_register ?? [], null, 2),
+  );
+  const [structuredError, setStructuredError] = useState<string | null>(null);
+  const [riskRegisterError, setRiskRegisterError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const isDraft = !!working && ['draft_ai', 'draft_human'].includes(working.approval_status);
   const hasIssued = archive.some(r => r.approval_status === 'issued' || r.approval_status === 'superseded');
   const [kind, setKind] = useState(hasIssued ? 'post_documentation' : 'gap_assessment');
@@ -48,6 +58,43 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
   const excluded = useMemo(() => new Set(overrides.sections_excluded ?? []), [overrides]);
 
   function edit(next: ReportOverrides) { setOverrides(next); setDirty(true); }
+
+  function editStructured(value: string) {
+    setStructuredText(value);
+    setDirty(true);
+    try {
+      const structured = JSON.parse(value) as Partial<StructuredReportData>;
+      setOverrides(current => ({ ...current, structured }));
+      setStructuredError(null);
+    } catch {
+      setStructuredError('Structured report data must be valid JSON.');
+    }
+  }
+
+  function editRiskRegister(value: string) {
+    setRiskRegisterText(value);
+    setDirty(true);
+    try {
+      const risk_register = JSON.parse(value) as Finding[];
+      if (!Array.isArray(risk_register)) throw new Error('not an array');
+      setOverrides(current => ({ ...current, risk_register }));
+      setRiskRegisterError(null);
+    } catch {
+      setRiskRegisterError('Risk register must be a valid JSON array.');
+    }
+  }
+
+  function confirmAllClasses() {
+    if (!payload?.classification_register) return;
+    const classification = { ...overrides.classification };
+    payload.classification_register.forEach(row => {
+      classification[row.uid] = {
+        ...classification[row.uid],
+        cls: classification[row.uid]?.cls ?? row.cls,
+      };
+    });
+    edit({ ...overrides, classification });
+  }
 
   async function compile() {
     setBusy(true); setMsg({});
@@ -62,7 +109,7 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
   }
 
   async function saveOverrides() {
-    if (!working) return;
+    if (!working || structuredError || riskRegisterError) return;
     setBusy(true); setMsg({});
     const { error } = await browserClient().rpc('update_assessment_report_overrides', {
       p_report_id: working.id, p_overrides: overrides,
@@ -148,19 +195,47 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
             {isDraft && <Button size="sm" variant="secondary" disabled={busy} onClick={compile}>
               {working.compiled_at ? 'Recompile data' : 'Compile'}
             </Button>}
-            {isDraft && dirty && <Button size="sm" disabled={busy} onClick={saveOverrides}>Save edits</Button>}
+            {isDraft && dirty &&
+              <Button size="sm" disabled={busy || !!structuredError || !!riskRegisterError} onClick={saveOverrides}>Save edits</Button>}
             {working.compiled_at && (
               <a href={`/api/clients/${clientOrgId}/assessment-report/preview?report=${working.id}`} target="_blank" rel="noreferrer">
                 <Button size="sm" variant="secondary">Preview / print</Button>
               </a>
             )}
             {isDraft && working.compiled_at && !dirty &&
-              <Button size="sm" disabled={busy} onClick={approve}>Approve</Button>}
+              <Button
+                size="sm"
+                disabled={busy || !overrides.accuracy_confirmed || (payload?.quality?.proposed_classifications ?? 0) > 0}
+                onClick={approve}
+              >
+                Approve
+              </Button>}
             {working.approval_status === 'approved' && canIssue &&
               <Button size="sm" disabled={busy} onClick={issue} cta>Issue v{working.version}</Button>}
           </div>
           {msg.err && <Alert tone="err">{msg.err}</Alert>}
           {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
+        </Card>
+      )}
+
+      {isAdvisor && isDraft && payload && (
+        <Card title="Accuracy gate" pad={20} style={{ marginBottom: 24 }}>
+          <p style={{ color: 'var(--muted)', fontSize: 'var(--fs-xs)', marginTop: 0 }}>
+            Approval is blocked until every remediation classification is advisor-confirmed and the
+            compiled report has been checked against the source evidence.
+          </p>
+          {(payload.quality?.issues ?? []).map(issue => <Alert key={issue} tone="info">{issue}</Alert>)}
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12 }}>
+            <input
+              type="checkbox"
+              checked={overrides.accuracy_confirmed === true}
+              onChange={event => edit({ ...overrides, accuracy_confirmed: event.target.checked })}
+            />
+            <span>
+              I have reviewed the control population, calculations, findings and structured report
+              data against the source evidence.
+            </span>
+          </label>
         </Card>
       )}
 
@@ -207,7 +282,12 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
       )}
 
       {isAdvisor && isDraft && payload?.classification_register?.length ? (
-        <Card title="Classification register (A–D)" pad={0} style={{ marginBottom: 24 }}>
+        <Card
+          title="Classification register (A–D)"
+          action={<Button size="sm" variant="secondary" onClick={confirmAllClasses}>Confirm all proposed</Button>}
+          pad={0}
+          style={{ marginBottom: 24 }}
+        >
           <DataTable
             columns={[{ label: 'Ref' }, { label: 'Control area' }, { label: 'Risk' }, { label: 'Class' }, { label: 'Evidence required' }]}
             rows={payload.classification_register.map((row: ClassRegisterRow) => {
@@ -236,6 +316,37 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
           />
         </Card>
       ) : null}
+
+      {isAdvisor && isDraft && payload && (
+        <Card title="Consolidated risk register" pad={20} style={{ marginBottom: 24 }}>
+          <p style={{ color: 'var(--muted)', fontSize: 'var(--fs-xs)', marginTop: 0 }}>
+            Group assessment, awareness and advisor findings into the evidence-backed report register.
+          </p>
+          <Textarea
+            rows={18}
+            value={riskRegisterText}
+            onChange={event => editRiskRegister(event.target.value)}
+            className="mono"
+          />
+          {riskRegisterError && <Alert tone="err">{riskRegisterError}</Alert>}
+        </Card>
+      )}
+
+      {isAdvisor && isDraft && payload && (
+        <Card title="Structured consultant report data" pad={20} style={{ marginBottom: 24 }}>
+          <p style={{ color: 'var(--muted)', fontSize: 'var(--fs-xs)', marginTop: 0 }}>
+            Edit the evidence-backed profile, document suites, R-register, workstreams, delivery
+            cadence, residual exposures and appendices. Recompile after saving.
+          </p>
+          <Textarea
+            rows={24}
+            value={structuredText}
+            onChange={event => editStructured(event.target.value)}
+            className="mono"
+          />
+          {structuredError && <Alert tone="err">{structuredError}</Alert>}
+        </Card>
+      )}
 
       <Card title="Version history" action={<span className="mono" style={{ fontSize: 'var(--fs-xs)', color: 'var(--faint)' }}>corrections are new versions</span>} pad={0}>
         {archive.length === 0 ? (

@@ -43,14 +43,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   let logo: string | null = practice?.logo_url ?? null;
   if (logo && !isSafeLogoUrl(logo)) logo = null;
   if (logo) {
+    const sourceLogo = logo;
+    logo = null;
     try {
-      const res = await fetch(logo, { signal: AbortSignal.timeout(5000), redirect: 'error' });
+      const res = await fetch(sourceLogo, { signal: AbortSignal.timeout(5000), redirect: 'error' });
       const type = res.headers.get('content-type') ?? '';
       if (res.ok && type.startsWith('image/')) {
         const buf = Buffer.from(await res.arrayBuffer());
         if (buf.length <= 512 * 1024) logo = `data:${type};base64,${buf.toString('base64')}`;
       }
-    } catch { /* keep the URL — artifact still renders without the image */ }
+    } catch { /* issue without a logo rather than archiving an external dependency */ }
   }
 
   const html = renderReportHtml(
