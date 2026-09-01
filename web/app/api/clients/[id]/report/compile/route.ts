@@ -19,8 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const [{ data: track }, { data: tasks }, { data: docs }] = await Promise.all([
     supabase.from('tracks').select('baseline_pct, baseline_rating, baseline_at')
       .eq('client_org_id', id).eq('track_kind', 'privacy').maybeSingle(),
-    supabase.from('tasks').select('priority, status').eq('client_org_id', id),
+    supabase.from('tasks').select('title, priority, status').eq('client_org_id', id),
     supabase.from('documents').select('original_filename, created_at').eq('client_org_id', id)
+      .neq('source', 'upload') // evidence uploads are not platform-issued documents
       .order('created_at', { ascending: false }),
   ]);
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     '',
     '## Outstanding critical & high items',
     openCritHigh.length
-      ? openCritHigh.map(t => `- ${t.priority.toUpperCase()}: task pending`).join('\n')
+      ? openCritHigh.map(t => `- ${t.priority.toUpperCase()}: ${t.title}`).join('\n')
       : '_All critical and high items are complete._',
     '',
     '## Next period',
