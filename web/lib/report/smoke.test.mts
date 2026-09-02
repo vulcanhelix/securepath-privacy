@@ -1,7 +1,7 @@
 // Smallest runnable check for the report pipeline: fixture -> payload -> HTML.
 // Run: npx tsx web/lib/report/smoke.test.mts   (no framework — plain asserts)
 import assert from 'node:assert';
-import { buildReportPayload } from './compile';
+import { buildReportPayload, rebaseReportIdentity } from './compile';
 import { renderReportHtml } from './render';
 import { DEFAULT_REPORT_SPEC, resolveSpec } from './spec';
 import { validateReportOverrides } from './validate';
@@ -88,6 +88,37 @@ const row = p2.classification_register!.find(r => r.uid === 't.s1.q01')!;
 assert.equal(row.cls, 'C');
 assert.equal(row.cls_source, 'advisor');
 assert.equal(row.owner, 'IT');
+
+const rebasedOverrides = rebaseReportIdentity(validateReportOverrides({
+  narratives: {
+    conclusion: 'Legacy Client remains responsible for closing the programme.',
+  },
+  structured: {
+    cover: {
+      prepared_by: 'W. Despard',
+      attention: null,
+      scope_of_version: 'Legacy Client reassessment.',
+      confidentiality_statement: 'Confidential to Legacy Client.',
+    },
+    company_profile: {
+      legal_name: 'Legacy Client',
+      registration_number: 'OLD-001',
+      location: null,
+      industry: null,
+      activities: null,
+      personal_information_categories: [],
+    },
+  },
+}), ['Legacy Client'], inputs.clientName);
+const identityPayload = buildReportPayload({
+  ...inputs,
+  registrationNumber: 'NEW-001',
+  session: { ...inputs.session, org_name: 'Legacy Client' },
+} as never, rebasedOverrides);
+assert.ok(!JSON.stringify(identityPayload).includes('Legacy Client'));
+assert.equal(identityPayload.cover.org_name, inputs.clientName);
+assert.equal(identityPayload.structured.company_profile.legal_name, inputs.clientName);
+assert.equal(identityPayload.structured.company_profile.registration_number, 'NEW-001');
 
 // residual exposures must explain the exposure, never restate it
 for (const exposure of p2.residual_risk ?? []) {

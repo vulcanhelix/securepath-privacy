@@ -37,7 +37,7 @@ export default async function AssessmentReportPreview({
   return (
     <>
       <PageHeader
-        title={`${client.name} — ${report.title}`}
+        title={`${client.name} — ${report.framework_key.toUpperCase()} Compliance Assessment Report`}
         back="Assessment reports"
         backHref={`/clients/${id}/assessment-report${frameworkQuery}`}
         meta="Review the client deliverable in the SecurePath workspace, then download the print-formatted A4 PDF."

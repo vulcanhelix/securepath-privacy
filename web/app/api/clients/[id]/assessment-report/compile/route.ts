@@ -2,9 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 import { trackKindFor } from '@/lib/track';
 import { resolveSpec } from '@/lib/report/spec';
-import { buildReportPayload, type QuestionRow, type ResponseRow } from '@/lib/report/compile';
+import {
+  buildReportPayload, rebaseReportIdentity, type QuestionRow, type ResponseRow,
+} from '@/lib/report/compile';
 import { validateReportOverrides } from '@/lib/report/validate';
-import type { ReportOverrides } from '@/lib/report/types';
+import type { ReportOverrides, ReportPayload } from '@/lib/report/types';
 
 // Compile (or recompile) the working assessment report for a client+framework.
 // Creates the next version in the chain if no working draft exists, gathers a full
@@ -110,6 +112,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       error: error instanceof Error ? error.message : 'Report overrides are malformed.',
     }, { status: 400 });
   }
+  const previousPayload = report.payload as ReportPayload | null;
+  overrides = rebaseReportIdentity(overrides, [
+    previousPayload?.cover.client_name,
+    previousPayload?.cover.org_name,
+    report.title.split(' — ')[0],
+    session?.org_name,
+    overrides.structured?.company_profile?.legal_name,
+  ], client.name);
 
   const payload = buildReportPayload({
     spec,

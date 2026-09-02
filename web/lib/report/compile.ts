@@ -170,6 +170,31 @@ const mergeStructured = (
   awareness_respondents: override?.awareness_respondents ?? base.awareness_respondents,
 });
 
+export function rebaseReportIdentity(
+  overrides: ReportOverrides,
+  previousNames: (string | null | undefined)[],
+  currentName: string,
+): ReportOverrides {
+  const identities = [...new Set(previousNames
+    .map(name => name?.trim())
+    .filter((name): name is string =>
+      Boolean(name) && name !== currentName && !currentName.includes(name!)))]
+    .sort((a, b) => b.length - a.length);
+  if (!identities.length) return overrides;
+
+  const rewrite = (value: unknown): unknown => {
+    if (typeof value === 'string') {
+      return identities.reduce((text, identity) => text.split(identity).join(currentName), value);
+    }
+    if (Array.isArray(value)) return value.map(rewrite);
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, rewrite(item)]));
+    }
+    return value;
+  };
+  return rewrite(overrides) as ReportOverrides;
+}
+
 export function buildReportPayload(inputs: CompileInputs, overrides: ReportOverrides): ReportPayload {
   const { spec } = inputs;
   const responseByQuestion = new Map(inputs.responses.map(response => [response.question_id, response]));
@@ -337,7 +362,7 @@ export function buildReportPayload(inputs: CompileInputs, overrides: ReportOverr
       closed_by: row.ref,
     }));
 
-  const structured = mergeStructured({
+  const mergedStructured = mergeStructured({
     cover: {
       prepared_by: inputs.session.auditor_name || inputs.practiceName,
       attention: inputs.contactName ?? null,
@@ -381,6 +406,14 @@ export function buildReportPayload(inputs: CompileInputs, overrides: ReportOverr
     })),
     awareness_respondents: defaultAwarenessRespondents,
   }, overrides.structured);
+  const structured: StructuredReportData = {
+    ...mergedStructured,
+    company_profile: {
+      ...mergedStructured.company_profile,
+      legal_name: inputs.clientName,
+      registration_number: inputs.registrationNumber ?? mergedStructured.company_profile.registration_number,
+    },
+  };
 
   const classificationRegister = isV2 ? structured.remediation_register : null;
   const proposedClassifications = classificationRegister?.filter(row => row.cls_source === 'proposed').length ?? 0;
@@ -405,7 +438,7 @@ export function buildReportPayload(inputs: CompileInputs, overrides: ReportOverr
   } : null;
 
   const vars = {
-    org_name: inputs.session.org_name || inputs.clientName,
+    org_name: inputs.clientName,
     auditor_name: inputs.session.auditor_name,
     audit_date: inputs.session.audit_date,
     overall_pct: overallPct,
@@ -437,7 +470,7 @@ export function buildReportPayload(inputs: CompileInputs, overrides: ReportOverr
     },
     cover: {
       client_name: inputs.clientName,
-      org_name: inputs.session.org_name,
+      org_name: inputs.clientName,
       auditor_name: inputs.session.auditor_name,
       audit_date: inputs.session.audit_date,
       audit_ref: inputs.session.audit_ref,
