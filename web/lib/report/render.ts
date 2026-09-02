@@ -108,46 +108,209 @@ export function renderReportHtml(
 <html lang="en"><head><meta charset="utf-8"/>
 <title>${esc(payload.cover.client_name)} — ${esc(payload.meta.framework.toUpperCase())} Assessment Report v${payload.meta.version}</title>
 <style>
-  :root { --accent: ${accent}; }
+  :root {
+    --accent: ${accent};
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --inset: #ededed;
+    --border: #e4e4e4;
+    --border-strong: #d2d2d2;
+    --text: #000000;
+    --text-2: rgba(0, 0, 0, .7);
+    --muted: rgba(0, 0, 0, .6);
+    --faint: rgba(0, 0, 0, .45);
+    --panel: #2b2644;
+    --pass: #1a5c46;
+    --pass-soft: #eaf1ee;
+    --pass-border: #bfd6cd;
+    --warn: #85681a;
+    --warn-soft: #f4eedb;
+    --warn-border: #dccfa3;
+    --fail: #96302c;
+    --fail-soft: #f6eae9;
+    --fail-border: #e2c4c1;
+    --info: #2b2644;
+    --info-soft: #ecebf1;
+  }
   * { box-sizing: border-box; margin: 0; }
-  body { font: 13px/1.55 Georgia, 'Times New Roman', serif; color: #1b1b1b; background: #fff;
-         max-width: 860px; margin: 0 auto; padding: 24px; }
-  h1 { font-size: 26px; line-height: 1.25; }
-  h2 { font-size: 18px; color: var(--accent); border-bottom: 2px solid var(--accent);
-       padding-bottom: 4px; margin: 0 0 12px; break-after: avoid; }
-  h3 { font-size: 14px; margin: 14px 0 6px; break-after: avoid; }
-  p { margin: 0 0 8px; }
-  ul, ol { margin: 6px 0 12px 22px; }
-  li { margin-bottom: 4px; }
-  .sec { margin-top: 26px; }
-  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px;
-          font-family: Helvetica, Arial, sans-serif; font-size: 11.5px; page-break-inside: avoid; }
-  th { background: var(--accent); color: #fff; text-align: left; padding: 5px 7px; font-weight: 600; }
-  td { border: 1px solid #d8d8d8; padding: 5px 7px; vertical-align: top; }
-  tr:nth-child(even) td { background: #f7f7f5; }
-  .chip { display: inline-block; border: 1px solid; border-radius: 3px; padding: 0 5px;
-          font: 600 10px/1.6 Helvetica, Arial, sans-serif; white-space: nowrap; }
-  .st { font: 600 11px Helvetica, Arial, sans-serif; }
-  .st.ok { color: #2f6b2f; } .st.warn { color: #a16207; } .st.review { color: #1d4ed8; }
-  .st.bad { color: #b3261e; } .st.mut { color: #777; }
-  .cover { min-height: 85vh; display: flex; flex-direction: column; justify-content: center; }
-  .conf { display: inline-block; background: #b3261e; color: #fff;
-          font: 600 11px/1 Helvetica, Arial, sans-serif; letter-spacing: 2px;
-          padding: 6px 12px; border-radius: 3px; margin-bottom: 22px; align-self: flex-start; }
-  .cover .sub { color: #555; font-size: 15px; margin: 8px 0 26px; }
-  .cover .meta td:first-child { font-weight: 600; width: 32%; background: #f2f2ef; }
-  .scorebox { display: flex; gap: 26px; align-items: center; border: 2px solid var(--accent);
-              border-radius: 6px; padding: 14px 20px; margin: 10px 0 14px; }
-  .scorebox .pct { font: 600 44px/1 Helvetica, Arial, sans-serif; }
-  .scorebox .lab { font: 600 15px Helvetica, Arial, sans-serif; }
-  .logo { max-height: 56px; max-width: 220px; margin-bottom: 18px; }
-  .foot { color: #999; font: 10px Helvetica, Arial, sans-serif; text-align: right; margin-top: 30px; }
+  html { background: var(--bg); -webkit-font-smoothing: antialiased; }
+  body {
+    color: var(--text);
+    background: var(--bg);
+    font: 13px/1.6 'TT Norms Pro', Inter, 'Segoe UI', Helvetica, Arial, sans-serif;
+    padding: 40px 24px;
+  }
+  .report {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+  }
+  h1 {
+    font-size: 32px;
+    line-height: 1.14;
+    letter-spacing: -.03em;
+    font-weight: 500;
+  }
+  h2 {
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: -.02em;
+    font-weight: 500;
+    margin: 0 0 18px;
+    break-after: avoid;
+  }
+  h3 {
+    font-size: 15px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    break-after: avoid;
+  }
+  p { color: var(--text-2); margin: 0 0 10px; }
+  ul, ol { color: var(--text-2); margin: 8px 0 16px 22px; }
+  li { margin-bottom: 5px; }
+  .sec {
+    margin-top: 24px;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .sec > h2::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    margin-right: 10px;
+    border-radius: 999px;
+    background: var(--accent);
+    vertical-align: -2px;
+  }
+  table {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-spacing: 0;
+    border-collapse: separate;
+    border-radius: 12px;
+    margin: 10px 0 16px;
+    font-size: 11.5px;
+    overflow: hidden;
+  }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  th {
+    color: var(--faint);
+    background: var(--bg);
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    padding: 11px 12px 9px;
+    border-bottom: 1px solid var(--border);
+    font-size: 9.5px;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+  td {
+    color: var(--text-2);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  .chip {
+    display: inline-block;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 10px;
+    line-height: 1.35;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .st {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 10px;
+    line-height: 1.35;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .st.ok { color: var(--pass); background: var(--pass-soft); border-color: var(--pass-border); }
+  .st.warn { color: var(--warn); background: var(--warn-soft); border-color: var(--warn-border); }
+  .st.review { color: var(--info); background: var(--info-soft); border-color: var(--accent); }
+  .st.bad { color: var(--fail); background: var(--fail-soft); border-color: var(--fail-border); }
+  .st.mut { color: var(--muted); background: var(--bg); }
+  .cover {
+    min-height: 78vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 52px;
+    color: #fff;
+    background: var(--panel);
+    border-top: 8px solid var(--accent);
+    border-radius: 20px;
+  }
+  .brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 44px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .conf {
+    display: inline-block;
+    align-self: flex-start;
+    margin-bottom: 18px;
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, .3);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: .12em;
+    font-weight: 600;
+  }
+  .cover .sub { color: rgba(255, 255, 255, .7); font-size: 16px; margin: 10px 0 30px; }
+  .cover h3 { color: #fff; }
+  .cover p { color: rgba(255, 255, 255, .7) !important; }
+  .cover table { background: #fff; }
+  .cover .meta td:first-child { width: 32%; color: var(--faint); background: var(--bg); font-weight: 500; }
+  .scorebox {
+    display: flex;
+    gap: 26px;
+    align-items: center;
+    margin: 12px 0 18px;
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--accent);
+    border-radius: 12px;
+    background: var(--bg);
+  }
+  .scorebox .pct { font-size: 44px; line-height: 1; letter-spacing: -.04em; font-weight: 500; }
+  .scorebox .lab { color: var(--muted); font-size: 14px; font-weight: 500; }
+  .logo { max-height: 44px; max-width: 180px; }
+  .foot { color: var(--faint); font-size: 10px; text-align: right; margin-top: 24px; }
   @page { size: A4; margin: 16mm 14mm; }
-  @media print { body { padding: 0; max-width: none; } .cover { min-height: 92vh; } }
-</style></head><body>
+  @media print {
+    html, body { background: #fff; }
+    body { padding: 0; }
+    .report { max-width: none; padding: 0; border: 0; border-radius: 0; }
+    .cover { min-height: 92vh; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .sec { padding: 0; border: 0; border-radius: 0; }
+    th, .scorebox, .st { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style></head><body><main class="report">
 ${parts.join('\n')}
 <div class="foot">${esc(docRef)} · v${payload.meta.version} · CONFIDENTIAL</div>
-</body></html>`;
+</main></body></html>`;
 
   function coverSection(report: ReportPayload): string {
     const structured = report.structured.cover;
@@ -177,7 +340,10 @@ ${parts.join('\n')}
       ? `${report.meta.framework.toUpperCase()} & ISO/IEC 27701`
       : report.meta.framework.toUpperCase();
     return `<div class="cover">
-      ${logo ? `<img class="logo" src="${esc(logo)}" alt=""/>` : ''}
+      <div class="brand-lockup">
+        ${logo ? `<img class="logo" src="${esc(logo)}" alt=""/>` : ''}
+        <span>${esc(report.cover.practice_name || brand.practiceName)}</span>
+      </div>
       <span class="conf">CONFIDENTIAL</span>
       <h1>${esc(frameworkTitle)} Compliance Assessment Report</h1>
       <div class="sub">${esc(report.cover.client_name)}${report.cover.audit_date ? ` · ${esc(fmtDate(report.cover.audit_date))}` : ''}</div>

@@ -107,6 +107,13 @@ assert.ok(html1.includes('What Documentation Cannot Close'));
 assert.ok(html1.includes('Inherent risk across all 5 in-scope controls:'));
 assert.ok(!html1.includes('id="delivery'), 'no stray markup');
 assert.ok(html1.includes('--accent: #123456'));
+assert.ok(html1.includes('--bg: #f5f5f5'));
+assert.ok(html1.includes('<main class="report">'));
+assert.ok(html1.includes('class="brand-lockup"'));
+assert.ok(html1.includes("font: 13px/1.6 'TT Norms Pro'"));
+assert.ok(html1.includes('border-radius: 24px'));
+assert.ok(!html1.includes("Georgia, 'Times New Roman'"), 'report must use the app typography');
+assert.ok(!html1.includes('th { background: var(--accent)'), 'tables must use the app table styling');
 // Declared sections remain visible even when evidence is absent.
 assert.ok(html1.includes('Awareness — People Risk</h2>'));
 assert.ok(html1.includes('No evidence or advisor content was recorded for this section.'));
