@@ -8,11 +8,11 @@ const esc = (value: unknown): string =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 
 const SEV_COLOR: Record<Severity, string> = {
-  Critical: '#b3261e', High: '#c2410c', Medium: '#a16207', Low: '#3f6212',
+  Critical: 'var(--fail)', High: 'var(--fail)', Medium: 'var(--warn)', Low: 'var(--pass)',
 };
 const sevChip = (severity: Severity | string | null) => {
   if (!severity) return '—';
-  const color = SEV_COLOR[severity as Severity] ?? '#555';
+  const color = SEV_COLOR[severity as Severity] ?? 'var(--muted)';
   return `<span class="chip" style="color:${color};border-color:${color}">${esc(severity)}</span>`;
 };
 const statusCell = (status: string) => {
@@ -56,7 +56,7 @@ export function renderReportHtml(
   const excluded = new Set(overrides.sections_excluded ?? []);
   const narrative = (key: string) =>
     overrides.narratives?.[key] ?? payload.sections[key]?.narrative_default ?? null;
-  const accent = /^#[0-9a-fA-F]{6}$/.test(brand.accentHex ?? '') ? brand.accentHex! : '#1f3a5f';
+  const accent = /^#[0-9a-fA-F]{6}$/.test(brand.accentHex ?? '') ? brand.accentHex! : '#2b2644';
   const docRef = payload.cover.audit_ref || `${payload.meta.framework.toUpperCase()}-ASSESSMENT`;
   const logo = brand.logo?.startsWith('data:image/') ? brand.logo : null;
   const mergedRegister = payload.classification_register?.map(row => {
@@ -300,11 +300,28 @@ export function renderReportHtml(
   .foot { color: var(--faint); font-size: 10px; text-align: right; margin-top: 24px; }
   @page { size: A4; margin: 16mm 14mm; }
   @media print {
-    html, body { background: #fff; }
-    body { padding: 0; }
+    html, body { background: #fff; widows: 3; orphans: 3; }
+    body { padding: 0; font-size: 10.5pt; line-height: 1.45; }
     .report { max-width: none; padding: 0; border: 0; border-radius: 0; }
-    .cover { min-height: 92vh; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    .sec { padding: 0; border: 0; border-radius: 0; }
+    .cover {
+      min-height: 252mm;
+      break-after: page;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+    .sec {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      break-before: page;
+    }
+    h2, h3 { break-after: avoid-page; }
+    h2 + *, h3 + * { break-before: avoid-page; }
+    table { overflow: visible; border-radius: 0; }
+    thead { display: table-header-group; }
+    tr, .scorebox, li { break-inside: avoid-page; }
+    p { widows: 3; orphans: 3; }
     th, .scorebox, .st { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   }
 </style></head><body><main class="report">
@@ -348,7 +365,7 @@ ${parts.join('\n')}
       <h1>${esc(frameworkTitle)} Compliance Assessment Report</h1>
       <div class="sub">${esc(report.cover.client_name)}${report.cover.audit_date ? ` · ${esc(fmtDate(report.cover.audit_date))}` : ''}</div>
       <table class="meta"><tbody>${rows.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`).join('')}</tbody></table>
-      ${history}<p style="margin-top:16px;color:#555;font-size:11.5px">${esc(confidentiality)}</p>
+      ${history}<p style="margin-top:16px;font-size:11.5px">${esc(confidentiality)}</p>
     </div>`;
   }
 
@@ -435,7 +452,7 @@ ${parts.join('\n')}
       const rows = domain.rows.map(row => {
         const base = [
           esc(row.ref),
-          `${esc(row.control_area ?? '—')}<br/><span style="color:#666">${esc(row.question)}</span>`,
+          `${esc(row.control_area ?? '—')}<br/><span style="color:var(--muted)">${esc(row.question)}</span>`,
           esc(row.ref_a),
         ];
         if (hasIso) base.push(esc(row.ref_b ?? '—'));
@@ -535,7 +552,7 @@ ${parts.join('\n')}
       mergedRegister.map(row => [
         esc(row.ref),
         esc(row.item),
-        `<b>${row.cls}</b>${row.cls_source === 'proposed' ? '<span style="color:#999">*</span>' : ''}`,
+        `<b>${row.cls}</b>${row.cls_source === 'proposed' ? '<span style="color:var(--faint)">*</span>' : ''}`,
         esc(row.documents_covering.join(', ') || 'None'),
         esc(row.evidence_required ?? '—'),
         esc(row.owner ?? '—'),
@@ -550,7 +567,7 @@ ${parts.join('\n')}
       : '';
     return `${para(narrative('classification_register'))}${legend}${register}${outstanding}
       ${mergedRegister.some(row => row.cls_source === 'proposed')
-        ? '<p style="color:#777;font-size:11px">* proposed classification — approval is blocked pending advisor confirmation.</p>'
+        ? '<p style="color:var(--muted);font-size:11px">* proposed classification — approval is blocked pending advisor confirmation.</p>'
         : ''}`;
   }
 

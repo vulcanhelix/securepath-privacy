@@ -209,9 +209,13 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
             {isDraft && dirty &&
               <Button size="sm" disabled={busy || !!structuredError || !!riskRegisterError} onClick={saveOverrides}>Save edits</Button>}
             {working.compiled_at && (
-              <a href={`/api/clients/${clientOrgId}/assessment-report/preview?report=${working.id}`} target="_blank" rel="noreferrer">
-                <Button size="sm" variant="secondary">Preview / print</Button>
-              </a>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => router.push(`/clients/${clientOrgId}/assessment-report/preview?report=${working.id}`)}
+              >
+                View report
+              </Button>
             )}
             {isDraft && working.compiled_at && !dirty &&
               <Button
@@ -379,7 +383,7 @@ export default function Workbench({ clientOrgId, framework, isAdvisor, canIssue,
               <Badge key="s" tone={STATUS_TONE[r.approval_status] ?? 'neutral'}>{STATUS_LABEL[r.approval_status]}</Badge>,
               <span key="l">
                 {r.issued_document_id && (
-                  <a href={`/api/documents/${r.issued_document_id}?inline=1`} target="_blank" rel="noreferrer"
+                  <a href={`/clients/${clientOrgId}/assessment-report/preview?report=${r.id}`}
                      style={{ fontSize: 'var(--fs-xs)' }}>View</a>
                 )}
               </span>,

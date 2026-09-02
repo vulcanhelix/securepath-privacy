@@ -112,6 +112,10 @@ assert.ok(html1.includes('<main class="report">'));
 assert.ok(html1.includes('class="brand-lockup"'));
 assert.ok(html1.includes("font: 13px/1.6 'TT Norms Pro'"));
 assert.ok(html1.includes('border-radius: 24px'));
+assert.ok(html1.includes('break-after: page'));
+assert.ok(html1.includes('break-before: page'));
+assert.ok(html1.includes('display: table-header-group'));
+assert.ok(html1.includes('break-inside: avoid-page'));
 assert.ok(!html1.includes("Georgia, 'Times New Roman'"), 'report must use the app typography');
 assert.ok(!html1.includes('th { background: var(--accent)'), 'tables must use the app table styling');
 // Declared sections remain visible even when evidence is absent.
