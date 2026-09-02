@@ -75,6 +75,7 @@ jobs:
           APP_URL: http://127.0.0.1:8080
         run: |
           npm ci
+          npm run test:report
           npm run build
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public

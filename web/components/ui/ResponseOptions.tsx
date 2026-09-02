@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 export const RESPONSE_OPTIONS = [
   { value: 'fully_compliant', label: 'Yes – Fully Compliant', tone: 'pass', icon: 'check' },
   { value: 'partial', label: 'Yes – Partially Compliant', tone: 'warn', icon: 'minus' },
+  { value: 'under_review', label: 'Under Review – Evidence Pending', tone: 'neutral', icon: 'search' },
   { value: 'non_compliant', label: 'No – Non-Compliant', tone: 'fail', icon: 'x' },
   { value: 'na', label: 'N/A – Not Applicable', tone: 'neutral', icon: 'circle-slash' },
 ] as const;

@@ -1,0 +1,2698 @@
+{
+  "source": {
+    "title": "Puris_POPIA_ISO27701_Compliance_Assessment (2)",
+    "published_url": "https://docs.google.com/document/d/e/2PACX-1vT1oX3A-zsnZHIKtsUObkIskXTmc56yxk5s4Q23E3tU5eyzCAzVx2pc4r4QI-v68X2txoZNKzeuyt1k/pub",
+    "document_reference": "PURIS-POPIA27701-2026-001",
+    "version": "2.0",
+    "date": "2026-08-16"
+  },
+  "inputs": {
+    "kind": "post_documentation",
+    "version": 2,
+    "framework": "popia",
+    "clientName": "Puris Natural Aroma Chemicals (Pty) Ltd",
+    "registrationNumber": "2001/010785/07",
+    "industry": "Natural aroma ingredients for the global flavour and fragrance industries",
+    "contactName": "Marcel Broodryk",
+    "practiceName": "Section Five (Pty) Ltd",
+    "session": {
+      "org_name": "Puris Natural Aroma Chemicals (Pty) Ltd",
+      "auditor_name": "William Despard",
+      "audit_date": "2026-08-16",
+      "audit_ref": "PURIS-POPIA27701-2026-001"
+    },
+    "score": null,
+    "questions": [
+      {
+        "id": "puris-control-1-1",
+        "uid": "puris.1.1",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Privacy Information Management System (PIMS) / privacy governance framework formally adopted",
+        "question_number": 1,
+        "question": "Privacy Information Management System (PIMS) / privacy governance framework formally adopted",
+        "regulatory_ref": "POPIA s.21, s.55 | ISO 27701 5.2.1, 5.4",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-2",
+        "uid": "puris.1.2",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Information Officer appointed by name and registered with the Information Regulator",
+        "question_number": 2,
+        "question": "Information Officer appointed by name and registered with the Information Regulator",
+        "regulatory_ref": "POPIA s.55–56 | ISO 27701 5.3.2",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-3",
+        "uid": "puris.1.3",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Formal context-of-organisation / stakeholder assessment completed",
+        "question_number": 3,
+        "question": "Formal context-of-organisation / stakeholder assessment completed",
+        "regulatory_ref": "POPIA s.21 | ISO 27701 5.2.1, 5.2.2",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-4",
+        "uid": "puris.1.4",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "POPIA / PIMS compliance a standing board or EXCO agenda item",
+        "question_number": 4,
+        "question": "POPIA / PIMS compliance a standing board or EXCO agenda item",
+        "regulatory_ref": "POPIA s.55 | ISO 27701 5.1, 9.3",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-5",
+        "uid": "puris.1.5",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Board-approved Privacy Policy addressing all eight POPIA conditions",
+        "question_number": 5,
+        "question": "Board-approved Privacy Policy addressing all eight POPIA conditions",
+        "regulatory_ref": "POPIA s.55 (all conditions) | ISO 27701 5.2, 6.2",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-6",
+        "uid": "puris.1.6",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Current PAIA Manual with Record of Processing Activities (RoPA)",
+        "question_number": 6,
+        "question": "Current PAIA Manual with Record of Processing Activities (RoPA)",
+        "regulatory_ref": "POPIA s.17; PAIA s.51 | ISO 27701 7.2.1, 8.2.1",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-7",
+        "uid": "puris.1.7",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Documented annual policy review cycle with version control",
+        "question_number": 7,
+        "question": "Documented annual policy review cycle with version control",
+        "regulatory_ref": "POPIA s.55 | ISO 27701 7.5, 10.2",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-8",
+        "uid": "puris.1.8",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Privacy / fair-processing notices issued at point of collection",
+        "question_number": 8,
+        "question": "Privacy / fair-processing notices issued at point of collection",
+        "regulatory_ref": "POPIA s.18 | ISO 27701 7.3, 7.3.2",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-9",
+        "uid": "puris.1.9",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Privacy / Data Protection Impact Assessments for new or changed processing",
+        "question_number": 9,
+        "question": "Privacy / Data Protection Impact Assessments for new or changed processing",
+        "regulatory_ref": "POPIA s.69 | ISO 27701 6.1.2, 7.2.5",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-10",
+        "uid": "puris.1.10",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Privacy by Design and by Default embedded in systems and product development",
+        "question_number": 10,
+        "question": "Privacy by Design and by Default embedded in systems and product development",
+        "regulatory_ref": "POPIA s.12–13 | ISO 27701 7.2.5",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-11",
+        "uid": "puris.1.11",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Documented, role-based POPIA / privacy awareness training programme",
+        "question_number": 11,
+        "question": "Documented, role-based POPIA / privacy awareness training programme",
+        "regulatory_ref": "POPIA s.55 | ISO 27701 7.4, 6.3",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-12",
+        "uid": "puris.1.12",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Confidentiality / acceptable-use agreements with post-employment PI clause",
+        "question_number": 12,
+        "question": "Confidentiality / acceptable-use agreements with post-employment PI clause",
+        "regulatory_ref": "POPIA s.107 | ISO 27701 6.6",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-1-13",
+        "uid": "puris.1.13",
+        "section_id": 1,
+        "section_name": "Governance, Procedural Issues & Awareness",
+        "subsection": "Staff able to recognise and report a personal information breach",
+        "question_number": 13,
+        "question": "Staff able to recognise and report a personal information breach",
+        "regulatory_ref": "POPIA s.22 | ISO 27701 6.13.1",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-1",
+        "uid": "puris.2.1",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Documented lawful basis mapped per processing activity in the RoPA",
+        "question_number": 1,
+        "question": "Documented lawful basis mapped per processing activity in the RoPA",
+        "regulatory_ref": "POPIA s.11, s.9 | ISO 27701 7.2.2, 7.2.3",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-2",
+        "uid": "puris.2.2",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Consent freely given, specific, informed and separately recorded",
+        "question_number": 2,
+        "question": "Consent freely given, specific, informed and separately recorded",
+        "regulatory_ref": "POPIA s.11(1)(a); s.69 | ISO 27701 7.2.3, 7.3.4",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-3",
+        "uid": "puris.2.3",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Documented, prompt consent-withdrawal mechanism",
+        "question_number": 3,
+        "question": "Documented, prompt consent-withdrawal mechanism",
+        "regulatory_ref": "POPIA s.11(3) | ISO 27701 7.3.5",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-4",
+        "uid": "puris.2.4",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Special personal information identified with a documented s.27 condition per category",
+        "question_number": 4,
+        "question": "Special personal information identified with a documented s.27 condition per category",
+        "regulatory_ref": "POPIA s.26–33, s.34–38 | ISO 27701 7.2.8",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-5",
+        "uid": "puris.2.5",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Processing purposes granular, documented and consistent across RoPA and notices",
+        "question_number": 5,
+        "question": "Processing purposes granular, documented and consistent across RoPA and notices",
+        "regulatory_ref": "POPIA s.13, s.18 | ISO 27701 7.2.1, 7.3.2",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-6",
+        "uid": "puris.2.6",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Further processing limited to original purpose and compatibility-assessed",
+        "question_number": 6,
+        "question": "Further processing limited to original purpose and compatibility-assessed",
+        "regulatory_ref": "POPIA s.15 | ISO 27701 7.2.6",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-7",
+        "uid": "puris.2.7",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Documented procedure and log for third-party / law-enforcement disclosure requests",
+        "question_number": 7,
+        "question": "Documented procedure and log for third-party / law-enforcement disclosure requests",
+        "regulatory_ref": "POPIA s.11(1)(b)–(f); PAIA | ISO 27701 7.2.7",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-8",
+        "uid": "puris.2.8",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Regular data-minimisation review of collection forms and systems",
+        "question_number": 8,
+        "question": "Regular data-minimisation review of collection forms and systems",
+        "regulatory_ref": "POPIA s.12 | ISO 27701 7.2.5",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-9",
+        "uid": "puris.2.9",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Documented data accuracy, currency and correction procedures",
+        "question_number": 9,
+        "question": "Documented data accuracy, currency and correction procedures",
+        "regulatory_ref": "POPIA s.16 | ISO 27701 7.4.3",
+        "risk": "Medium",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-10",
+        "uid": "puris.2.10",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Cross-border transfers of personal information identified and documented",
+        "question_number": 10,
+        "question": "Cross-border transfers of personal information identified and documented",
+        "regulatory_ref": "POPIA s.72 | ISO 27701 7.5.1",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-11",
+        "uid": "puris.2.11",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Lawful transfer mechanism confirmed for each cross-border destination",
+        "question_number": 11,
+        "question": "Lawful transfer mechanism confirmed for each cross-border destination",
+        "regulatory_ref": "POPIA s.72(1)(a)–(f) | ISO 27701 7.5.1, 7.5.2",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-12",
+        "uid": "puris.2.12",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Operator register and POPIA-compliant Data Processing Agreements in place",
+        "question_number": 12,
+        "question": "Operator register and POPIA-compliant Data Processing Agreements in place",
+        "regulatory_ref": "POPIA s.20–22 | ISO 27701 7.2.7, 6.12, 8.5",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-2-13",
+        "uid": "puris.2.13",
+        "section_id": 2,
+        "section_name": "Lawful Processing of Personal Information",
+        "subsection": "Operators assessed for compliance pre-engagement and monitored thereafter",
+        "question_number": 13,
+        "question": "Operators assessed for compliance pre-engagement and monitored thereafter",
+        "regulatory_ref": "POPIA s.21; s.19(2) | ISO 27701 6.12.1",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-1",
+        "uid": "puris.3.1",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Comprehensive data-mapping exercise across structured, unstructured and physical records",
+        "question_number": 1,
+        "question": "Comprehensive data-mapping exercise across structured, unstructured and physical records",
+        "regulatory_ref": "POPIA s.17, s.14 | ISO 27701 7.2.1, 8.2.1",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-2",
+        "uid": "puris.3.2",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Classified information asset register mapped to retention periods",
+        "question_number": 2,
+        "question": "Classified information asset register mapped to retention periods",
+        "regulatory_ref": "POPIA s.26–34, s.14 | ISO 27701 7.2.1; ISO 27002 5.9",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-3",
+        "uid": "puris.3.3",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Board-approved Record Retention Policy with detailed retention schedule",
+        "question_number": 3,
+        "question": "Board-approved Record Retention Policy with detailed retention schedule",
+        "regulatory_ref": "POPIA s.14 | ISO 27701 7.4.7, 7.5",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-4",
+        "uid": "puris.3.4",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Retention periods aligned to sector legislation; conflicts formally resolved",
+        "question_number": 4,
+        "question": "Retention periods aligned to sector legislation; conflicts formally resolved",
+        "regulatory_ref": "POPIA s.14–15 | ISO 27701 7.4.7",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-5",
+        "uid": "puris.3.5",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Personal information deleted, destroyed or de-identified once purpose has lapsed",
+        "question_number": 5,
+        "question": "Personal information deleted, destroyed or de-identified once purpose has lapsed",
+        "regulatory_ref": "POPIA s.14(1) | ISO 27701 7.4.7, 7.4.8",
+        "risk": "Critical",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-6",
+        "uid": "puris.3.6",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Documented secure destruction procedure for paper and electronic media",
+        "question_number": 6,
+        "question": "Documented secure destruction procedure for paper and electronic media",
+        "regulatory_ref": "POPIA s.14, s.19 | ISO 27701 7.4.8; ISO 27002 7.14",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-7",
+        "uid": "puris.3.7",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "De-identification methodology tested against re-identification risk",
+        "question_number": 7,
+        "question": "De-identification methodology tested against re-identification risk",
+        "regulatory_ref": "POPIA s.1, s.14 | ISO 27701 7.4.8",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-8",
+        "uid": "puris.3.8",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Off-site / cloud archives inventoried, under POPIA-compliant agreements, reviewed periodically",
+        "question_number": 8,
+        "question": "Off-site / cloud archives inventoried, under POPIA-compliant agreements, reviewed periodically",
+        "regulatory_ref": "POPIA s.14, s.20–22 | ISO 27701 7.4.7, 6.12.1",
+        "risk": "Medium",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-9",
+        "uid": "puris.3.9",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Operational databases purged on a regular, logged cycle",
+        "question_number": 9,
+        "question": "Operational databases purged on a regular, logged cycle",
+        "regulatory_ref": "POPIA s.14 | ISO 27701 7.4.7, 7.4.8",
+        "risk": "High",
+        "evidence_req": null,
+        "remediation": null
+      },
+      {
+        "id": "puris-control-3-10",
+        "uid": "puris.3.10",
+        "section_id": 3,
+        "section_name": "Record Retention",
+        "subsection": "Backup data subject to the retention policy and purged on expiry",
+        "question_number": 10,
+        "question": "Backup data subject to the retention policy and purged on expiry",
+        "regulatory_ref": "POPIA s.14, s.19 | ISO 27701 7.4.7; ISO 27002 8.13",
+        "risk": "Medium",
+        "evidence_req": null,
+        "remediation": null
+      }
+    ],
+    "responses": [
+      {
+        "question_id": "puris-control-1-1",
+        "response": "under_review",
+        "findings": "Privacy Information Management System (PIMS) / privacy governance framework formally adopted — Under Review.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-2",
+        "response": "fully_compliant",
+        "findings": null,
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-3",
+        "response": "under_review",
+        "findings": "Formal context-of-organisation / stakeholder assessment completed — Under Review.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-4",
+        "response": "non_compliant",
+        "findings": "POPIA / PIMS compliance a standing board or EXCO agenda item — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-5",
+        "response": "under_review",
+        "findings": "Board-approved Privacy Policy addressing all eight POPIA conditions — Under Review.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-6",
+        "response": "under_review",
+        "findings": "Current PAIA Manual with Record of Processing Activities (RoPA) — Under Review.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-7",
+        "response": "non_compliant",
+        "findings": "Documented annual policy review cycle with version control — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-8",
+        "response": "fully_compliant",
+        "findings": null,
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-9",
+        "response": "partial",
+        "findings": "Privacy / Data Protection Impact Assessments for new or changed processing — Partially Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-10",
+        "response": "non_compliant",
+        "findings": "Privacy by Design and by Default embedded in systems and product development — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-11",
+        "response": "non_compliant",
+        "findings": "Documented, role-based POPIA / privacy awareness training programme — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-12",
+        "response": "non_compliant",
+        "findings": "Confidentiality / acceptable-use agreements with post-employment PI clause — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-1-13",
+        "response": "partial",
+        "findings": "Staff able to recognise and report a personal information breach — Partially Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-1",
+        "response": "partial",
+        "findings": "Documented lawful basis mapped per processing activity in the RoPA — Partially Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-2",
+        "response": "partial",
+        "findings": "Consent freely given, specific, informed and separately recorded — Partially Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-3",
+        "response": "non_compliant",
+        "findings": "Documented, prompt consent-withdrawal mechanism — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-4",
+        "response": "non_compliant",
+        "findings": "Special personal information identified with a documented s.27 condition per category — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-5",
+        "response": "under_review",
+        "findings": "Processing purposes granular, documented and consistent across RoPA and notices — Under Review.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-6",
+        "response": "fully_compliant",
+        "findings": null,
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-7",
+        "response": "non_compliant",
+        "findings": "Documented procedure and log for third-party / law-enforcement disclosure requests — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-8",
+        "response": "non_compliant",
+        "findings": "Regular data-minimisation review of collection forms and systems — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-9",
+        "response": "non_compliant",
+        "findings": "Documented data accuracy, currency and correction procedures — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-10",
+        "response": "non_compliant",
+        "findings": "Cross-border transfers of personal information identified and documented — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-11",
+        "response": "non_compliant",
+        "findings": "Lawful transfer mechanism confirmed for each cross-border destination — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-12",
+        "response": "non_compliant",
+        "findings": "Operator register and POPIA-compliant Data Processing Agreements in place — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-2-13",
+        "response": "non_compliant",
+        "findings": "Operators assessed for compliance pre-engagement and monitored thereafter — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-1",
+        "response": "fully_compliant",
+        "findings": null,
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-2",
+        "response": "non_compliant",
+        "findings": "Classified information asset register mapped to retention periods — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-3",
+        "response": "non_compliant",
+        "findings": "Board-approved Record Retention Policy with detailed retention schedule — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-4",
+        "response": "non_compliant",
+        "findings": "Retention periods aligned to sector legislation; conflicts formally resolved — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-5",
+        "response": "non_compliant",
+        "findings": "Personal information deleted, destroyed or de-identified once purpose has lapsed — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-6",
+        "response": "non_compliant",
+        "findings": "Documented secure destruction procedure for paper and electronic media — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-7",
+        "response": "non_compliant",
+        "findings": "De-identification methodology tested against re-identification risk — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-8",
+        "response": "non_compliant",
+        "findings": "Off-site / cloud archives inventoried, under POPIA-compliant agreements, reviewed periodically — Non-Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-9",
+        "response": "partial",
+        "findings": "Operational databases purged on a regular, logged cycle — Partially Compliant.",
+        "responsible_party": null,
+        "target_date": null
+      },
+      {
+        "question_id": "puris-control-3-10",
+        "response": "fully_compliant",
+        "findings": null,
+        "responsible_party": null,
+        "target_date": null
+      }
+    ],
+    "track": {
+      "baseline_pct": null,
+      "baseline_rating": null,
+      "baseline_at": null
+    },
+    "chain": [
+      {
+        "version": 1,
+        "kind": "gap_assessment",
+        "title": "Puris POPIA & ISO 27701 Compliance Assessment",
+        "approval_status": "superseded",
+        "issued_at": "2026-08-12",
+        "payload": {
+          "summary": {
+            "overall_pct": 20.8
+          }
+        }
+      }
+    ],
+    "issuedDocs": [
+      {
+        "original_filename": "Puris POPIA Compliance Policy.pdf",
+        "source": "generated",
+        "created_at": "2026-08-16"
+      }
+    ],
+    "checklist": [],
+    "confirmedChecklistIds": [],
+    "uploads": [
+      {
+        "document": "Puris Employee Handbook and Policy Document",
+        "version_date": "2026"
+      },
+      {
+        "document": "Puris Natural Aroma Chemicals (Pty) Ltd Privacy Policy",
+        "version_date": "Current, undated"
+      },
+      {
+        "document": "Puris POPIA Compliance Framework",
+        "version_date": "Live document — Puris_Human_Resources\\POPIA"
+      },
+      {
+        "document": "POPIA & ISO/IEC 27701:2019 Compliance Audit — Section 1: Procedural Issues & Awareness",
+        "version_date": "Fieldwork instrument, 2026"
+      },
+      {
+        "document": "POPIA & ISO/IEC 27701:2019 Compliance Audit — Section 2: Lawful Processing",
+        "version_date": "Fieldwork instrument, 2026"
+      },
+      {
+        "document": "POPIA & ISO/IEC 27701:2019 Compliance Audit — Section 3: Record Retention",
+        "version_date": "Fieldwork instrument, 2026"
+      },
+      {
+        "document": "Security & Privacy Awareness Interview per Department",
+        "version_date": "v2, 2026"
+      }
+    ],
+    "tasks": [],
+    "frameworkLegend": null,
+    "awareness": {
+      "coverage": {
+        "cohorts_completed": 1,
+        "cohorts_in_progress": 0,
+        "departments_covered": [
+          "Assessed departmental cohort"
+        ],
+        "departments_planned": 7,
+        "limitation": true
+      },
+      "overall": {
+        "respondents": 4,
+        "answered": 152,
+        "aligned": 114,
+        "pct": 75,
+        "rating": "Medium"
+      },
+      "domains": [
+        {
+          "code": "POL",
+          "name": "Policy, training & awareness",
+          "questions": 5,
+          "answered": 20,
+          "aligned": 15,
+          "pct": 75.0,
+          "rating": "Medium"
+        },
+        {
+          "code": "ACC",
+          "name": "Access & authentication",
+          "questions": 8,
+          "answered": 32,
+          "aligned": 19,
+          "pct": 60.0,
+          "rating": "Medium"
+        },
+        {
+          "code": "EML",
+          "name": "Email & social engineering",
+          "questions": 6,
+          "answered": 24,
+          "aligned": 22,
+          "pct": 91.7,
+          "rating": "Low"
+        },
+        {
+          "code": "DEV",
+          "name": "Devices, remote & network",
+          "questions": 6,
+          "answered": 24,
+          "aligned": 14,
+          "pct": 58.3,
+          "rating": "Medium"
+        },
+        {
+          "code": "DAT",
+          "name": "Data handling & privacy",
+          "questions": 8,
+          "answered": 32,
+          "aligned": 25,
+          "pct": 78.1,
+          "rating": "Medium"
+        },
+        {
+          "code": "INC",
+          "name": "Incident reporting",
+          "questions": 4,
+          "answered": 16,
+          "aligned": 14,
+          "pct": 87.5,
+          "rating": "Low"
+        },
+        {
+          "code": "AI",
+          "name": "AI tools & shadow IT",
+          "questions": 4,
+          "answered": 16,
+          "aligned": 16,
+          "pct": 100.0,
+          "rating": "Low"
+        }
+      ],
+      "high_risk_questions": [
+        {
+          "code": "ACC-04",
+          "domain_code": "ACC",
+          "question": "Do you ever share passwords or MFA codes with another person?",
+          "good_answer": "No",
+          "answered": 4,
+          "aligned": 0,
+          "pct": 0,
+          "regulatory_ref": "POPIA s.19"
+        },
+        {
+          "code": "DEV-04",
+          "domain_code": "DEV",
+          "question": "Do you use public or open Wi-Fi without an approved VPN?",
+          "good_answer": "No",
+          "answered": 4,
+          "aligned": 0,
+          "pct": 0,
+          "regulatory_ref": "POPIA s.19"
+        },
+        {
+          "code": "DAT-04",
+          "domain_code": "DAT",
+          "question": "Do you use personal email, WhatsApp or personal cloud storage for work information?",
+          "good_answer": "No",
+          "answered": 4,
+          "aligned": 0,
+          "pct": 0,
+          "regulatory_ref": "POPIA s.19"
+        },
+        {
+          "code": "ACC-02",
+          "domain_code": "ACC",
+          "question": "Do you use an approved password manager?",
+          "good_answer": "Yes",
+          "answered": 4,
+          "aligned": 1,
+          "pct": 25,
+          "regulatory_ref": "POPIA s.19"
+        },
+        {
+          "code": "DEV-05",
+          "domain_code": "DEV",
+          "question": "Do you use USB or removable media for work information?",
+          "good_answer": "Yes",
+          "answered": 4,
+          "aligned": 1,
+          "pct": 25,
+          "regulatory_ref": "POPIA s.19"
+        }
+      ],
+      "cohorts": [
+        {
+          "respondents": [
+            {
+              "respondent_no": 1,
+              "answered": 37,
+              "pct": 86.5,
+              "rating": "Low"
+            },
+            {
+              "respondent_no": 2,
+              "answered": 39,
+              "pct": 76.9,
+              "rating": "Medium"
+            },
+            {
+              "respondent_no": 3,
+              "answered": 39,
+              "pct": 69.2,
+              "rating": "Medium"
+            },
+            {
+              "respondent_no": 4,
+              "answered": 37,
+              "pct": 67.6,
+              "rating": "Medium"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "overrides": {
+    "structured": {
+      "cover": {
+        "prepared_by": "William Despard — Independent Privacy & Cybersecurity Advisor, on behalf of Section Five (Pty) Ltd",
+        "attention": "Marcel Broodryk, Managing Director / Information Officer",
+        "scope_of_version": "Post-documentation position and implementation programme",
+        "confidentiality_statement": "This document contains information that is confidential and proprietary to Puris Natural Aroma Chemicals (Pty) Ltd (“Puris”). It shall not be disclosed outside Puris, transmitted, duplicated, or used in whole or in part for any purpose other than its intended purpose, without the explicit written permission of Puris. This report reflects the state of the systems, documents and personnel interviewed at the time of the assessment and does not constitute legal advice."
+      },
+      "company_profile": {
+        "legal_name": "Puris Natural Aroma Chemicals (Pty) Ltd",
+        "registration_number": "2001/010785/07",
+        "location": "25 Textile Street, Riverside Industrial Park, Paarl, Western Cape, South Africa",
+        "industry": "Natural aroma ingredients for the global flavour and fragrance industries",
+        "activities": "Produces and sells essential oils, high-value aroma isolates and single molecules.",
+        "personal_information_categories": [
+          "Employee and applicant information",
+          "Customer and supplier contact information",
+          "Financial and banking information",
+          "Health and medical information",
+          "Website visitor information"
+        ]
+      },
+      "scope": {
+        "objectives": [
+          "Determine the current compliance posture against POPIA.",
+          "Map the posture to ISO/IEC 27701:2019.",
+          "Assess the practical human element through structured staff interviews."
+        ],
+        "methodology": [
+          "Structured interviews against 36 controls.",
+          "Review of the documents listed in Appendix A.",
+          "Line-by-line mapping to POPIA and ISO/IEC 27701:2019.",
+          "A 41-question security and privacy awareness interview with four respondents."
+        ],
+        "limitations": [
+          "The assessment reflects evidence available at the assessment date.",
+          "Under Review controls remain open until sufficient evidence is obtained.",
+          "The awareness result reflects one departmental cohort of four people."
+        ],
+        "out_of_scope_domains": [
+          "Security of Personal Information",
+          "Requests for Personal Data",
+          "Direct Marketing"
+        ]
+      },
+      "documentation_suites": [
+        {
+          "suite": "POPIA compliance",
+          "documents": "14 — policies, procedures, public notices, operator contracting and forms",
+          "governing_document": "PU-POL-POPIA-001"
+        },
+        {
+          "suite": "Information security management",
+          "documents": "9 — ISMS policy, access, registration, passwords, mobile, email, internet, user commitment, incident response",
+          "governing_document": "PU-POL-ISM-011"
+        },
+        {
+          "suite": "Consolidated",
+          "documents": "23 controlled documents; 30 open remediation items",
+          "governing_document": "PU-REG-001 v1.1"
+        }
+      ],
+      "remediation_register": [
+        {
+          "uid": "puris-remediation-r01",
+          "ref": "R01",
+          "item": "Privacy Information Management System and governance framework",
+          "control_area": null,
+          "severity": "High",
+          "cls": "A",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-POPIA-001"
+          ],
+          "evidence_required": "Board approval recorded in the minutes of the meeting at which it is adopted",
+          "owner": "DIO",
+          "workstream": "Workstream 1 — Governance activation"
+        },
+        {
+          "uid": "puris-remediation-r02",
+          "ref": "R02",
+          "item": "Record retention schedule fixed and verified against system configuration",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-DRP-002"
+          ],
+          "evidence_required": "Each period checked against the configured system; screenshot or export retained per system",
+          "owner": "IT + DIO",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r03",
+          "ref": "R03",
+          "item": "PAIA Manual current, published and lodged",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-PIM-001"
+          ],
+          "evidence_required": "Fee schedule verified against the Regulations in force; manual published on puris.co.za; lodgement acknowledged",
+          "owner": "DIO",
+          "workstream": "Unassigned"
+        },
+        {
+          "uid": "puris-remediation-r04",
+          "ref": "R04",
+          "item": "Record of Processing Activities",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — the ROPA is built, not written"
+          ],
+          "evidence_required": "Completed ROPA workbook with an owner against every entry",
+          "owner": "DIO",
+          "workstream": "Workstream 2 — Records foundation"
+        },
+        {
+          "uid": "puris-remediation-r05",
+          "ref": "R05",
+          "item": "Payroll and HR administration provider identified and contracted",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-AGR-DPA-006"
+          ],
+          "evidence_required": "Vendor identified; signed operator agreement on file",
+          "owner": "Finance + DIO",
+          "workstream": "Workstream 3 — Third-party contracting"
+        },
+        {
+          "uid": "puris-remediation-r06",
+          "ref": "R06",
+          "item": "Special personal information categories identified and access restricted",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-POPIA-001",
+            "PU-POL-EMP-003"
+          ],
+          "evidence_required": "Category list per system; access control list showing restriction applied and tested",
+          "owner": "DIO + IT",
+          "workstream": "Workstream 2 — Records foundation"
+        },
+        {
+          "uid": "puris-remediation-r07",
+          "ref": "R07",
+          "item": "Lawful basis documented per processing activity; legitimate-interest assessments",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — depends on the ROPA"
+          ],
+          "evidence_required": "Completed lawful-basis column; a written LIA for each activity relying on s.11(1)(f)",
+          "owner": "DIO",
+          "workstream": "Workstream 2 — Records foundation"
+        },
+        {
+          "uid": "puris-remediation-r08",
+          "ref": "R08",
+          "item": "Cross-border transfers mapped and a s.72 mechanism in place per destination",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — requires tenant and vendor investigation"
+          ],
+          "evidence_required": "Transfer map; Microsoft tenant data-residency evidence; executed transfer mechanism per destination",
+          "owner": "IT + DIO",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r09",
+          "ref": "R09",
+          "item": "Role-based POPIA and security awareness training delivered",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-PIMS-001 s.10 (curriculum specified)"
+          ],
+          "evidence_required": "Attendance register per session, retained five years; induction tied to account creation",
+          "owner": "DIO",
+          "workstream": "Workstream 5 — Operating the cycle"
+        },
+        {
+          "uid": "puris-remediation-r10",
+          "ref": "R10",
+          "item": "Breach procedure operating and tested",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-DBR-004",
+            "PU-PLN-IRP-019"
+          ],
+          "evidence_required": "Tabletop exercise report; breach register in operation; reporting route published to staff",
+          "owner": "DIO + IT",
+          "workstream": "Workstream 5 — Operating the cycle"
+        },
+        {
+          "uid": "puris-remediation-r11",
+          "ref": "R11",
+          "item": "Structured consent capture where consent is relied on",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — requires a change to forms and systems"
+          ],
+          "evidence_required": "Consent records showing purpose, channel, date and wording version; quarterly audit sample",
+          "owner": "IT + DIO",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r12",
+          "ref": "R12",
+          "item": "Operator register built and POPIA-compliant agreements executed",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-FORM-OCQ-008",
+            "PU-AGR-DPA-006"
+          ],
+          "evidence_required": "Completed questionnaire and signed agreement for each of the nine operators",
+          "owner": "DIO",
+          "workstream": "Workstream 3 — Third-party contracting"
+        },
+        {
+          "uid": "puris-remediation-r13",
+          "ref": "R13",
+          "item": "Information Officer registered; Deputy designated in writing",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — a statutory filing and an appointment"
+          ],
+          "evidence_required": "Regulator registration confirmation; signed s.56 designation letter",
+          "owner": "Chairman",
+          "workstream": "Workstream 1 — Governance activation"
+        },
+        {
+          "uid": "puris-remediation-r14",
+          "ref": "R14",
+          "item": "POPIA a standing board and management agenda item",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — a governance behaviour"
+          ],
+          "evidence_required": "Minutes of three consecutive meetings showing the item and the decisions taken",
+          "owner": "MD",
+          "workstream": "Workstream 1 — Governance activation"
+        },
+        {
+          "uid": "puris-remediation-r15",
+          "ref": "R15",
+          "item": "Policy register with version history and review dates operating",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-REG-001"
+          ],
+          "evidence_required": "Populated register; superseded versions retained; first annual review completed",
+          "owner": "DIO",
+          "workstream": "Workstream 1 — Governance activation"
+        },
+        {
+          "uid": "puris-remediation-r16",
+          "ref": "R16",
+          "item": "Post-employment personal information clause in employment contracts",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — a contract amendment"
+          ],
+          "evidence_required": "Updated contract template; signed variation or new contracts issued; offboarding confirmation step in use",
+          "owner": "HR + legal",
+          "workstream": "Workstream 3 — Third-party contracting"
+        },
+        {
+          "uid": "puris-remediation-r17",
+          "ref": "R17",
+          "item": "Third-party and law-enforcement disclosure procedure and log",
+          "control_area": null,
+          "severity": "High",
+          "cls": "D",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Document outstanding"
+          ],
+          "evidence_required": "Approved disclosure procedure; maintained disclosure log",
+          "owner": "DIO",
+          "workstream": "Workstream 5 — Operating the cycle"
+        },
+        {
+          "uid": "puris-remediation-r18",
+          "ref": "R18",
+          "item": "Secure destruction operating with records retained",
+          "control_area": null,
+          "severity": "High",
+          "cls": "B",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-DRP-002"
+          ],
+          "evidence_required": "August 2026 clearance recorded retrospectively; destruction certificates from the point of adoption onward",
+          "owner": "IT + DIO",
+          "workstream": "Workstream 5 — Operating the cycle"
+        },
+        {
+          "uid": "puris-remediation-r19",
+          "ref": "R19",
+          "item": "MFA coverage completed; password manager provided; encryption audited",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-ACC-012",
+            "PU-PRC-PWD-014"
+          ],
+          "evidence_required": "MFA coverage report showing 100 per cent; password manager deployed and trained; encryption status per device",
+          "owner": "IT",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r20",
+          "ref": "R20",
+          "item": "Sanctioned remote-access route; unsanctioned storage blocked",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-MOB-015"
+          ],
+          "evidence_required": "Remote-access solution in production; DLP or tenant restriction configured; policy rule superseded",
+          "owner": "IT",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r21",
+          "ref": "R21",
+          "item": "Data classification scheme designed and applied",
+          "control_area": null,
+          "severity": "High",
+          "cls": "D",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Document outstanding"
+          ],
+          "evidence_required": "Approved classification policy; classification applied across the asset register and document libraries",
+          "owner": "DIO + IT",
+          "workstream": "Workstream 2 — Records foundation"
+        },
+        {
+          "uid": "puris-remediation-r22",
+          "ref": "R22",
+          "item": "Awareness assessment extended to all departments",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Instrument exists"
+          ],
+          "evidence_required": "Completed interview workbook for each of the six remaining functions",
+          "owner": "DIO",
+          "workstream": "Workstream 6 — Assurance completion"
+        },
+        {
+          "uid": "puris-remediation-r23",
+          "ref": "R23",
+          "item": "Outstanding audit domains completed",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Instrument exists"
+          ],
+          "evidence_required": "Completed Sections 4 to 6: Security of Personal Data, Data Subject Requests, Direct Marketing",
+          "owner": "DIO",
+          "workstream": "Workstream 6 — Assurance completion"
+        },
+        {
+          "uid": "puris-remediation-r24",
+          "ref": "R24",
+          "item": "IT function named, with a deputy",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — an appointment"
+          ],
+          "evidence_required": "Named role recorded at Annex B of PU-PLN-IRP-019 and in the ISMS governance table",
+          "owner": "MD",
+          "workstream": "Workstream 1 — Governance activation"
+        },
+        {
+          "uid": "puris-remediation-r25",
+          "ref": "R25",
+          "item": "IT change management process",
+          "control_area": null,
+          "severity": "High",
+          "cls": "D",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Document outstanding"
+          ],
+          "evidence_required": "Approved change procedure; change records showing security impact assessed before application",
+          "owner": "IT",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r26",
+          "ref": "R26",
+          "item": "Teleworking Policy and Remote Supplier Access Procedure",
+          "control_area": null,
+          "severity": "High",
+          "cls": "D",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Documents outstanding"
+          ],
+          "evidence_required": "Both approved and issued; interim rules in PU-POL-MOB-015 and PU-POL-ACC-012 superseded",
+          "owner": "DIO",
+          "workstream": "Unassigned"
+        },
+        {
+          "uid": "puris-remediation-r27",
+          "ref": "R27",
+          "item": "Cyber insurance and forensic support confirmed",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — a procurement decision"
+          ],
+          "evidence_required": "Policy schedule and retainer or arrangement recorded at Annex B of PU-PLN-IRP-019",
+          "owner": "Finance",
+          "workstream": "Workstream 3 — Third-party contracting"
+        },
+        {
+          "uid": "puris-remediation-r28",
+          "ref": "R28",
+          "item": "IT asset register",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "None — an inventory exercise"
+          ],
+          "evidence_required": "Populated register covering every endpoint and system, with encryption status and owner",
+          "owner": "IT",
+          "workstream": "Workstream 2 — Records foundation"
+        },
+        {
+          "uid": "puris-remediation-r29",
+          "ref": "R29",
+          "item": "Patching and vulnerability management standard",
+          "control_area": null,
+          "severity": "High",
+          "cls": "D",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "Document outstanding"
+          ],
+          "evidence_required": "Approved standard; patch compliance report; confirmation that no unsupported OS remains in service",
+          "owner": "IT",
+          "workstream": "Workstream 4 — Technical control build"
+        },
+        {
+          "uid": "puris-remediation-r30",
+          "ref": "R30",
+          "item": "Local administrator rights audited and restricted",
+          "control_area": null,
+          "severity": "High",
+          "cls": "C",
+          "cls_source": "advisor",
+          "documents_covering": [
+            "PU-POL-ISM-011"
+          ],
+          "evidence_required": "Administrator group membership report before and after; software installation restricted to the IT function",
+          "owner": "IT",
+          "workstream": "Workstream 4 — Technical control build"
+        }
+      ],
+      "outstanding_documents": [
+        {
+          "document": "Backup and Disaster Recovery Policy",
+          "position": "Referenced across the ISMS suite. Backup retention is currently covered at Section 4 of PU-POL-DRP-002 only.",
+          "ref": "R02"
+        },
+        {
+          "document": "Logging and Audit Policy",
+          "position": "Referenced at Section 8.5 of PU-POL-ISM-011. Log retention and review are not defined in a standalone document.",
+          "ref": "R08"
+        },
+        {
+          "document": "Third-Party Disclosure Procedure",
+          "position": "No procedure governs release of personal information to a third party or to law enforcement, and no disclosure log exists.",
+          "ref": "R17"
+        },
+        {
+          "document": "Data Classification Policy",
+          "position": "No classification scheme is in force. Until one exists, handling rules apply uniformly to all information.",
+          "ref": "R21"
+        },
+        {
+          "document": "IT Change Management Procedure",
+          "position": "No documented change process for IT systems. The FSSC 22000 SOP discipline in production is the model to copy.",
+          "ref": "R25"
+        },
+        {
+          "document": "Teleworking Policy",
+          "position": "Referenced by the mobile and access control policies. Remote working is currently governed by PU-POL-MOB-015 as an interim measure.",
+          "ref": "R26"
+        },
+        {
+          "document": "Remote Supplier Access Procedure",
+          "position": "Referenced by PU-POL-ACC-012. Supplier access is currently governed by Section 4.2 of that policy with PU-AGR-DPA-006.",
+          "ref": "R26"
+        }
+      ],
+      "implementation_programme": [
+        {
+          "number": 1,
+          "title": "Governance activation",
+          "item_refs": [
+            "R01",
+            "R13",
+            "R14",
+            "R15",
+            "R24"
+          ],
+          "window": "0–30 days",
+          "owner": "Outsourced DIO, with Executive Chairman and Managing Director decisions",
+          "actions": [
+            "Board adoption of PU-POL-POPIA-001 and PU-POL-ISM-011, recorded in the minutes.",
+            "Registration of the Information Officer with the Information Regulator, and issue of the written section 56 designation for the Deputy.",
+            "Naming of the IT function and a deputy, and recording of both in the ISMS governance table and at Annex B of the Incident Response Plan.",
+            "POPIA and information security added as a standing board and management agenda item.",
+            "Policy register populated and the review cycle started."
+          ],
+          "dependencies": "Must complete first; governance appointments and the named IT function are preconditions to most of the programme."
+        },
+        {
+          "number": 2,
+          "title": "Records foundation",
+          "item_refs": [
+            "R04",
+            "R06",
+            "R07",
+            "R08",
+            "R21",
+            "R28"
+          ],
+          "window": "30–90 days",
+          "owner": "Outsourced DIO, with IT for system interrogation",
+          "actions": [
+            "Build the Record of Processing Activities from the system register at Annex A of PU-POL-POPIA-001.",
+            "Identify every category of special personal information, document the applicable section 27 to 33 condition and test access restriction.",
+            "Complete the lawful-basis column and write a legitimate-interest assessment for each section 11(1)(f) activity.",
+            "Map every cross-border flow, confirm Microsoft 365 tenant data residency with evidence and put a section 72 mechanism in place per destination.",
+            "Design and apply a classification scheme across the asset register and document libraries.",
+            "Build the IT asset register, recording encryption status and owner against every device."
+          ],
+          "dependencies": "Precedes much of Workstream 3 and meaningful assurance because lawful basis, transfers, retention and operator scoping depend on the ROPA."
+        },
+        {
+          "number": 3,
+          "title": "Third-party contracting",
+          "item_refs": [
+            "R05",
+            "R12",
+            "R16",
+            "R27"
+          ],
+          "window": "30–120 days",
+          "owner": "Outsourced DIO, with Financial Manager and legal input",
+          "actions": [
+            "Identify the payroll and HR administration provider and execute an operator agreement.",
+            "Issue PU-FORM-OCQ-008 to each of the nine operators, assess responses and execute PU-AGR-DPA-006 or accept an adequate vendor equivalent.",
+            "Amend the employment contract template to include a post-employment personal information clause and issue variations.",
+            "Confirm the cyber insurance and forensic or incident-response arrangements and record both at Annex B of PU-PLN-IRP-019."
+          ],
+          "dependencies": "Operator scoping and contracting depend on the records foundation and named internal decision-makers."
+        },
+        {
+          "number": 4,
+          "title": "Technical control build",
+          "item_refs": [
+            "R02",
+            "R08",
+            "R11",
+            "R19",
+            "R20",
+            "R25",
+            "R29",
+            "R30"
+          ],
+          "window": "30–180 days",
+          "owner": "IT function — cannot be delivered by the DIO",
+          "actions": [
+            "Extend multi-factor authentication to full coverage across Microsoft 365, administrative accounts and externally reachable services.",
+            "Provide and deploy an approved password manager with training.",
+            "Audit endpoint encryption across the fleet and remediate exceptions.",
+            "Provision a sanctioned remote-access route and supersede the interim public Wi-Fi rule.",
+            "Restrict unsanctioned cloud storage and personal-account use at tenant level.",
+            "Verify retention periods against configured systems; define and evidence backup retention tiers and restore testing.",
+            "Define log retention and review, including at least 12 months for authentication and privileged access logs.",
+            "Write and operate patching and IT change standards; audit and restrict local administrator rights.",
+            "Implement structured consent capture where consent is relied on."
+          ],
+          "dependencies": "Runs in parallel and independently, but requires the IT function named under R24."
+        },
+        {
+          "number": 5,
+          "title": "Operating the cycle",
+          "item_refs": [
+            "R09",
+            "R10",
+            "R17",
+            "R18"
+          ],
+          "window": "60–180 days, then continuous",
+          "owner": "Outsourced DIO, with IT for the tabletop exercise",
+          "actions": [
+            "Deliver induction and annual awareness training to every employee and temporary worker and retain the attendance register.",
+            "Publish the breach reporting route, open the breach register and run a business-email-compromise tabletop exercise.",
+            "Write and adopt the third-party disclosure procedure and open the disclosure log.",
+            "Record the August 2026 clearance exercise retrospectively and operate the Destruction Register.",
+            "Open the DSAR register."
+          ],
+          "dependencies": "Relies on governance ownership and IT participation for the tabletop exercise; then continues as the standing monthly cycle."
+        },
+        {
+          "number": 6,
+          "title": "Assurance completion",
+          "item_refs": [
+            "R22",
+            "R23"
+          ],
+          "window": "90–180 days",
+          "owner": "Outsourced DIO",
+          "actions": [
+            "Extend the Security and Privacy Awareness Interview to the six functions not yet assessed.",
+            "Complete Security of Personal Data, Requests for Personal Data and Direct Marketing.",
+            "Re-issue this report at version 3.0 with the full control population and a revised maturity rating."
+          ],
+          "dependencies": "Follows the records foundation and initial implementation so the remaining domains and wider cohort can be assessed against operating evidence."
+        }
+      ],
+      "delivery_options": [
+        {
+          "route": "Outsourced Deputy Information Officer, standing engagement",
+          "scope": "Workstreams 1, 2, 3, 5 and 6 — 20 of the 30 items",
+          "strength": "Continuity of the monthly cycle; the registers stay populated; independence from the functions being reviewed",
+          "limitation": "Cannot deliver Workstream 4. Depends on internal IT and Finance for information and decisions."
+        },
+        {
+          "route": "Defined project, fixed scope and end date",
+          "scope": "Workstreams 1, 2 and 3 — the build of the ROPA, the contracting programme and the governance activation",
+          "strength": "Concentrated effort on the foundation items; a clear completion point",
+          "limitation": "Leaves Workstream 5 without an owner once the project closes, which is where compliance programmes usually decay."
+        },
+        {
+          "route": "Internal IT or the appointed MSP",
+          "scope": "Workstream 4 — 8 of the 30 items",
+          "strength": "The only route to closing the technical items",
+          "limitation": "Requires the IT function to be named first (R24). Scope and accountability should be recorded in the service agreement."
+        },
+        {
+          "route": "Combination — project for the build, standing DIO for the cycle",
+          "scope": "All six workstreams",
+          "strength": "Matches the shape of the work: the foundation is a project, the operation is a cycle",
+          "limitation": "Requires clarity at handover on which items transfer and what evidence accompanies them."
+        }
+      ],
+      "delivery_cadence": [
+        {
+          "cycle": "Monthly",
+          "activity": "Remediation register progress; backup and restore status; DSARs and breaches logged in the period",
+          "evidence": "Dated progress report to the Information Officer"
+        },
+        {
+          "cycle": "Quarterly",
+          "activity": "Privileged access review; operator agreement status; check that new systems have been entered in the ROPA; IRP contact list review",
+          "evidence": "Review records with exceptions and actions"
+        },
+        {
+          "cycle": "Annually",
+          "activity": "Full ROPA review; policy suite review; training delivery and attendance; tabletop exercise; compliance report to the Executive Chairman",
+          "evidence": "Re-issued ROPA, attendance register, exercise report, annual report"
+        },
+        {
+          "cycle": "On event",
+          "activity": "ROPA update on any new or changed system; policy review after any significant breach or regulatory development",
+          "evidence": "Updated ROPA entry; post-incident review"
+        }
+      ],
+      "residual_exposures": [
+        {
+          "exposure": "The published website privacy notice",
+          "why_it_matters": "The notice currently live tells data subjects that Puris may transfer their information outside South Africa — which Puris cannot presently support with a section 72 mechanism — and that it may retain personal information indefinitely, which is not sustainable under section 14. PU-NOT-DPN-007 has been written to replace it and has not yet been published.",
+          "closed_by": "Publication — no operational change required"
+        },
+        {
+          "exposure": "Nine operator relationships without agreements",
+          "why_it_matters": "Four are already disclosed in that same notice. Puris has told data subjects these disclosures occur without the section 21 contracts governing them, and has no contractual right to breach notification from any supplier.",
+          "closed_by": "R05, R12"
+        },
+        {
+          "exposure": "Credential sharing and incomplete MFA",
+          "why_it_matters": "Every member of staff interviewed had shared a password or MFA code, and MFA coverage is partial. This is the most likely route to a reportable incident.",
+          "closed_by": "R19"
+        },
+        {
+          "exposure": "Personal accounts and removable media in use",
+          "why_it_matters": "Puris personal information currently sits outside the estate, where it is not backed up, not retained to schedule, not searchable for an access request and not recoverable when a person leaves.",
+          "closed_by": "R20"
+        },
+        {
+          "exposure": "No tested breach capability",
+          "why_it_matters": "A procedure now exists but has never been exercised, the IT function is unnamed, and cyber insurance and forensic support are unconfirmed. All three matter in the first hours of an incident.",
+          "closed_by": "R10, R24, R27"
+        },
+        {
+          "exposure": "No ROPA",
+          "why_it_matters": "Puris cannot answer the first question the Regulator asks, and cannot scope a data subject access request or a breach with confidence.",
+          "closed_by": "R04"
+        },
+        {
+          "exposure": "Special personal information without documented conditions",
+          "why_it_matters": "Medical certificates, injury-on-duty records and race data for verification are processed. The condition is now documented in policy; the identification exercise and access restriction are not done.",
+          "closed_by": "R06"
+        }
+      ],
+      "reviewed_documents": [
+        {
+          "document": "Puris Employee Handbook and Policy Document",
+          "version_date": "2026"
+        },
+        {
+          "document": "Puris Natural Aroma Chemicals (Pty) Ltd Privacy Policy",
+          "version_date": "Current, undated"
+        },
+        {
+          "document": "Puris POPIA Compliance Framework",
+          "version_date": "Live document — Puris_Human_Resources\\POPIA"
+        },
+        {
+          "document": "POPIA & ISO/IEC 27701:2019 Compliance Audit — Section 1: Procedural Issues & Awareness",
+          "version_date": "Fieldwork instrument, 2026"
+        },
+        {
+          "document": "POPIA & ISO/IEC 27701:2019 Compliance Audit — Section 2: Lawful Processing",
+          "version_date": "Fieldwork instrument, 2026"
+        },
+        {
+          "document": "POPIA & ISO/IEC 27701:2019 Compliance Audit — Section 3: Record Retention",
+          "version_date": "Fieldwork instrument, 2026"
+        },
+        {
+          "document": "Security & Privacy Awareness Interview per Department",
+          "version_date": "v2, 2026"
+        }
+      ],
+      "awareness_respondents": [
+        {
+          "respondent": "Respondent 1",
+          "questions_answered": 37,
+          "pct_aligned": 86.5,
+          "rating": "Low"
+        },
+        {
+          "respondent": "Respondent 2",
+          "questions_answered": 39,
+          "pct_aligned": 76.9,
+          "rating": "Medium"
+        },
+        {
+          "respondent": "Respondent 3",
+          "questions_answered": 39,
+          "pct_aligned": 69.2,
+          "rating": "Medium"
+        },
+        {
+          "respondent": "Respondent 4",
+          "questions_answered": 37,
+          "pct_aligned": 67.6,
+          "rating": "Medium"
+        }
+      ]
+    },
+    "risk_register": [
+      {
+        "uid": "puris-risk-01",
+        "ref": "1.1",
+        "control_area": null,
+        "finding": "No board-approved, ISO 27701-aligned Privacy Information Management System (PIMS) / governance framework in place",
+        "severity": "Critical",
+        "recommended_action": "Establish a PIMS per ISO 27701 cl.5.2; obtain board endorsement; map to all eight POPIA conditions (30 days)",
+        "owner": null,
+        "target_window": "30 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-02",
+        "ref": "1.5",
+        "control_area": null,
+        "finding": "Privacy Policy not yet confirmed as board-approved and mapped to all eight POPIA conditions",
+        "severity": "Critical",
+        "recommended_action": "Finalise, version-control and obtain board sign-off on the POPIA Compliance Policy (30 days)",
+        "owner": null,
+        "target_window": "30 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-03",
+        "ref": "1.6",
+        "control_area": null,
+        "finding": "PAIA Manual / Record of Processing Activities (RoPA) currency not confirmed",
+        "severity": "Critical",
+        "recommended_action": "Update and publish the PAIA Manual with a complete RoPA; submit to the Information Regulator (30 days)",
+        "owner": null,
+        "target_window": "30 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-04",
+        "ref": "1.11",
+        "control_area": null,
+        "finding": "No documented, role-based POPIA / privacy awareness training programme",
+        "severity": "Critical",
+        "recommended_action": "Roll out mandatory onboarding and annual refresher training, tracked to completion (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-05",
+        "ref": "1.13",
+        "control_area": null,
+        "finding": "Breach recognition and reporting awareness only partially embedded among staff",
+        "severity": "Critical",
+        "recommended_action": "Publish a breach-reporting procedure and run a tabletop exercise (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-06",
+        "ref": "2.1",
+        "control_area": null,
+        "finding": "Lawful basis not consistently mapped per processing activity",
+        "severity": "Critical",
+        "recommended_action": "Complete the RoPA lawful-basis column; document legitimate-interest assessments where relied upon (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-07",
+        "ref": "2.2",
+        "control_area": null,
+        "finding": "Consent capture not consistently freely given, specific and separately recorded",
+        "severity": "Critical",
+        "recommended_action": "Implement structured consent capture (timestamp, purpose, channel, wording version) and quarterly audit (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-08",
+        "ref": "2.4",
+        "control_area": null,
+        "finding": "Special personal information categories not mapped to a documented s.27 condition (staff-related category identified during fieldwork)",
+        "severity": "Critical",
+        "recommended_action": "Identify all special-PI categories; document the applicable s.27 condition; apply heightened controls (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-09",
+        "ref": "2.11",
+        "control_area": null,
+        "finding": "No confirmed lawful mechanism for cross-border transfers of personal information",
+        "severity": "Critical",
+        "recommended_action": "Map all cross-border flows; confirm adequacy or implement standard contractual clauses per destination (90 days)",
+        "owner": null,
+        "target_window": "90 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-10",
+        "ref": "2.12",
+        "control_area": null,
+        "finding": "No operator register or POPIA-compliant Data Processing Agreements with third-party processors",
+        "severity": "Critical",
+        "recommended_action": "Build an operator register; execute DPAs covering processing instructions, security and breach obligations (90 days)",
+        "owner": null,
+        "target_window": "90 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-11",
+        "ref": "3.3",
+        "control_area": null,
+        "finding": "No board-approved Record Retention Policy or retention schedule",
+        "severity": "Critical",
+        "recommended_action": "Develop and approve a retention schedule cross-referenced to POPIA and sector legislation (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-12",
+        "ref": "3.5",
+        "control_area": null,
+        "finding": "No consistent trigger for deletion, destruction or de-identification once purpose has lapsed",
+        "severity": "Critical",
+        "recommended_action": "Implement automated or scheduled retention-enforcement rules across key systems (90 days)",
+        "owner": null,
+        "target_window": "90 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-13",
+        "ref": "1.4",
+        "control_area": null,
+        "finding": "POPIA / PIMS compliance not a standing board or EXCO agenda item",
+        "severity": "High",
+        "recommended_action": "Add as a mandatory standing item; record decisions and actions in minutes (30 days)",
+        "owner": null,
+        "target_window": "30 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-14",
+        "ref": "1.7",
+        "control_area": null,
+        "finding": "No documented annual review cycle for privacy policies",
+        "severity": "High",
+        "recommended_action": "Establish a policy register with review dates, version history and sign-off (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-15",
+        "ref": "1.12",
+        "control_area": null,
+        "finding": "No confidentiality / acceptable-use agreements carrying a post-employment PI clause",
+        "severity": "High",
+        "recommended_action": "Update employment contracts and onboarding packs; confirm at offboarding (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-16",
+        "ref": "2.7",
+        "control_area": null,
+        "finding": "No documented third-party / law-enforcement disclosure procedure or log",
+        "severity": "High",
+        "recommended_action": "Introduce a disclosure procedure requiring IO or legal review, with a maintained log (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-17",
+        "ref": "3.2",
+        "control_area": null,
+        "finding": "No classified information asset register mapped to retention periods",
+        "severity": "High",
+        "recommended_action": "Implement a data classification policy and apply it across the asset register (90 days)",
+        "owner": null,
+        "target_window": "90 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-18",
+        "ref": "3.6",
+        "control_area": null,
+        "finding": "No documented secure destruction procedure for paper and electronic media",
+        "severity": "High",
+        "recommended_action": "Formalise a media-sanitisation standard; retain destruction certificates (data clearance exercise already commenced 11 August) (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "assessment"
+      },
+      {
+        "uid": "puris-risk-19",
+        "ref": "Awareness ACC-04",
+        "control_area": null,
+        "finding": "Credential and MFA-code sharing reported by all staff interviewed",
+        "severity": "High",
+        "recommended_action": "Reinforce in training; enforce a strict no-sharing rule; consider technical controls (SSO, conditional access) (30 days)",
+        "owner": null,
+        "target_window": "30 days",
+        "source_type": "awareness"
+      },
+      {
+        "uid": "puris-risk-20",
+        "ref": "Awareness DEV-04 / DAT-04",
+        "control_area": null,
+        "finding": "Use of public Wi-Fi without a VPN, and personal email / cloud storage for work information, reported by all or most staff interviewed",
+        "severity": "High",
+        "recommended_action": "Deploy a VPN or managed access solution; block unsanctioned storage; reinforce policy in training (60 days)",
+        "owner": null,
+        "target_window": "60 days",
+        "source_type": "awareness"
+      }
+    ],
+    "classification": {
+      "puris-remediation-r01": {
+        "cls": "A",
+        "item": "Privacy Information Management System and governance framework",
+        "documents_covering": [
+          "PU-POL-POPIA-001"
+        ],
+        "evidence_required": "Board approval recorded in the minutes of the meeting at which it is adopted",
+        "owner": "DIO",
+        "workstream": "Workstream 1 — Governance activation"
+      },
+      "puris-remediation-r02": {
+        "cls": "B",
+        "item": "Record retention schedule fixed and verified against system configuration",
+        "documents_covering": [
+          "PU-POL-DRP-002"
+        ],
+        "evidence_required": "Each period checked against the configured system; screenshot or export retained per system",
+        "owner": "IT + DIO",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r03": {
+        "cls": "B",
+        "item": "PAIA Manual current, published and lodged",
+        "documents_covering": [
+          "PU-PIM-001"
+        ],
+        "evidence_required": "Fee schedule verified against the Regulations in force; manual published on puris.co.za; lodgement acknowledged",
+        "owner": "DIO",
+        "workstream": "Unassigned"
+      },
+      "puris-remediation-r04": {
+        "cls": "C",
+        "item": "Record of Processing Activities",
+        "documents_covering": [
+          "None — the ROPA is built, not written"
+        ],
+        "evidence_required": "Completed ROPA workbook with an owner against every entry",
+        "owner": "DIO",
+        "workstream": "Workstream 2 — Records foundation"
+      },
+      "puris-remediation-r05": {
+        "cls": "C",
+        "item": "Payroll and HR administration provider identified and contracted",
+        "documents_covering": [
+          "PU-AGR-DPA-006"
+        ],
+        "evidence_required": "Vendor identified; signed operator agreement on file",
+        "owner": "Finance + DIO",
+        "workstream": "Workstream 3 — Third-party contracting"
+      },
+      "puris-remediation-r06": {
+        "cls": "B",
+        "item": "Special personal information categories identified and access restricted",
+        "documents_covering": [
+          "PU-POL-POPIA-001",
+          "PU-POL-EMP-003"
+        ],
+        "evidence_required": "Category list per system; access control list showing restriction applied and tested",
+        "owner": "DIO + IT",
+        "workstream": "Workstream 2 — Records foundation"
+      },
+      "puris-remediation-r07": {
+        "cls": "C",
+        "item": "Lawful basis documented per processing activity; legitimate-interest assessments",
+        "documents_covering": [
+          "None — depends on the ROPA"
+        ],
+        "evidence_required": "Completed lawful-basis column; a written LIA for each activity relying on s.11(1)(f)",
+        "owner": "DIO",
+        "workstream": "Workstream 2 — Records foundation"
+      },
+      "puris-remediation-r08": {
+        "cls": "C",
+        "item": "Cross-border transfers mapped and a s.72 mechanism in place per destination",
+        "documents_covering": [
+          "None — requires tenant and vendor investigation"
+        ],
+        "evidence_required": "Transfer map; Microsoft tenant data-residency evidence; executed transfer mechanism per destination",
+        "owner": "IT + DIO",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r09": {
+        "cls": "B",
+        "item": "Role-based POPIA and security awareness training delivered",
+        "documents_covering": [
+          "PU-PIMS-001 s.10 (curriculum specified)"
+        ],
+        "evidence_required": "Attendance register per session, retained five years; induction tied to account creation",
+        "owner": "DIO",
+        "workstream": "Workstream 5 — Operating the cycle"
+      },
+      "puris-remediation-r10": {
+        "cls": "B",
+        "item": "Breach procedure operating and tested",
+        "documents_covering": [
+          "PU-POL-DBR-004",
+          "PU-PLN-IRP-019"
+        ],
+        "evidence_required": "Tabletop exercise report; breach register in operation; reporting route published to staff",
+        "owner": "DIO + IT",
+        "workstream": "Workstream 5 — Operating the cycle"
+      },
+      "puris-remediation-r11": {
+        "cls": "C",
+        "item": "Structured consent capture where consent is relied on",
+        "documents_covering": [
+          "None — requires a change to forms and systems"
+        ],
+        "evidence_required": "Consent records showing purpose, channel, date and wording version; quarterly audit sample",
+        "owner": "IT + DIO",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r12": {
+        "cls": "B",
+        "item": "Operator register built and POPIA-compliant agreements executed",
+        "documents_covering": [
+          "PU-FORM-OCQ-008",
+          "PU-AGR-DPA-006"
+        ],
+        "evidence_required": "Completed questionnaire and signed agreement for each of the nine operators",
+        "owner": "DIO",
+        "workstream": "Workstream 3 — Third-party contracting"
+      },
+      "puris-remediation-r13": {
+        "cls": "C",
+        "item": "Information Officer registered; Deputy designated in writing",
+        "documents_covering": [
+          "None — a statutory filing and an appointment"
+        ],
+        "evidence_required": "Regulator registration confirmation; signed s.56 designation letter",
+        "owner": "Chairman",
+        "workstream": "Workstream 1 — Governance activation"
+      },
+      "puris-remediation-r14": {
+        "cls": "C",
+        "item": "POPIA a standing board and management agenda item",
+        "documents_covering": [
+          "None — a governance behaviour"
+        ],
+        "evidence_required": "Minutes of three consecutive meetings showing the item and the decisions taken",
+        "owner": "MD",
+        "workstream": "Workstream 1 — Governance activation"
+      },
+      "puris-remediation-r15": {
+        "cls": "B",
+        "item": "Policy register with version history and review dates operating",
+        "documents_covering": [
+          "PU-REG-001"
+        ],
+        "evidence_required": "Populated register; superseded versions retained; first annual review completed",
+        "owner": "DIO",
+        "workstream": "Workstream 1 — Governance activation"
+      },
+      "puris-remediation-r16": {
+        "cls": "C",
+        "item": "Post-employment personal information clause in employment contracts",
+        "documents_covering": [
+          "None — a contract amendment"
+        ],
+        "evidence_required": "Updated contract template; signed variation or new contracts issued; offboarding confirmation step in use",
+        "owner": "HR + legal",
+        "workstream": "Workstream 3 — Third-party contracting"
+      },
+      "puris-remediation-r17": {
+        "cls": "D",
+        "item": "Third-party and law-enforcement disclosure procedure and log",
+        "documents_covering": [
+          "Document outstanding"
+        ],
+        "evidence_required": "Approved disclosure procedure; maintained disclosure log",
+        "owner": "DIO",
+        "workstream": "Workstream 5 — Operating the cycle"
+      },
+      "puris-remediation-r18": {
+        "cls": "B",
+        "item": "Secure destruction operating with records retained",
+        "documents_covering": [
+          "PU-POL-DRP-002"
+        ],
+        "evidence_required": "August 2026 clearance recorded retrospectively; destruction certificates from the point of adoption onward",
+        "owner": "IT + DIO",
+        "workstream": "Workstream 5 — Operating the cycle"
+      },
+      "puris-remediation-r19": {
+        "cls": "C",
+        "item": "MFA coverage completed; password manager provided; encryption audited",
+        "documents_covering": [
+          "PU-POL-ACC-012",
+          "PU-PRC-PWD-014"
+        ],
+        "evidence_required": "MFA coverage report showing 100 per cent; password manager deployed and trained; encryption status per device",
+        "owner": "IT",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r20": {
+        "cls": "C",
+        "item": "Sanctioned remote-access route; unsanctioned storage blocked",
+        "documents_covering": [
+          "PU-POL-MOB-015"
+        ],
+        "evidence_required": "Remote-access solution in production; DLP or tenant restriction configured; policy rule superseded",
+        "owner": "IT",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r21": {
+        "cls": "D",
+        "item": "Data classification scheme designed and applied",
+        "documents_covering": [
+          "Document outstanding"
+        ],
+        "evidence_required": "Approved classification policy; classification applied across the asset register and document libraries",
+        "owner": "DIO + IT",
+        "workstream": "Workstream 2 — Records foundation"
+      },
+      "puris-remediation-r22": {
+        "cls": "C",
+        "item": "Awareness assessment extended to all departments",
+        "documents_covering": [
+          "Instrument exists"
+        ],
+        "evidence_required": "Completed interview workbook for each of the six remaining functions",
+        "owner": "DIO",
+        "workstream": "Workstream 6 — Assurance completion"
+      },
+      "puris-remediation-r23": {
+        "cls": "C",
+        "item": "Outstanding audit domains completed",
+        "documents_covering": [
+          "Instrument exists"
+        ],
+        "evidence_required": "Completed Sections 4 to 6: Security of Personal Data, Data Subject Requests, Direct Marketing",
+        "owner": "DIO",
+        "workstream": "Workstream 6 — Assurance completion"
+      },
+      "puris-remediation-r24": {
+        "cls": "C",
+        "item": "IT function named, with a deputy",
+        "documents_covering": [
+          "None — an appointment"
+        ],
+        "evidence_required": "Named role recorded at Annex B of PU-PLN-IRP-019 and in the ISMS governance table",
+        "owner": "MD",
+        "workstream": "Workstream 1 — Governance activation"
+      },
+      "puris-remediation-r25": {
+        "cls": "D",
+        "item": "IT change management process",
+        "documents_covering": [
+          "Document outstanding"
+        ],
+        "evidence_required": "Approved change procedure; change records showing security impact assessed before application",
+        "owner": "IT",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r26": {
+        "cls": "D",
+        "item": "Teleworking Policy and Remote Supplier Access Procedure",
+        "documents_covering": [
+          "Documents outstanding"
+        ],
+        "evidence_required": "Both approved and issued; interim rules in PU-POL-MOB-015 and PU-POL-ACC-012 superseded",
+        "owner": "DIO",
+        "workstream": "Unassigned"
+      },
+      "puris-remediation-r27": {
+        "cls": "C",
+        "item": "Cyber insurance and forensic support confirmed",
+        "documents_covering": [
+          "None — a procurement decision"
+        ],
+        "evidence_required": "Policy schedule and retainer or arrangement recorded at Annex B of PU-PLN-IRP-019",
+        "owner": "Finance",
+        "workstream": "Workstream 3 — Third-party contracting"
+      },
+      "puris-remediation-r28": {
+        "cls": "C",
+        "item": "IT asset register",
+        "documents_covering": [
+          "None — an inventory exercise"
+        ],
+        "evidence_required": "Populated register covering every endpoint and system, with encryption status and owner",
+        "owner": "IT",
+        "workstream": "Workstream 2 — Records foundation"
+      },
+      "puris-remediation-r29": {
+        "cls": "D",
+        "item": "Patching and vulnerability management standard",
+        "documents_covering": [
+          "Document outstanding"
+        ],
+        "evidence_required": "Approved standard; patch compliance report; confirmation that no unsupported OS remains in service",
+        "owner": "IT",
+        "workstream": "Workstream 4 — Technical control build"
+      },
+      "puris-remediation-r30": {
+        "cls": "C",
+        "item": "Local administrator rights audited and restricted",
+        "documents_covering": [
+          "PU-POL-ISM-011"
+        ],
+        "evidence_required": "Administrator group membership report before and after; software installation restricted to the IT function",
+        "owner": "IT",
+        "workstream": "Workstream 4 — Technical control build"
+      }
+    },
+    "accuracy_confirmed": true
+  },
+  "report_spec": {
+    "sections": [
+      {
+        "key": "cover",
+        "title": "Cover & Document Control"
+      },
+      {
+        "key": "exec_summary",
+        "title": "Executive Summary"
+      },
+      {
+        "key": "company_profile",
+        "title": "Company Profile"
+      },
+      {
+        "key": "scope_methodology",
+        "title": "Scope, Objectives & Methodology"
+      },
+      {
+        "key": "alignment",
+        "title": "Assessment Framework: POPIA & ISO/IEC 27701 Alignment"
+      },
+      {
+        "key": "domains",
+        "title": "Control Assessment by Domain"
+      },
+      {
+        "key": "awareness",
+        "title": "Security & Privacy Awareness — People Risk"
+      },
+      {
+        "key": "risk_register",
+        "title": "Consolidated Risk Register"
+      },
+      {
+        "key": "roadmap",
+        "title": "Remediation Roadmap"
+      },
+      {
+        "key": "documentation_issued",
+        "title": "Post-Assessment Position: Documentation Issued",
+        "min_version": 2
+      },
+      {
+        "key": "classification_register",
+        "title": "What Documentation Cannot Close",
+        "min_version": 2
+      },
+      {
+        "key": "implementation_programme",
+        "title": "Implementation Programme",
+        "min_version": 2
+      },
+      {
+        "key": "delivery_options",
+        "title": "Delivery Options & Standing Cadence",
+        "min_version": 2
+      },
+      {
+        "key": "residual_risk",
+        "title": "Residual Risk Pending Implementation",
+        "min_version": 2
+      },
+      {
+        "key": "conclusion",
+        "title": "Conclusion"
+      },
+      {
+        "key": "appendices",
+        "title": "Appendices"
+      }
+    ],
+    "narrative_templates": {
+      "exec_summary": "{{org_name}} was assessed across {{question_total}} controls: {{non_compliant_count}} Non-Compliant, {{under_review_count}} Under Review, {{partial_count}} Partially Compliant and {{fully_compliant_count}} Compliant. The overall maturity position is {{maturity_label}} ({{overall_pct}}%).",
+      "company_profile": "{{org_name}} was assessed as at {{audit_date}}.",
+      "scope_methodology": "The assessment combined structured interviews, evidence review and line-by-line mapping to POPIA and ISO/IEC 27701.",
+      "conclusion": "{{org_name}}'s overall maturity is assessed at {{maturity_label}}."
+    },
+    "maturity_bands": [
+      {
+        "min": 0,
+        "max": 24,
+        "label": "Initial / Ad Hoc (Red)",
+        "tone": "fail"
+      },
+      {
+        "min": 25,
+        "max": 49,
+        "label": "Repeatable but Reactive (Orange)",
+        "tone": "warn"
+      },
+      {
+        "min": 50,
+        "max": 74,
+        "label": "Defined (Amber)",
+        "tone": "warn"
+      },
+      {
+        "min": 75,
+        "max": 89,
+        "label": "Managed (Green)",
+        "tone": "pass"
+      },
+      {
+        "min": 90,
+        "max": 100,
+        "label": "Optimised (Blue)",
+        "tone": "ink"
+      }
+    ],
+    "severity_matrix": {
+      "Critical": {
+        "non_compliant": "Critical",
+        "partial": "Critical",
+        "under_review": "Critical",
+        "not_assessed": "Critical"
+      },
+      "High": {
+        "non_compliant": "High",
+        "partial": "High",
+        "under_review": "High",
+        "not_assessed": "High"
+      },
+      "Medium": {
+        "non_compliant": "Medium",
+        "partial": "Medium",
+        "under_review": "Medium",
+        "not_assessed": "Medium"
+      },
+      "Low": {
+        "non_compliant": "Low",
+        "partial": "Low",
+        "under_review": "Low",
+        "not_assessed": "Low"
+      }
+    },
+    "target_windows": {
+      "Critical": "0–30 days",
+      "High": "0–30 days",
+      "Medium": "31–90 days",
+      "Low": "Next assessment cycle"
+    },
+    "assessment_scope": {
+      "section_ids": [
+        1,
+        2,
+        3
+      ],
+      "limitations": [
+        "The assessment reflects evidence available at the assessment date.",
+        "Under Review controls remain open until sufficient evidence is obtained.",
+        "The awareness result reflects one departmental cohort of four people."
+      ],
+      "out_of_scope_domains": [
+        "Security of Personal Information",
+        "Requests for Personal Data",
+        "Direct Marketing"
+      ]
+    },
+    "risk_register_limit": 20,
+    "rating_scale": {
+      "statuses": [
+        {
+          "key": "compliant",
+          "label": "Compliant",
+          "definition": "Evidence confirms the control is designed and operating as required."
+        },
+        {
+          "key": "partially_compliant",
+          "label": "Partially Compliant",
+          "definition": "The control exists in some form but is inconsistently applied or incompletely evidenced."
+        },
+        {
+          "key": "under_review",
+          "label": "Under Review",
+          "definition": "Insufficient evidence was available at the time of assessment to confirm status."
+        },
+        {
+          "key": "non_compliant",
+          "label": "Non-Compliant",
+          "definition": "No evidence of the control was identified."
+        }
+      ],
+      "risks": [
+        {
+          "key": "Critical",
+          "definition": "Immediate action required — material regulatory, financial or reputational exposure."
+        },
+        {
+          "key": "High",
+          "definition": "Action required within 30 days of the applicable phase."
+        },
+        {
+          "key": "Medium",
+          "definition": "Action required within 90 days."
+        },
+        {
+          "key": "Low",
+          "definition": "Monitor and review at the next assessment cycle."
+        }
+      ]
+    },
+    "alignment_table": [
+      {
+        "condition": "1. Accountability",
+        "reference": "",
+        "iso_clause": "5.2–5.4",
+        "iso_title": "Context of the organisation; Leadership"
+      },
+      {
+        "condition": "2. Processing Limitation",
+        "reference": "",
+        "iso_clause": "7.2.2–7.2.6",
+        "iso_title": "Lawful basis, consent, minimisation, further processing"
+      },
+      {
+        "condition": "3. Purpose Specification",
+        "reference": "",
+        "iso_clause": "7.2.1, 7.3.2",
+        "iso_title": "RoPA; privacy notices"
+      },
+      {
+        "condition": "4. Further Processing Limitation",
+        "reference": "",
+        "iso_clause": "7.2.6",
+        "iso_title": "Processing for specified purpose only"
+      },
+      {
+        "condition": "5. Information Quality",
+        "reference": "",
+        "iso_clause": "7.4.3",
+        "iso_title": "Accuracy and correction of PII"
+      },
+      {
+        "condition": "6. Openness",
+        "reference": "",
+        "iso_clause": "7.3",
+        "iso_title": "Determining and meeting PII principals’ information needs"
+      },
+      {
+        "condition": "7. Security Safeguards",
+        "reference": "",
+        "iso_clause": "6.– series (Annex A/B controls); 7.4.7–7.4.8",
+        "iso_title": "Retention & disposal"
+      },
+      {
+        "condition": "8. Data Subject Participation",
+        "reference": "",
+        "iso_clause": "7.3.4–7.3.9",
+        "iso_title": "Consent, access, correction, objection mechanisms"
+      }
+    ],
+    "implementation_workstreams": [],
+    "delivery_options": [
+      {
+        "route": "Outsourced Deputy Information Officer, standing engagement",
+        "scope": "Workstreams 1, 2, 3, 5 and 6 — 20 of the 30 items",
+        "strength": "Continuity of the monthly cycle; the registers stay populated; independence from the functions being reviewed",
+        "limitation": "Cannot deliver Workstream 4. Depends on internal IT and Finance for information and decisions."
+      },
+      {
+        "route": "Defined project, fixed scope and end date",
+        "scope": "Workstreams 1, 2 and 3 — the build of the ROPA, the contracting programme and the governance activation",
+        "strength": "Concentrated effort on the foundation items; a clear completion point",
+        "limitation": "Leaves Workstream 5 without an owner once the project closes, which is where compliance programmes usually decay."
+      },
+      {
+        "route": "Internal IT or the appointed MSP",
+        "scope": "Workstream 4 — 8 of the 30 items",
+        "strength": "The only route to closing the technical items",
+        "limitation": "Requires the IT function to be named first (R24). Scope and accountability should be recorded in the service agreement."
+      },
+      {
+        "route": "Combination — project for the build, standing DIO for the cycle",
+        "scope": "All six workstreams",
+        "strength": "Matches the shape of the work: the foundation is a project, the operation is a cycle",
+        "limitation": "Requires clarity at handover on which items transfer and what evidence accompanies them."
+      }
+    ],
+    "delivery_cadence": [
+      {
+        "cycle": "Monthly",
+        "activity": "Remediation register progress; backup and restore status; DSARs and breaches logged in the period",
+        "evidence": "Dated progress report to the Information Officer"
+      },
+      {
+        "cycle": "Quarterly",
+        "activity": "Privileged access review; operator agreement status; check that new systems have been entered in the ROPA; IRP contact list review",
+        "evidence": "Review records with exceptions and actions"
+      },
+      {
+        "cycle": "Annually",
+        "activity": "Full ROPA review; policy suite review; training delivery and attendance; tabletop exercise; compliance report to the Executive Chairman",
+        "evidence": "Re-issued ROPA, attendance register, exercise report, annual report"
+      },
+      {
+        "cycle": "On event",
+        "activity": "ROPA update on any new or changed system; policy review after any significant breach or regulatory development",
+        "evidence": "Updated ROPA entry; post-incident review"
+      }
+    ]
+  },
+  "expected": {
+    "control_total": 36,
+    "status_counts": {
+      "fully_compliant": 5,
+      "partial": 5,
+      "under_review": 5,
+      "non_compliant": 21,
+      "na": 0,
+      "not_assessed": 0
+    },
+    "status_percentages": {
+      "fully_compliant": 13.9,
+      "partial": 13.9,
+      "under_review": 13.9,
+      "non_compliant": 58.3
+    },
+    "domain_totals": [
+      13,
+      13,
+      10
+    ],
+    "risk_counts": {
+      "Critical": 16,
+      "High": 17,
+      "Medium": 3,
+      "Low": 0
+    },
+    "risk_register_rows": 20,
+    "awareness": {
+      "respondents": 4,
+      "questions": 41,
+      "pct": 75,
+      "domains": 7,
+      "high_risk_behaviours": 5
+    },
+    "class_counts": {
+      "A": 1,
+      "B": 8,
+      "C": 16,
+      "D": 5
+    },
+    "workstreams": 6,
+    "residual_exposures": 7,
+    "document_suites": 3,
+    "outstanding_documents": 7,
+    "reviewed_documents": 7,
+    "section_keys": [
+      "cover",
+      "exec_summary",
+      "company_profile",
+      "scope_methodology",
+      "alignment",
+      "domains",
+      "awareness",
+      "risk_register",
+      "roadmap",
+      "documentation_issued",
+      "classification_register",
+      "implementation_programme",
+      "delivery_options",
+      "residual_risk",
+      "conclusion",
+      "appendices"
+    ]
+  }
+}

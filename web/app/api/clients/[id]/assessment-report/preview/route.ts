@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 import { renderReportHtml } from '@/lib/report/render';
+import { validateReportOverrides } from '@/lib/report/validate';
 import type { ReportOverrides, ReportPayload } from '@/lib/report/types';
 
 // Live preview of a report (draft or issued) rendered from its stored payload+overrides.
@@ -23,9 +24,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!report) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (!report.compiled_at) return NextResponse.json({ error: 'report not compiled yet' }, { status: 409 });
 
+  let overrides: ReportOverrides;
+  try {
+    overrides = validateReportOverrides(report.overrides ?? {});
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Report overrides are malformed.',
+    }, { status: 409 });
+  }
+
   const html = renderReportHtml(
     report.payload as ReportPayload,
-    (report.overrides ?? {}) as ReportOverrides,
+    overrides,
     { practiceName: practice?.name ?? '', accentHex: practice?.accent_hex ?? null, logo: practice?.logo_url ?? null },
   );
   return new NextResponse(html, {

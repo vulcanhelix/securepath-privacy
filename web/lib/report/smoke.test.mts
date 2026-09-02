@@ -1,9 +1,10 @@
 // Smallest runnable check for the report pipeline: fixture -> payload -> HTML.
 // Run: npx tsx web/lib/report/smoke.test.mts   (no framework — plain asserts)
 import assert from 'node:assert';
-import { buildReportPayload } from './compile';
+import { buildReportPayload, rebaseReportIdentity } from './compile';
 import { renderReportHtml } from './render';
 import { DEFAULT_REPORT_SPEC, resolveSpec } from './spec';
+import { validateReportOverrides } from './validate';
 
 const q = (n: number, section: number, risk: string, extra: Partial<Record<string, unknown>> = {}) => ({
   id: `q${section}-${n}`, uid: `t.s${section}.q${String(n).padStart(2, '0')}`,
@@ -49,7 +50,15 @@ const payload = buildReportPayload(inputs as never, {});
 // counts: 1 nc, 1 partial, 1 fc, 1 na, 1 not_assessed
 assert.deepEqual(
   { ...payload.summary.counts },
-  { fully_compliant: 1, partial: 1, non_compliant: 1, na: 1, not_assessed: 1, total: 5 });
+  {
+    fully_compliant: 1,
+    partial: 1,
+    under_review: 0,
+    non_compliant: 1,
+    na: 1,
+    not_assessed: 1,
+    total: 5,
+  });
 // severity matrix: Critical x non_compliant = Critical finding; Critical x na = closed
 assert.equal(payload.summary.critical_count, 1);
 assert.equal(payload.domains.length, 2);
@@ -80,6 +89,43 @@ assert.equal(row.cls, 'C');
 assert.equal(row.cls_source, 'advisor');
 assert.equal(row.owner, 'IT');
 
+const rebasedOverrides = rebaseReportIdentity(validateReportOverrides({
+  narratives: {
+    conclusion: 'Legacy Client remains responsible for closing the programme.',
+  },
+  structured: {
+    cover: {
+      prepared_by: 'W. Despard',
+      attention: null,
+      scope_of_version: 'Legacy Client reassessment.',
+      confidentiality_statement: 'Confidential to Legacy Client.',
+    },
+    company_profile: {
+      legal_name: 'Legacy Client',
+      registration_number: 'OLD-001',
+      location: null,
+      industry: null,
+      activities: null,
+      personal_information_categories: [],
+    },
+  },
+}), ['Legacy Client'], inputs.clientName);
+const identityPayload = buildReportPayload({
+  ...inputs,
+  registrationNumber: 'NEW-001',
+  session: { ...inputs.session, org_name: 'Legacy Client' },
+} as never, rebasedOverrides);
+assert.ok(!JSON.stringify(identityPayload).includes('Legacy Client'));
+assert.equal(identityPayload.cover.org_name, inputs.clientName);
+assert.equal(identityPayload.structured.company_profile.legal_name, inputs.clientName);
+assert.equal(identityPayload.structured.company_profile.registration_number, 'NEW-001');
+
+// residual exposures must explain the exposure, never restate it
+for (const exposure of p2.residual_risk ?? []) {
+  assert.notEqual(exposure.why_it_matters.trim(), exposure.exposure.trim());
+  assert.ok(exposure.why_it_matters.trim().length > 0);
+}
+
 // render: deterministic, escaped, sections present/excluded as configured
 const brand = { practiceName: 'Test Practice', accentHex: '#123456', logo: null };
 const html1 = renderReportHtml(p2, { narratives: { exec_summary: 'ADVISOR <b>SUMMARY</b>' } }, brand);
@@ -89,10 +135,23 @@ assert.ok(html1.includes('ADVISOR &lt;b&gt;SUMMARY&lt;/b&gt;'), 'narrative overr
 assert.ok(html1.includes('CONFIDENTIAL'));
 assert.ok(html1.includes('Consolidated Risk Register'));
 assert.ok(html1.includes('What Documentation Cannot Close'));
+assert.ok(html1.includes('Inherent risk across all 5 in-scope controls:'));
 assert.ok(!html1.includes('id="delivery'), 'no stray markup');
 assert.ok(html1.includes('--accent: #123456'));
-// no awareness data -> section dropped
-assert.ok(!html1.includes('Awareness — People Risk</h2>'));
+assert.ok(html1.includes('--bg: #f5f5f5'));
+assert.ok(html1.includes('<main class="report">'));
+assert.ok(html1.includes('class="brand-lockup"'));
+assert.ok(html1.includes("font: 13px/1.6 'TT Norms Pro'"));
+assert.ok(html1.includes('border-radius: 24px'));
+assert.ok(html1.includes('break-after: page'));
+assert.ok(html1.includes('break-before: page'));
+assert.ok(html1.includes('display: table-header-group'));
+assert.ok(html1.includes('break-inside: avoid-page'));
+assert.ok(!html1.includes("Georgia, 'Times New Roman'"), 'report must use the app typography');
+assert.ok(!html1.includes('th { background: var(--accent)'), 'tables must use the app table styling');
+// Declared sections remain visible even when evidence is absent.
+assert.ok(html1.includes('Awareness — People Risk</h2>'));
+assert.ok(html1.includes('No evidence or advisor content was recorded for this section.'));
 // classification overrides saved AFTER the last compile still render (payload holds the
 // proposal, overrides carry the decision — preview and issue must show the decision)
 const p3 = buildReportPayload(inputs as never, {});
@@ -105,5 +164,56 @@ const ceP = buildReportPayload({ ...inputs, spec: DEFAULT_REPORT_SPEC, framework
 const ceHtml = renderReportHtml(ceP, {}, brand);
 assert.ok(ceHtml.includes('Executive Summary'));
 assert.ok(!ceHtml.includes('What Documentation Cannot Close'), 'v1 must not include v2 sections');
+
+const programmePayload = buildReportPayload({
+  ...inputs,
+  spec: {
+    ...DEFAULT_REPORT_SPEC,
+    implementation_workstreams: [{
+      number: 2,
+      title: 'Records foundation',
+      themes: ['registers', 'records'],
+      default_window: '30–90 days',
+      default_owner: 'Outsourced DIO with IT',
+      description: 'Build accountable records of processing and assets.',
+    }],
+  },
+  tasks: [{
+    theme: '2. Data Mapping & Asset Register',
+    title: 'For each asset record, document owner, data type, location and access rights',
+    description: 'Build the Information Asset Register and classify personal information.',
+    responsible: 'IT',
+    output: 'Completed Asset Register',
+    priority: 'high',
+    owner: null,
+    due_date: null,
+    status: 'todo',
+  }],
+} as never, {});
+assert.deepEqual(
+  programmePayload.implementation_programme?.[0].actions,
+  ['For each asset record, document owner, data type, location and access rights'],
+);
+
+assert.throws(
+  () => validateReportOverrides({ structured: { company_profile: { legal_name: 42 } } }),
+  /company_profile\.legal_name must be a string/,
+);
+assert.throws(
+  () => validateReportOverrides({
+    risk_register: [{
+      uid: 'bad',
+      ref: '1.1',
+      control_area: null,
+      finding: 'Malformed severity',
+      severity: 'Urgent',
+      recommended_action: null,
+      owner: null,
+      target_window: '0–30 days',
+      source_type: 'assessment',
+    }],
+  }),
+  /unsupported value/,
+);
 
 console.log('report smoke: all assertions passed');
