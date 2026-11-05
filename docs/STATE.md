@@ -4,19 +4,28 @@ Updated after every merge. Next session reads BUILD_PLAN_R1.md → BACKLOG.md �
 
 ## Last update
 
-2026-11-05 — plan v2 written after adversarial spec review. Awaiting William's
-confirmation that v0.2 sits underneath the existing build (email sent). Do NOT start
-W0 before that lands — W0-00 (authz remodel) and W0-04 (tracks→programmes) both
-depend on the answer.
+2026-11-05 — plan v2 written after adversarial spec review. Gate RELAXED (same day):
+William's answer only affects W0-04 (tracks→programmes = migration vs deprecation).
+Everything else is identical under either answer — W0-00/01/02/03/05 unblocked NOW.
+W0-04 stays pending his reply; even it can land mid-build (it's legacy-data seam,
+not new-schema shape).
 
 ## In flight
 
 (none)
 
+## Done
+
+- W0-00 MERGED 2026-11-05 (PR #59, CI green). role_assignments + predicate catalogue
+  live; memberships is now a view; end_date exclusive; PostgREST needs a schema
+  reload on staging after apply. NOTE: CI minio image moved to
+  docker.io/bitnamilegacy/minio:2025.4.22 (upstream minio is login-gated everywhere)
+  + http healthcheck + root user.
+
 ## Next unblocked
 
-- Commit plan v2 + spec + backlog + status.sh.
-- On William's confirmation: W0-00 authz remodel — the long pole, start first.
+- W0-01 (#10) ALTERs + platform-tier tables; W0-05 (#14) fixtures can go in parallel.
+- Deploy note: applying migration to staging requires PostgREST schema reload.
 
 ## Open questions for William
 
