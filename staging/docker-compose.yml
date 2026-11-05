@@ -81,6 +81,7 @@ services:
   minio:
     image: docker.io/bitnamilegacy/minio:2025.4.22
     restart: unless-stopped
+    user: "0:0"
     command: server /data --console-address ":9001"
     ports:
       - "127.0.0.1:9000:9000"
