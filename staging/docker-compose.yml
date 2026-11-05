@@ -79,7 +79,7 @@ services:
   # S3-compatible object store for document uploads (Stage 2+). Loopback only.
   # Portable: the app talks S3; at prod point S3_ENDPOINT at AWS S3 af-south-1, no code change.
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-01-20T14-49-07Z
+    image: docker.io/bitnamilegacy/minio:2025.4.22
     restart: unless-stopped
     command: server /data --console-address ":9001"
     ports:
