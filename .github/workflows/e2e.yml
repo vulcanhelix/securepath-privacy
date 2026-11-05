@@ -39,8 +39,6 @@ jobs:
           echo "ANON_KEY=$(python3 ci/mint_jwt.py "$JWT_SECRET" anon)" >> "$GITHUB_ENV"
           echo "SERVICE_KEY=$(python3 ci/mint_jwt.py "$JWT_SECRET" service_role)" >> "$GITHUB_ENV"
 
-      - name: GHCR login (minio image lives in ghcr — Docker Hub pulled the tag)
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Start Supabase stack (db, auth, rest, minio)
         working-directory: staging
