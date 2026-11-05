@@ -79,8 +79,9 @@ services:
   # S3-compatible object store for document uploads (Stage 2+). Loopback only.
   # Portable: the app talks S3; at prod point S3_ENDPOINT at AWS S3 af-south-1, no code change.
   minio:
-    image: minio/minio:RELEASE.2025-01-20T14-49-07Z
+    image: docker.io/bitnamilegacy/minio:2025.4.22
     restart: unless-stopped
+    user: "0:0"
     command: server /data --console-address ":9001"
     ports:
       - "127.0.0.1:9000:9000"
@@ -91,7 +92,7 @@ services:
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || wget -q -O /dev/null http://localhost:9000/minio/health/live || exit 1"]
       interval: 10s
       retries: 5
 
