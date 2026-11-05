@@ -1,0 +1,1181 @@
+CONFIDENTIAL
+SecurePath · Product Specification
+Compliance Platform
+Functional specification for a white-label, multi-tenant platform to implement and maintain privacy and cybersecurity frameworks
+Prepared by
+SecurePath
+For the developer appointed to price and build release 1  |  South Africa and United Kingdom
+Document reference
+SP-SPC-PLT-001 (proposed)
+Version
+0.2 · Draft for developer review
+Date
+3 November 2026
+Classification
+Confidential
+Prepared by
+William Despard, SecurePath
+Product
+SecurePath Compliance Platform (working name)
+SECUREPATH
+
+
+Document Information
+Document reference
+SP-SPC-PLT-001 (proposed)
+Version
+0.2 · Draft for developer review. Supersedes the single-client draft 0.1
+Date prepared
+3 November 2026
+Classification
+Confidential: SecurePath and the developer appointed to price or build the platform
+Product owner
+SecurePath, owned by William Despard and Bruce Martin
+Prepared by
+William Despard, SecurePath
+Product name
+SecurePath Compliance Platform (working name)
+Companion design
+Annex B: workflow, platform and partner screens, client programme screens
+This document contains information that is confidential to SecurePath. It may not be disclosed beyond the developer appointed to price or build the platform without SecurePath’s written permission. It specifies software requirements and does not constitute legal advice. Figures on the screen designs in Annex B are illustrative and are not client data.
+Document control
+Version
+Date
+Prepared by
+Summary of change
+Status
+0.2
+3 November 2026
+W J Despard
+Rewritten as a SecurePath product: multi-tenant platform, white-label partner console, framework template library for six frameworks, jurisdiction packs, tenant isolation, licensing. First client anonymised.
+Draft
+0.1
+3 November 2026
+W J Despard
+Single-client draft for the first POPIA programme. Withdrawn.
+Superseded
+
+Contents
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \o "1-2" \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>Executive Summary<w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>1. Document control and purpose<w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>2. Product overview and scope<w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>3. Platform model<w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>4. Users, roles and permissions<w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>4.1 Platform and partner roles<w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>4.2 Client roles<w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>5. Framework templates<w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5.1 What a template holds<w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5.2 Release 1 template library<w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5.3 Requirements<w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5.4 Jurisdiction packs<w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5.5 Content rules<w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>6. Data model<w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>6.1 Platform and partner entities<w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>6.2 Programme entities<w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>7. Functional requirements: platform and partner modules<w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7.1 Platform administration (SecurePath)<w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7.2 Partner console (screen 10)<w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7.3 Client onboarding (screen 11)<w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7.4 White-label branding (screen 12)<w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7.5 Licences and usage<w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7.6 Partner team<w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>8. Functional requirements: client programme modules<w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.1 Programme dashboard (screen 01)<w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.2 Activity schedule (screen 02)<w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.3 Remediation register<w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.4 Evidence library and review (screens 03 and 08)<w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.5 Weekly working session (screen 04)<w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.6 Monthly report builder (screen 05)<w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.7 KPIs<w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.8 RAID log and decisions<w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.9 Monthly Maintenance (screen 09)<w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.10 Operational registers (screen 06)<w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.11 Quarterly and annual cycles<w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.12 Training and awareness<w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.13 Document register<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.14 Executive view<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8.15 Mobile view (screens 07 and 08)<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>9. Business rules and calculations<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.1 Dates, weeks, months and phases<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.2 Activity RAG<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.3 Register status and days overdue<w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.4 Register closure<w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.5 Monthly snapshots<w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.6 Workstream, programme and partner RAG (proposed)<w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>9.7 Operational deadlines<w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:lastRenderedPageBreak/><w:t>9.8 Licence counting<w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>10. Notifications and scheduled jobs<w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>11. Reports and exports<w:t>19
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>12. Non-functional requirements<w:t>19
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>12.1 Tenant isolation and access<w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>12.2 Audit and integrity<w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>12.3 Privacy, residency and contracts<w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>12.4 Availability, scale and support<w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>12.5 Build approach<w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>13. Onboarding, import and the first client migration<w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>13.1 Import routes<w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>13.2 First client migration<w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>14. Acceptance criteria and test scenarios<w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>15. Assumptions, open questions and decisions required<w:t>23
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>Annex A: POPIA template Monthly Maintenance set<w:t>24
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:before="120" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="13233F"/></w:rPr><w:t>Annex B: Workflow and Screen Designs<w:t>25
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.1 Concept, users and modules<w:t>25
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.2 Core workflow and operating rhythm<w:t>26
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.3 Partner console: client portfolio (screen 10)<w:t>27
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.4 Partner: add a client (screen 11)<w:t>28
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.5 Partner: white-label branding (screen 12)<w:t>29
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.6 Programme dashboard (screen 01)<w:t>30
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.7 Activity schedule and Gantt (screen 02)<w:t>31
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.8 Evidence review (screen 03)<w:t>32
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.9 Weekly working session (screen 04)<w:t>33
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.10 Monthly report builder (screen 05)<w:t>34
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.11 Operational registers (screen 06)<w:t>35
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.12 Monthly Maintenance (screen 09)<w:t>36
+<w:tab w:val="right" w:leader="dot" w:pos="9638"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="360"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>B.13 Mobile view: my actions and evidence capture (screens 07 and 08)<w:t>37
+
+
+Executive Summary
+SecurePath requires a white-label, multi-tenant platform that MSP partners and end-user organisations use to implement privacy and cybersecurity frameworks and then maintain them every month. Partners sell it under their own brand as a managed compliance service; end users can also buy it directly from SecurePath.
+6
+framework templates in release 1
+21
+platform, partner and client modules
+2
+jurisdictions: South Africa and UK
+22
+acceptance test scenarios
+
+What the platform must do. Keep each partner and client strictly separate; give partners one console across all their clients; run every client programme from a versioned framework template (POPIA and PAIA, UK GDPR and DPA 2018, ISO/IEC 27001, ISO/IEC 27701, Cyber Essentials and its South African adaptation); close findings only on accepted evidence; and generate the Monthly Maintenance cycle and monthly report under the partner’s brand.
+Where it comes from. The design is taken from a POPIA programme already running in Excel for a South African client. That programme becomes the first template and the first client to migrate.
+What the developer is asked to do. Propose the stack, hosting provider and South African and UK regions for a hosted multi-tenant web application; price release 1; show how the tenant isolation, audit and residency requirements in section 12 are met; and raise any requirement that cannot be met as written.
+Open points. Fifteen decisions are listed in section 15. Four affect the developer’s contract and quote: intellectual property assignment to SecurePath, the product name, the licence model and the planning load.
+
+1. Document control and purpose
+This specification sets out what the SecurePath Compliance Platform must do, so that a developer can estimate, build and test it. The platform lets managed service providers (MSPs) and end-user organisations implement privacy and cybersecurity frameworks and then maintain them month by month. It is sold under each partner's own brand.
+Conventions
+Requirement identifiers take the form FR-<module>-<number> for functional requirements and NFR-<number> for non-functional requirements.
+Priority follows MoSCoW: Must is required for release 1, Should is expected where effort allows, Could may be deferred.
+Partner means an MSP or reseller that sells and delivers the platform to its own clients. Client means an organisation whose compliance programme runs on the platform. Programme means one framework implementation for one client.
+Role names that carry a legal meaning (Information Officer, Deputy Information Officer, Data Protection Officer) change with the jurisdiction (section 5.4).
+Figures on the screen designs in Annex B are illustrative and are not client data.
+2. Product overview and scope
+SecurePath owns the platform and its framework content. MSP partners resell it under their own brand and use it to deliver compliance as a managed service. End-user organisations can also buy it directly from SecurePath. Each client runs one or more framework programmes: first an implementation phase that closes the gaps found at assessment, then a monthly maintenance cycle with no end date.
+Who uses it and why
+Buyer
+What they get
+How they pay
+MSP partner
+A white-labelled platform to run many clients' programmes, a cross-client view of overdue work and reports due, and a repeatable monthly service to sell
+Partner subscription plus a fee per client programme (model to be set by SecurePath)
+End-user organisation, through a partner
+A structured programme, evidence of compliance, monthly reports to its board
+Billed by the partner
+End-user organisation, direct
+The same, with SecurePath as its partner
+Billed by SecurePath
+
+The first live programme. The platform design comes from a POPIA implementation programme already running in Excel for a South African motor dealer group with three sites: 59 activities, 24 remediation items, 43 weeks and 5 phases, with weekly sessions and a monthly report. That programme becomes the first POPIA template and the first client to migrate (section 13). The client is not named in this specification.
+In scope for release 1
+Multi-tenant platform: SecurePath, partners, clients, programmes (section 3).
+Partner console with cross-client dashboard, client onboarding and white-label branding.
+Framework template library with six templates (section 5.2) and template versioning.
+Client programme modules: schedule, remediation register, evidence review, weekly session, monthly report, KPIs, RAID log, operational registers, Monthly Maintenance, quarterly and annual cycles, training and awareness, document register, executive view, mobile view.
+Jurisdiction settings for South Africa and the United Kingdom.
+Licence management: client and programme counts per partner.
+Out of scope for release 1
+Online payment and invoicing. Release 1 records licences and reports usage; billing stays outside the platform.
+Integration with the Cyberwin Partner Portal readiness checks. Assessment results are imported by file in release 1 (section 13).
+Running technical controls (scanning, phishing simulation, backups). The platform stores results and reports from the tools that do.
+Legal advice or automated legal interpretation.
+Certification. The platform supports a client's work towards a standard; it does not certify anyone.
+3. Platform model
+The platform has four levels: SecurePath, partners, clients and programmes. Each level sees only what sits beneath it.
+
+Figure 1: Platform model
+SecurePath runs the platform, publishes the framework templates, issues partner licences and supports partners. It sees partner and licence data. It sees a client's programme data only through logged, time-limited support access that the client has approved (NFR-04).
+Partners brand the platform, onboard clients, start programmes from templates and deliver the work. A partner sees only its own clients. SecurePath Direct is SecurePath acting as the partner for clients who buy directly.
+Clients own their programme data. A client can have programmes under more than one framework, and evidence can be shared between them where controls overlap (FR-TPL-07).
+Programmes are one framework for one client, created from a template version. Each runs an implementation phase, then a monthly maintenance cycle with no end date.
+4. Users, roles and permissions
+Roles are granted per level: platform, partner and client. One person can hold roles at more than one level, for example a partner consultant who also leads a client's programme.
+4.1 Platform and partner roles
+Capability
+SecurePath platform admin
+SecurePath content author
+SecurePath support
+Partner admin
+Partner consultant
+Create and suspend partners; issue licences
+Full
+None
+None
+None
+None
+Author, version and publish framework templates
+Approve
+Full
+None
+None
+None
+Partner branding, domain and report templates
+Read
+None
+None
+Full
+None
+Create clients and start programmes
+None
+None
+None
+Full
+If granted
+Assign partner users to clients
+None
+None
+None
+Full
+None
+Cross-client console for the partner
+None
+None
+None
+Full
+Assigned clients
+Open a client's programme data
+None
+None
+With client approval, time limited, logged
+Own clients
+Assigned clients
+Licence and usage reports
+Full
+None
+None
+Own
+None
+
+4.2 Client roles
+The accountable officer and programme lead carry jurisdiction labels: in South Africa, the Information Officer and Deputy Information Officer; in the United Kingdom, the senior accountable lead and, where appointed, the Data Protection Officer. For ISO and Cyber Essentials programmes they are the management representative and the programme lead.
+Capability
+Executive
+Accountable officer
+Programme lead
+Partner consultant
+Workstream lead
+External provider
+Assessor
+All staff
+View dashboard and executive view
+Read
+Read
+Read
+Read
+Own workstream
+Own items
+Read
+None
+Edit schedule and register
+None
+None
+Full
+Full
+None
+None
+None
+None
+Update activity status
+None
+Read
+Full
+Full
+Own
+Own
+None
+None
+Upload evidence
+None
+Yes
+Yes
+Yes
+Own
+Own
+None
+None
+Verify evidence
+None
+None
+Yes
+Yes
+None
+None
+None
+None
+Accept evidence; close register item
+Alternate
+Yes
+None
+None
+None
+None
+None
+None
+Monthly report: draft, sign, issue
+Receive
+Review and sign
+Draft and co-sign
+Draft and co-sign
+None
+Inputs
+None
+None
+Monthly Maintenance
+Read
+Read, approve
+Full
+Full
+Inputs
+Inputs
+None
+None
+Breach notification decision
+None
+Yes
+None
+None
+None
+None
+None
+Report a suspected breach
+
+Rules
+FR-ACC-01 (Must): nobody may verify or accept evidence they uploaded.
+FR-ACC-02 (Must): only the accountable officer, or a named alternate, may close a register item or record a breach notification decision.
+FR-ACC-03 (Must): statutory designations (Information Officer, Deputy Information Officer, Data Protection Officer) are recorded against named individuals with the designation date and evidence of appointment. The jurisdiction pack sets who may hold each designation. In South Africa a partner organisation is recorded as providing DIO support, not as holding the designation; this rule must be confirmed against the Information Regulator's guidance before release.
+FR-ACC-04 (Must): partner users see only the clients they are assigned to. Partner admins see all of their own partner's clients and none of any other partner's.
+FR-ACC-05 (Must): assessor access expires on a set date and is read only.
+FR-ACC-06 (Must): multi-factor authentication for every user.
+5. Framework templates
+The developer builds the template engine; SecurePath writes the framework content. Every programme is created from a published template version, so adding a framework later is content work, not development.
+5.1 What a template holds
+Component
+Content
+Framework metadata
+Name, edition, jurisdiction, source references, template version, release notes
+Programme structure
+Phases with default durations, workstreams with default lead roles
+Activity library
+Activities with reference, workstream, default start and end week, milestone flag, evidence required, dependencies
+Remediation register
+Default findings, or a mapping from assessment results to findings (section 13)
+Document set
+Policies, procedures, notices and forms the framework expects, with review cycles
+KPIs
+Name, unit, calculation, default target, source
+Monthly Maintenance set
+Task templates with timing rule, owner role, input from, evidence produced, report section fed
+Quarterly and annual cycles
+Checklists and their timing
+Operational registers
+Which registers apply and their deadline parameters, taken from the jurisdiction pack
+Report template
+Monthly report sections and tables
+Role labels and glossary
+Names for the accountable officer, programme lead, regulator and other terms
+
+5.2 Release 1 template library
+Template
+Jurisdiction
+Content status
+Notes
+POPIA and PAIA
+South Africa
+Exists: 59 activities, 24 findings, 13 KPIs, 19 maintenance tasks from the first live programme
+To be generalised so it is not specific to one client
+UK GDPR and DPA 2018
+United Kingdom
+To be authored by SecurePath
+Same structure as the POPIA template
+ISO/IEC 27001
+Any
+To be authored by SecurePath
+Information security management system
+ISO/IEC 27701
+Any
+To be authored by SecurePath
+Privacy information management; normally run alongside an ISO/IEC 27001 programme
+Cyber Essentials
+United Kingdom
+To be authored by SecurePath
+Follows the published scheme requirements
+Cyber Essentials, SA adaptation
+South Africa
+Exists as SecurePath policy content; template to be authored
+SecurePath's adaptation of the UK scheme
+
+5.3 Requirements
+FR-TPL-01 (Must): a content author creates and edits templates in a draft state, and the platform admin publishes them as a numbered version.
+FR-TPL-02 (Must): a programme records the template version it was created from. Publishing a new version never changes running programmes.
+FR-TPL-03 (Must): when a new version is published, partners see what changed and can apply it to selected programmes. Applying it adds and updates items without losing client data, progress or evidence.
+FR-TPL-04 (Must): partners can add, edit or retire activities, findings, KPIs and maintenance tasks within a programme without changing the template.
+FR-TPL-05 (Should): partners can save their own template variants, which stay private to that partner.
+FR-TPL-06 (Must): import and export templates as structured files, so content can be authored in a spreadsheet.
+FR-TPL-07 (Should): a mapping table links requirements across frameworks, so evidence accepted in one programme can be offered for a mapped requirement in another programme for the same client. Acceptance is still made separately in each programme.
+FR-TPL-08 (Must): no legal period, deadline or statutory reference is hard-coded. All are parameters in the jurisdiction pack or template, entered by a content author.
+5.4 Jurisdiction packs
+A jurisdiction pack holds the values that change with the law: role labels, regulator name, response periods for data subject requests, breach notification rules and periods, public holidays, date and currency formats, and the default data region. Release 1 needs a South Africa pack and a United Kingdom pack. SecurePath enters and verifies every value against primary sources before publication; the developer supplies the structure only.
+5.5 Content rules
+ISO standards are copyright material. Templates may cite clause and control numbers and use SecurePath's own wording, but must not reproduce the standards' text.
+The use of the Cyber Essentials name for the South African adaptation needs a trade mark and scheme-rules check before release (section 15).
+The platform supports work towards a standard or law. Nothing in the product, its reports or its marketing may state or imply that a client is certified or compliant because it uses the platform.
+6. Data model
+Every record carries a partner ID and a client ID, which the server uses to enforce isolation (NFR-01). Calculated fields (marked calc) are derived by the platform and are never edited directly.
+6.1 Platform and partner entities
+Entity
+Key fields
+Relationships
+Partner
+Name, type (MSP, reseller, SecurePath Direct), country, status, primary contact, data region default
+Has branding, licences, users, clients
+Partner branding
+Logo, colours, display name, custom domain or subdomain, email sender name and domain, Word and PDF report templates, support contact
+Belongs to partner
+Licence
+Partner, plan, client limit, programme limit, start and end date, status
+Belongs to partner; usage calc
+User
+Name, email, organisation, MFA status, status, last sign-in
+Has role assignments
+Role assignment
+User, level (platform, partner, client), role, scope (partner, client or programme), start and end date
+Links user to scope
+Client
+Partner, legal name, trading name, registration number, jurisdiction, sector, sites, headcount in scope, data region
+Has programmes
+Designation
+Client, role (Information Officer, Deputy Information Officer, DPO), person, date designated, evidence, registration reference
+Belongs to client
+Jurisdiction pack
+Code, role labels, regulator, deadline parameters, public holiday calendar, formats, version
+Used by templates and programmes
+Template
+Framework, edition, jurisdiction
+Has versions
+Template version
+Number, status (draft, published, retired), published by, date, release notes, content
+Programmes are created from it
+Requirement mapping
+Requirement in framework A, requirement in framework B, mapping type
+Links template items across frameworks
+Support access grant
+Client, SecurePath user, reason, approved by, start, expiry
+Logged in the audit trail
+
+6.2 Programme entities
+Entity
+Key fields
+Relationships
+Programme
+Client, template version, name, start date (Monday of week 1), total weeks, phase, status (implementation, maintenance, closed), programme lead
+Has everything below
+Phase
+Number, name, start week, end week
+Belongs to programme
+Workstream
+Name, accountable lead, deputy
+Has activities
+Activity
+Ref, workstream, phase calc, text, leads, register refs, start week, end week, start date calc, due date calc, month calc, milestone, evidence required, status, % complete, actual completion, evidence ref, flag, comments, RAG calc
+Many-to-many with register items; dependencies
+Register item
+Ref, finding, priority, assessment window, lead, planned close week, planned close date calc, linked activities, status, evidence ref, accepted on, accepted by, days overdue calc
+Many-to-many with activities
+Evidence and review
+File or link, activity, register items, site, uploaded by and at, review stage, reviewer, outcome, checklist, reasons
+Belongs to programme; may be offered to mapped programmes
+Weekly log
+Week, calculated counts, session held, completed, planned next, blockers, decisions, week RAG
+One per week
+Monthly report
+Period, reference, snapshot of figures, overall RAG, trend, headline, commentary, status, signatures, issued on
+One per month
+KPI and KPI actual
+Name, unit, baseline, target, calculation; month, value, evidence
+Belongs to programme
+RAID item and decision
+Type, description, impact, action, owner, dates, status; decision outcome and minute reference
+Belongs to programme
+Operational record
+Type (data subject request, breach or incident, disclosure, opt-out or objection), dates, site, channel, due date calc, status, outcome, regulator notification
+Belongs to client; shared across the client's programmes
+Maintenance task and instance
+Template task, timing rule, owner role, input from, feeds; period, due date calc, assignee, status, evidence, exception
+Belongs to programme
+Training record
+Person, site, functional group, session, date, attendance
+Belongs to client
+Document
+Reference, title, version, owner, approval date, next review date
+Belongs to client
+Audit event
+Entity, record, field, old and new value, user, organisation, timestamp
+Every change, every level
+
+Operational registers, training records and documents belong to the client, not to one programme, because a breach or a data subject request concerns the client as a whole. Each programme reports the records relevant to it.
+7. Functional requirements: platform and partner modules
+Six modules serve SecurePath and its partners. Screen references point to the designs in Annex B.
+7.1 Platform administration (SecurePath)
+FR-PLT-01 (Must): create, edit, suspend and close partners, including SecurePath Direct.
+FR-PLT-02 (Must): issue and change licences: plan, client limit, programme limit, term.
+FR-PLT-03 (Must): maintain jurisdiction packs and publish template versions (section 5).
+FR-PLT-04 (Must): request support access to a client's programme; the client's accountable officer or the partner admin approves it for a set period; every action during the grant is logged and visible to the client.
+FR-PLT-05 (Should): platform metrics: partners, clients, programmes by framework, active users, monthly report completion rate.
+FR-PLT-06 (Must): suspending a partner blocks its users' sign-in without deleting client data; the data is then handled under the partner and client agreements.
+7.2 Partner console (screen 10)
+FR-PCN-01 (Must): one row per client programme showing client, framework, phase, overall RAG, register items closed, activities overdue, maintenance tasks due and overdue this month, monthly report status and due date, evidence awaiting decision and assigned consultant.
+FR-PCN-02 (Must): filter and sort by framework, jurisdiction, RAG, consultant, report status and overdue work.
+FR-PCN-03 (Must): headline tiles across all the partner's clients: programmes running, programmes Amber or Red, maintenance tasks overdue, reports due this week, reports late.
+FR-PCN-04 (Must): open any client programme in one click, inside the partner's brand.
+FR-PCN-05 (Should): consultant workload view: tasks, sessions and reports due per consultant per week.
+FR-PCN-06 (Should): bulk actions across clients, for example sending maintenance input requests to several clients' IT providers.
+7.3 Client onboarding (screen 11)
+FR-ONB-01 (Must): a step-by-step set-up: client details, jurisdiction and data region; statutory designations; framework templates; programme start date; source of findings (template defaults, assessment import or blank); client users and roles; review and create.
+FR-ONB-02 (Must): block programme creation when it would exceed the partner's licence, with a message to the partner admin.
+FR-ONB-03 (Must): templates offered are filtered by the client's jurisdiction, with templates for any jurisdiction (ISO) always offered.
+FR-ONB-04 (Must): invited client users receive a branded invitation and set up MFA on first sign-in.
+FR-ONB-05 (Should): add a second framework to an existing client and offer mapped evidence from the first (FR-TPL-07).
+7.4 White-label branding (screen 12)
+FR-BRN-01 (Must): per partner: logo, primary and accent colours, display name, sign-in page text, support contact.
+FR-BRN-02 (Must): a subdomain per partner on the platform domain; a custom domain with an automatically issued TLS certificate (Should).
+FR-BRN-03 (Must): emails sent under the partner's display name; from the partner's own domain once its sender records are verified (Should).
+FR-BRN-04 (Must): partner Word and PDF report templates, used for every report the partner's clients generate.
+FR-BRN-05 (Must): a SecurePath attribution line whose display is set per licence by SecurePath.
+FR-BRN-06 (Must): live preview of the sign-in page, dashboard header and report cover before saving.
+FR-BRN-07 (Must): colour choices that fail WCAG 2.1 AA contrast are flagged before saving.
+7.5 Licences and usage
+FR-LIC-01 (Must): partner admins see their licence, limits and current usage.
+FR-LIC-02 (Must): a monthly usage report per partner (clients, programmes by framework, active users) for SecurePath to invoice from.
+FR-LIC-03 (Could): integration with an online billing service in a later release.
+7.6 Partner team
+FR-TEAM-01 (Must): partner admins invite and remove their own users and assign them to clients.
+FR-TEAM-02 (Must): removing a user ends all their client access at once and is logged.
+8. Functional requirements: client programme modules
+Fifteen modules run each client programme. They are framework-neutral: the template supplies the activities, findings, KPIs, maintenance tasks and report structure. Examples below use the POPIA template.
+8.1 Programme dashboard (screen 01)
+FR-DSH-01 (Must): headline tiles: register items closed, high-priority items closed, activities complete, activities overdue, evidence awaiting decision, open RAID items.
+FR-DSH-02 (Must): phase timeline with the current week marked.
+FR-DSH-03 (Must): status by workstream with lead, items closed, RAG and latest commentary.
+FR-DSH-04 (Must): a needs-attention list: overdue activities, decisions near their needed-by date, evidence awaiting decision, items due this week.
+FR-DSH-05 (Must): register items as a grid coloured by status, and the next five milestones.
+FR-DSH-06 (Should): every figure links to the list behind it.
+8.2 Activity schedule (screen 02)
+FR-SCH-01 (Must): list, Gantt and by-lead views, grouped by workstream, filterable by workstream, lead, status and week window.
+FR-SCH-02 (Must): Gantt bars coloured by RAG, milestones as diamonds, current week outlined, reduced-capacity weeks shaded.
+FR-SCH-03 (Must): an activity record shows register links, evidence required, uploaded evidence and review status, comments and status history.
+FR-SCH-04 (Must): an activity cannot start while a predecessor is incomplete, unless the programme lead overrides with a reason.
+FR-SCH-05 (Must): marking an activity Complete records the completion date and prompts for evidence if none is attached.
+FR-SCH-06 (Must): change the programme start date and reduced-capacity weeks; all dates recalculate.
+FR-SCH-07 (Should): export to Excel.
+8.3 Remediation register
+FR-REG-01 (Must): hold findings with the fields in section 6.2, linked to activities.
+FR-REG-02 (Must): Closed is set only by an accepted evidence decision (section 9.4).
+FR-REG-03 (Must): days overdue calculated from the planned close date.
+FR-REG-04 (Must): add findings from a reassessment or internal audit with the same fields.
+8.4 Evidence library and review (screens 03 and 08)
+FR-EVD-01 (Must): upload files (PDF, images, Office documents) or record a link against an activity. Mobile capture records date, time and site.
+FR-EVD-02 (Must): files go straight to the client's encrypted evidence store and are not kept on the device.
+FR-EVD-03 (Must): the programme lead or partner consultant verifies each item against a checklist: shows the control operates, covers the required sites, dated within the activity window. Failed items return to the uploader with reasons.
+FR-EVD-04 (Must): verified items enter the accountable officer's queue, showing whether acceptance closes a finding, partly supports one, or is operating evidence for a KPI.
+FR-EVD-05 (Must): accept, or return with mandatory reasons. Name, outcome and time are written to the register and audit trail.
+FR-EVD-06 (Must): accepted items get an evidence reference in a format set per partner (default EV-<register ref>-<sequence>).
+FR-EVD-07 (Must): where the accountable officer uploaded or led the work, the decision goes to a named alternate.
+8.5 Weekly working session (screen 04)
+FR-WKS-01 (Must): an agenda built for the current week: due, overdue, starting, evidence awaiting decision, decisions for the executive, RAID items due for review, and a reduced-capacity notice where one applies.
+FR-WKS-02 (Must): actions available in place: update status, set a recovery date, notify the lead, add to the executive pack.
+FR-WKS-03 (Must): an Amber activity cannot be saved from the session without a recovery date.
+FR-WKS-04 (Must): capture the weekly log fields; calculated counts fill automatically.
+FR-WKS-05 (Should): email the agenda before the session.
+8.6 Monthly report builder (screen 05)
+FR-RPT-01 (Must): a draft report per programme month in the template's report structure.
+FR-RPT-02 (Must): sections filled from programme data as at the last business day of the month, then locked.
+FR-RPT-03 (Must): show which sections still need input.
+FR-RPT-04 (Must): workflow of Draft, inputs complete, accountable officer review, Signed, Issued.
+FR-RPT-05 (Must): export to Word and PDF in the partner's report template.
+FR-RPT-06 (Must): flag the report as late if not issued by the due business day set in the template.
+8.7 KPIs
+FR-KPI-01 (Must): hold the template's KPIs with baseline, target, unit and source.
+FR-KPI-02 (Must): calculate the KPIs the template marks as automatic; accept the rest as monthly entries with evidence.
+FR-KPI-03 (Must): the accountable officer confirms targets marked proposed.
+FR-KPI-04 (Should): monthly trend against target.
+8.8 RAID log and decisions
+FR-RAI-01 (Must): risks, assumptions, issues and decisions, loaded with the template's opening entries.
+FR-RAI-02 (Must): items past their review date appear on the weekly agenda.
+FR-RAI-03 (Must): decisions record outcome, date and minute reference, and update what they unlock.
+8.9 Monthly Maintenance (screen 09)
+Monthly Maintenance is the recurring control routine that partners sell as a managed service. It starts in the first programme month and continues with no end date once implementation closes. Each template supplies its own task set; the engine is the same for every framework.
+FR-MNT-01 (Must): hold maintenance task templates with code, task, timing rule, owner role, input from, evidence produced, report section or KPI fed, and an active-from rule.
+FR-MNT-02 (Must): on the first business day of each month, generate that month's tasks with due dates calculated from each timing rule.
+FR-MNT-03 (Must): group tasks by window: before month end, month-end close, report window (business days 1 to 5) and executive meeting.
+FR-MNT-04 (Must): request inputs from named providers (IT provider, marketing lead, finance, HR or admin) with a due date and reminders; their response and evidence attach to the task.
+FR-MNT-05 (Must): a task is Complete only when evidence is attached or the reason none applies is recorded.
+FR-MNT-06 (Must): a task can raise an exception that creates a RAID issue and appears on the weekly agenda.
+FR-MNT-07 (Must): the monthly report cannot go to review while a task feeding it is incomplete, unless the programme lead records a reason that prints in the report.
+FR-MNT-08 (Must): tasks with an active-from rule start only once the named activity is complete.
+FR-MNT-09 (Must): the partner console shows maintenance status for every client (FR-PCN-01).
+FR-MNT-10 (Should): a twelve-month completion history per task, used as evidence that controls operate.
+The POPIA template's maintenance set is in Annex A as the worked example. SecurePath authors the sets for the other five templates.
+8.10 Operational registers (screen 06)
+FR-OPS-01 (Must): registers for data subject requests, breaches and incidents, disclosures, and opt-outs and objections, held at client level.
+FR-OPS-02 (Must): due dates and deadlines calculated from the jurisdiction pack parameters, never hard-coded.
+FR-OPS-03 (Must): breaches follow the route: report, log, accountable officer assesses and decides on notification under the jurisdiction's rule, notification recorded, close with lessons learned.
+FR-OPS-04 (Must): any user can report a suspected breach from any screen; the programme lead, accountable officer and partner consultant are alerted at once.
+FR-OPS-05 (Must): monthly counts per register feed the monthly report.
+8.11 Quarterly and annual cycles
+FR-QTR-01 (Must): generate the template's quarterly checklist with evidence slots.
+FR-QTR-02 (Must): generate the annual review tasks and the annual report to the executive.
+8.12 Training and awareness
+FR-TRN-01 (Must): sessions and attendance by site and functional group against the in-scope headcount.
+FR-TRN-02 (Should): run staff awareness checks and report only the average across respondents; no names or individual responses appear in any report.
+8.13 Document register
+FR-DOC-01 (Must): hold the client's policy and procedure set with version, owner, approval date and next review date, linked to the activities that approve or reissue each document.
+8.14 Executive view
+FR-EXE-01 (Must): a read-only page for the client's board or directors: overall RAG, register progress, milestones, open decisions and the latest signed report.
+8.15 Mobile view (screens 07 and 08)
+FR-MOB-01 (Must): a responsive web view at 390 pixels wide listing the user's open actions with due dates and RAG.
+FR-MOB-02 (Must): camera evidence capture with date, time and site, against checklist points.
+9. Business rules and calculations
+The rules below apply to every programme. Thresholds are programme settings with the defaults shown; legal periods come from the jurisdiction pack.
+9.1 Dates, weeks, months and phases
+Value
+Rule
+Week start date
+Programme start date + (week − 1) × 7 days
+Activity or finding due date
+Programme start date + (end week − 1) × 7 + 4 days (the Friday of the end week)
+Programme month of an activity
+Calendar month of (due date − 4 days), counted from the start month as 1
+Phase
+From the template's phase boundaries by end week
+Current programme week
+Whole weeks from start date to report date, plus 1, within the programme's length
+Business day
+Monday to Friday, excluding public holidays in the jurisdiction pack calendar
+Report due date
+The business day of the following month set in the template (POPIA template: the fifth)
+
+9.2 Activity RAG
+Evaluated in this order; the first rule that applies sets the RAG.
+Status Complete: Complete.
+Status Blocked: Red.
+Past due and not Deferred: Red if more than the Red threshold (default 14 days) past due, otherwise Amber.
+Status At risk: Amber.
+Start date reached: Green.
+Otherwise: Not due.
+9.3 Register status and days overdue
+Days overdue = report date − planned close date, never below zero, blank once Closed.
+Status values: Not started, In progress, At risk, Blocked, Closed. Closed is set only by 9.4.
+9.4 Register closure
+A finding becomes Closed only when every linked activity is Complete and the accountable officer, or the named alternate, has accepted evidence for it. The platform records the date, the user and the evidence references. Re-opening needs the accountable officer and a reason.
+9.5 Monthly snapshots
+On the last business day of each month the platform stores a snapshot of every monthly figure for each programme. Reports are built from the snapshot, so an issued report cannot change afterwards.
+9.6 Workstream, programme and partner RAG (proposed)
+Workstream RAG: the worst RAG among its started, incomplete activities; the programme lead may override with a reason.
+Programme RAG: set monthly by the programme lead; the platform suggests the worst workstream RAG.
+Partner console RAG: the programme RAG, shown Red regardless if the monthly report is late or a maintenance task feeding it is overdue.
+9.7 Operational deadlines
+Data subject request response periods, opt-out deadlines and breach notification rules are read from the jurisdiction pack, with any framework-specific targets from the template. Reminders run off those values.
+9.8 Licence counting
+A programme counts against the partner's licence from creation until it is closed. A client counts while it has at least one programme that is not closed.
+10. Notifications and scheduled jobs
+Notifications go by email, under the partner's brand, and in the platform. Users can take a daily digest instead, except for breach alerts, which always go at once.
+Trigger
+Recipient
+Timing
+Priority
+Activity starts or falls due
+Lead; programme lead
+Start week; five business days before due; on the due date
+Must
+Activity turns Amber or Red
+Lead; programme lead; accountable officer when Red
+On the change
+Must
+Evidence returned
+Uploader
+On the decision
+Must
+Evidence awaiting decision
+Accountable officer
+Daily digest; flagged after five business days
+Must
+Maintenance input requested
+Named provider
+On request; two business days before due; when overdue
+Must
+Monthly report due or late
+Programme lead; accountable officer; partner consultant
+Two business days before due; when late
+Must
+Suspected breach reported
+Programme lead; accountable officer; partner consultant
+Immediately
+Must
+Data subject request nearing due date
+Owner; programme lead
+Per jurisdiction pack
+Must
+Decision nearing needed-by date
+Executive; accountable officer
+Ten business days before
+Must
+Template version published
+Partner admins
+On publication
+Must
+Licence near its limit or end date
+Partner admin; SecurePath
+At 90% of limit; 30 days before end
+Should
+Support access requested or granted
+Client accountable officer; partner admin
+On the event
+Must
+
+Scheduled jobs. Each job runs in the client's time zone.
+Daily at 06:00: recalculate RAG, days overdue and current week; send digests.
+First business day of each month: generate maintenance tasks and the draft monthly report.
+Last business day of each month at 18:00: take the monthly snapshot.
+Monday at 06:00: build the weekly session agenda.
+Quarterly and annual dates set by the template: generate checklists.
+First business day of each month: produce partner usage reports (FR-LIC-02).
+11. Reports and exports
+Every client-facing output carries the partner's brand and report template. Nothing is typed up outside the platform.
+Output
+Format
+Level
+Generated
+Priority
+Monthly progress report
+Word, PDF
+Programme
+Monthly, from the snapshot
+Must
+Executive pack
+PDF
+Client
+Monthly
+Must
+Quarterly control checklist
+Word, PDF
+Programme
+Per template
+Must
+Annual compliance report
+Word, PDF
+Client
+Yearly
+Should
+Evidence pack for an assessor or auditor
+Zip of files plus an index
+Programme
+On demand
+Must
+Programme export
+Excel
+Programme
+On demand
+Should
+Maintenance history
+Excel, PDF
+Programme
+On demand
+Should
+Partner portfolio report: programmes, RAG, overdue work, reports issued
+Excel, PDF
+Partner
+On demand and monthly
+Must
+Partner usage report
+Excel
+Partner, SecurePath
+Monthly
+Must
+Audit trail extract
+CSV
+Client, partner, platform
+On demand, admins only
+Must
+
+12. Non-functional requirements
+The platform holds clients' personal information and security evidence for many organisations at once, so tenant isolation and auditability come before every other requirement. SecurePath acts as an operator (POPIA) or processor (UK GDPR) for each client, usually through a partner; the contract chain is set out in 12.3.
+12.1 Tenant isolation and access
+NFR-01 (Must): every query is filtered by partner and client on the server. No user can reach another partner's or client's data by changing a URL, an ID or an API call. Isolation is covered by automated tests on every release.
+NFR-02 (Must): evidence files are stored per client, encrypted at rest, and served only through short-lived signed links after a permission check.
+NFR-03 (Must): single sign-on with Microsoft Entra ID and Google for organisations that use them; MFA for every account.
+NFR-04 (Must): SecurePath staff have no standing access to client data; access only through a support access grant (FR-PLT-04).
+NFR-05 (Must): sessions time out after a configurable idle period (default 30 minutes).
+NFR-06 (Must): uploaded files are scanned for malware before storage.
+NFR-07 (Must): independent penetration test, including tenant isolation, before launch and yearly after.
+12.2 Audit and integrity
+NFR-08 (Must): an append-only audit trail of every change at every level that no user, including platform admins, can edit or delete.
+NFR-09 (Must): accepted evidence and signed reports are locked; later changes create new versions.
+NFR-10 (Must): timestamps stored in UTC and shown in the client's time zone.
+12.3 Privacy, residency and contracts
+NFR-11 (Must): each client's data is stored in a selected region: South Africa or the United Kingdom in release 1. Cross-border transfers must meet POPIA section 72 or the UK GDPR transfer rules, as applicable.
+NFR-12 (Must): the developer, hosting provider and any sub-processors are listed and contracted as SecurePath's sub-operators or sub-processors.
+NFR-13 (Must): the contract chain runs SecurePath to partner (platform agreement with data processing terms), then partner to client. Direct clients contract with SecurePath.
+NFR-14 (Must): on client exit, a full export is provided and the data is deleted within a configurable period, with a deletion certificate.
+NFR-15 (Must): awareness check results are stored and reported only as averages.
+12.4 Availability, scale and support
+NFR-16 (Must): 99.5% availability measured monthly, with planned maintenance outside South African and UK business hours.
+NFR-17 (Must): daily backups per region with a restoration test each quarter.
+NFR-18 (Should): pages load in under 3 seconds at the planning load of \[number\] partners and \[number\] programmes, to be set by SecurePath.
+NFR-19 (Must): current Edge, Chrome and Safari; phones at 390 pixels wide.
+NFR-20 (Should): WCAG 2.1 level AA.
+12.5 Build approach
+The Microsoft 365 option in draft 0.1 suited one client. It does not fit a white-labelled, multi-partner product: each client would need its own SharePoint build, partners could not have one console across clients, and branding would be limited. Release 1 is therefore specified as a hosted, multi-tenant web application. The developer is asked to propose the stack, hosting provider and regions, and to show how NFR-01 to NFR-14 are met.
+13. Onboarding, import and the first client migration
+A new client's findings come from one of three sources: the template defaults, an assessment file, or the client's existing tracker. The first live client arrives through the third route.
+13.1 Import routes
+FR-IMP-01 (Must): import findings from a structured spreadsheet (reference, finding, priority, assessment window, lead) and map them to the template's activities.
+FR-IMP-02 (Should): import assessment results from SecurePath's assessment workbook, where each failed control maps to a template finding.
+FR-IMP-03 (Could): in a later release, receive readiness check results from partner portals by API.
+FR-IMP-04 (Must): import an existing programme tracker in the Excel layout described in 13.2.
+FR-IMP-05 (Must): every import shows a preview and a list of rows rejected with reasons before anything is written.
+13.2 First client migration
+The first client runs a POPIA programme in an Excel tracker with these sheets. Only input cells are loaded; every calculated value is rebuilt and compared.
+Tracker sheet
+Loads into
+Rows
+Dashboard
+Programme start date
+1
+Activity Schedule
+Activities and dependencies
+59
+Register
+Findings
+24
+Weekly Log
+Weekly logs
+43
+Monthly Summary
+Historical monthly reports
+10
+KPIs
+KPIs and monthly actuals
+13
+RAID Log
+RAID items
+Opening entries plus any added
+Lists
+Pick lists
+6 lists
+
+Steps
+Generalise the tracker into the POPIA template (section 5.2), removing client-specific names.
+Load the client's input cells into a test environment under SecurePath Direct or the delivering partner.
+Run a reconciliation report comparing calculated values with the tracker's at the same report date.
+Resolve every difference; expected differences are the snapshot rule (9.5) and the closure rule (9.4).
+Programme lead and accountable officer sign off the reconciliation.
+Run tracker and platform in parallel for two weekly sessions, then switch.
+Archive the final tracker as read-only evidence.
+14. Acceptance criteria and test scenarios
+Release 1 is accepted when every Must requirement passes and these scenarios pass in a test environment with two partners, three clients and the POPIA template. SecurePath runs the tests and signs off.
+ID
+Scenario
+Expected result
+AT-01
+A user of partner A changes a client ID in a URL or API call to one of partner B's clients
+Access refused; attempt logged
+AT-02
+Partner consultant assigned to client 1 only opens the partner console
+Sees client 1 only
+AT-03
+SecurePath support opens a client programme without a grant
+Not possible
+AT-04
+Support access granted for 24 hours
+Access works for 24 hours, every action logged and visible to the client, then ends
+AT-05
+Partner A uploads its logo and colours and sets a subdomain
+Sign-in page, dashboard, emails and Word report carry partner A's brand; partner B unaffected
+AT-06
+Partner A chooses a text colour that fails AA contrast
+Warning before saving
+AT-07
+Partner creates a programme beyond its licence limit
+Blocked with a message to the partner admin
+AT-08
+Content author publishes POPIA template version 1.1
+Running programmes stay on 1.0; partner sees the changes and can apply them to chosen programmes without losing progress or evidence
+AT-09
+Client with a UK jurisdiction pack logs a data subject request
+Due date taken from the UK pack, not from the SA pack
+AT-10
+First client tracker imported and reconciled at the same report date
+All dates, RAG values and counts match the tracker, apart from the documented snapshot and closure differences
+AT-11
+Activity due in week 4 still In progress 12 days later
+RAG Amber; on the weekly agenda as overdue
+AT-12
+Same activity 17 days late
+RAG Red; accountable officer notified; partner console shows the programme Red
+AT-13
+Lead uploads evidence; programme lead verifies; accountable officer accepts
+Finding Closed with date, user and evidence references
+AT-14
+Uploader tries to verify or accept their own evidence
+Not allowed
+AT-15
+First business day of a month
+Maintenance tasks generated with correct due dates; tasks with an unmet active-from rule absent
+AT-16
+An IT provider misses a maintenance input
+Reminder, then overdue; RAID issue created; report blocked from review without a recorded reason
+AT-17
+Status changes after a month-end snapshot
+Issued report and past figures unchanged
+AT-18
+Monthly report generated
+Word file in the partner's template, structured as the programme template sets
+AT-19
+Staff member reports a suspected breach from a phone
+Programme lead, accountable officer and partner consultant alerted at once; only the accountable officer can record the notification decision
+AT-20
+Client exits
+Full export produced; data deleted after the set period; deletion certificate issued
+AT-21
+Admin tries to edit or delete an audit event
+Not possible
+AT-22
+Awareness check report
+Averages only; no names or individual responses
+
+15. Assumptions, open questions and decisions required
+Fifteen points need an answer before the build is priced or before launch. Points 1 to 4 affect the developer's contract and quote.
+#
+Question or decision
+Owner
+Affects
+1
+Intellectual property: the developer's contract must assign all code and deliverables to SecurePath. Framework content stays SecurePath's and is not licensed to the developer
+SecurePath
+Contract
+2
+Product name and trade mark search before branding work starts
+SecurePath
+7.4, marketing
+3
+Partner licence and pricing model: partner subscription, fee per client programme, or both
+SecurePath
+7.5, 9.8
+4
+Planning load for NFR-18: number of partners and programmes in year one and year three
+SecurePath
+Hosting, cost
+5
+Hosting provider and confirmation that South African and UK regions are available for the database and file store
+Developer
+NFR-11
+6
+Commercial relationship with Cyberwin: Cyberwin as a SecurePath partner, and any later link to the Cyberwin Partner Portal readiness checks
+SecurePath; Cyberwin
+FR-IMP-03
+7
+Who may hold statutory designations in each jurisdiction, confirmed against the Information Regulator's guidance and UK DPO rules
+SecurePath
+FR-ACC-03
+8
+Jurisdiction pack values (response periods, notification rules, holidays) entered and verified against primary sources
+SecurePath
+5.4, 9.7
+9
+Approach to ISO/IEC 27001 and 27701 content without reproducing the standards' text
+SecurePath
+5.5
+10
+Use of the Cyber Essentials name for the South African adaptation: trade mark and scheme rules check
+SecurePath
+5.2, 5.5
+11
+Authoring plan and dates for the five templates still to be written
+SecurePath
+Launch
+12
+First client's written agreement to move its programme onto the platform, and an operator agreement covering SecurePath and the developer
+SecurePath; first client
+13.2
+13
+The source tracker's RAG rule refers to a Deferred status that is not in its pick list: add it or drop it
+SecurePath
+9.2
+14
+Confirm the proposed workstream, programme and partner RAG rules
+SecurePath
+9.6
+15
+Reconcile the POPIA maintenance set in Annex A against the client's compliance policy monitoring section
+SecurePath
+Annex A
+
+Assumptions
+Release 1 launches in South Africa and the United Kingdom only.
+Billing stays outside the platform in release 1.
+Figures on the screen designs in Annex B are illustrative and must not be used as test data unless deliberately loaded.
+Annex A: POPIA template Monthly Maintenance set
+The POPIA template's 19 monthly tasks, drawn from the first live programme. MM-18 and MM-19 are proposed additions. Owner is the programme lead unless shown.
+Code
+Task
+Window
+Input from
+Feeds
+MM-01
+Confirm every opt-out and objection was actioned within five business days
+Before month end
+Marketing lead
+Report; opt-out KPI
+MM-02
+Confirm the suppression list was applied to every campaign
+Before month end
+Marketing lead
+Campaign KPI
+MM-03
+Reconcile the data subject request register against its due dates
+Month-end close
+None
+Report; request KPI
+MM-04
+Review the breach register; confirm each was assessed; record any regulator notification
+Month-end close
+Accountable officer
+Report; breach KPI
+MM-05
+Record disclosures to third parties
+Month-end close
+None
+Report
+MM-06
+Obtain backup job status and last restoration test
+Report window, BD2
+IT provider
+Report
+MM-07
+Obtain the endpoint encryption and device management report
+Report window, BD2
+IT provider
+Endpoint KPI
+MM-08
+Review vulnerability scan and patching results; active once scanning is introduced
+Report window, BD2
+IT provider
+Report
+MM-09
+Update training records; confirm new joiners inducted within 30 days
+Month-end close
+Admin
+Training KPI
+MM-10
+Update the operator register: new suppliers, agreement status
+Month-end close
+Finance
+Operator KPI
+MM-11
+Confirm month-end status of every activity and finding, with evidence references
+Month-end close
+None
+Report
+MM-12
+Enter KPI month-end actuals
+Report window, BD1
+None
+Report
+MM-13
+Review the RAID log; select top risks and decisions
+Report window, BD1
+None
+Report
+MM-14
+Check for changes in legislation, regulations and regulator guidance
+Report window, BD3
+None
+Report
+MM-15
+Complete the monthly summary: RAG, commentary, decisions requested
+Report window, BD3
+None
+Report
+MM-16
+Issue the monthly report for review and signature
+Report window, BD5
+Accountable officer
+Report
+MM-17
+Present at the executive meeting; record decisions and minute references
+Executive meeting
+Executive
+RAID decisions
+MM-18
+Review the evidence library access list (proposed)
+Month-end close
+None
+None
+MM-19
+Flag documents reaching their review date (proposed)
+Month-end close
+None
+None
+
+
+Annex B: Workflow and Screen Designs
+The designs below show the intended layout and behaviour of each screen. They are design references, not pixel specifications: the developer may adjust spacing, components and visual detail provided the functional requirements are met. All client, partner and person names, and all figures, are illustrative.
+B.1 Concept, users and modules
+Product concept board: design principles, roles, modules, core data model, status rules and build approach.
+
+
+B.2 Core workflow and operating rhythm
+How a finding moves from scheduled activity to accepted evidence, the monthly reporting cycle, and the weekly, monthly, quarterly and annual rhythm (sections 8 and 9).
+
+
+B.3 Partner console: client portfolio (screen 10)
+Cross-client view for an MSP partner under its own brand (section 7.2). The partner and client names are fictional.
+
+
+B.4 Partner: add a client (screen 11)
+Step 3 of client onboarding: framework templates filtered by jurisdiction, mapped requirements and licence impact (section 7.3).
+
+
+B.5 Partner: white-label branding (screen 12)
+Logo, colours with contrast checks, domains, email sender and report template, with live preview (section 7.4).
+
+
+B.6 Programme dashboard (screen 01)
+Client programme home for a sample POPIA client in week 6 (section 8.1).
+
+
+B.7 Activity schedule and Gantt (screen 02)
+Activities by workstream with RAG, milestones, current week and reduced-capacity weeks (section 8.2).
+
+
+B.8 Evidence review (screen 03)
+The accountable officer’s queue, submitted files, verification checklist, decision and audit trail (section 8.4).
+
+
+B.9 Weekly working session (screen 04)
+Agenda built from the schedule, with the weekly log form (section 8.5).
+
+
+B.10 Monthly report builder (screen 05)
+Report sections filled from programme data, inputs outstanding, approval workflow and export (section 8.6).
+
+
+B.11 Operational registers (screen 06)
+Data subject requests, breach route and backup status (section 8.10).
+
+
+B.12 Monthly Maintenance (screen 09)
+The month’s maintenance tasks by window, inputs requested and cycle history (section 8.9).
+
+
+B.13 Mobile view: my actions and evidence capture (screens 07 and 08)
+A workstream lead’s open actions and camera evidence capture against checklist points, as a responsive web view at 390 pixels wide (section 8.15).
+
