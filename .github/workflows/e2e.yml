@@ -75,6 +75,13 @@ jobs:
             < app/tests/e2e_role_assignments.sql 2>&1 | tee /tmp/ra_checks.log
           ! grep -q "FAIL" /tmp/ra_checks.log
 
+      - name: Template-engine checks (W0-03)
+        run: |
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_template_engine.sql 2>&1 | tee /tmp/te_checks.log
+          ! grep -q "FAIL" /tmp/te_checks.log
+
       - name: Build web
         working-directory: web
         env:
