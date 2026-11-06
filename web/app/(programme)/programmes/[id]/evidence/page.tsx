@@ -62,12 +62,12 @@ export default async function EvidencePage({
       supabase.rpc('list_pending_reviews', { p_programme_id: id }),
       supabase
         .from('activities')
-        .select('id, ref, text, status')
+        .select('id, ref, text, status, active')
         .eq('programme_id', id)
         .order('ref'),
       supabase
         .from('register_items')
-        .select('id, ref, finding, status')
+        .select('id, ref, finding, status, active')
         .eq('programme_id', id)
         .order('ref'),
     ]);
@@ -89,8 +89,13 @@ export default async function EvidencePage({
     .order('uploaded_at', { ascending: false })
     .limit(100);
 
-  const actRef = new Map((activities ?? []).map((a) => [a.id as string, a.ref as string]));
-  const regRef = new Map((registerItems ?? []).map((r) => [r.id as string, r.ref as string]));
+  // #92: the library is history, so evidence filed against a since-retired
+  // activity/finding keeps its ref, marked "(retired)". The capture form
+  // below only offers live (active) targets.
+  const refOf = (row: { ref: unknown; active: unknown }) =>
+    row.active === false ? `${row.ref as string} (retired)` : (row.ref as string);
+  const actRef = new Map((activities ?? []).map((a) => [a.id as string, refOf(a)]));
+  const regRef = new Map((registerItems ?? []).map((r) => [r.id as string, refOf(r)]));
   const library: LibraryItem[] = (libraryRaw ?? []).map((e) => ({
     ...(e as Record<string, unknown>),
     activity_ref: (actRef.get(e.activity_id as string) ?? null) as string | null,
@@ -169,13 +174,13 @@ export default async function EvidencePage({
       <Card title="Submit evidence" pad={24} style={{ marginTop: 16 }}>
         <EvidenceUpload
           programmeId={id}
-          activities={(activities ?? []).map((a) => ({
+          activities={(activities ?? []).filter((a) => a.active !== false).map((a) => ({
             id: a.id as string,
             ref: a.ref as string,
             label: a.text as string,
             status: (a.status as string) ?? null,
           }))}
-          registerItems={(registerItems ?? []).map((r) => ({
+          registerItems={(registerItems ?? []).filter((r) => r.active !== false).map((r) => ({
             id: r.id as string,
             ref: r.ref as string,
             label: r.finding as string,
