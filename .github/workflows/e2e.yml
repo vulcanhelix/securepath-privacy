@@ -261,6 +261,18 @@ jobs:
           grep -q "PASS" /tmp/tb_checks.log
           grep -c "PASS" /tmp/tb_checks.log
 
+      - name: Register-integrity checks (#87)
+        run: |
+          # self-contained (own W1RI namespace, never touches TESTFIX): §9.4
+          # closure refs must be accepted, linked, same-programme evidence on
+          # every write path, plus the register RPCs (create/update/link/
+          # reopen/retire). Wipes + tears down its namespace — re-runnable.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_register_integrity.sql 2>&1 | tee /tmp/ri_checks.log
+          ! grep -q "FAIL" /tmp/ri_checks.log
+          grep -q "PASS" /tmp/ri_checks.log
+
       - name: Logs on failure
         if: failure()
         run: |
