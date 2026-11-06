@@ -50,14 +50,6 @@ not new-schema shape).
 - `notifications` is practice-broadcast (no per-user rows) — rebuild, don't extend.
 - `monthly_reports` lacks snapshot/signatures/workflow — `programme_reports` replaces it.
 
-## In-flight / last update (2026-11-06b)
-- MERGED: W0-00/01/02/03/05 (all of W0 except W0-04); W1-01 rules, W1-02 evidence, W1-03 cadence, W1-04 registers, W1-06 ops-crud, W1-08 notifications, W1-09 scheduler.
-- PENDING CI: #69 (W1-07 licences, post-review-fix rerun), #72 (W1-05 lifecycle, conflict resolved + rerun). Then W1-10 app shell opens the W2 screen wave.
-- STANDING RULE (Bruce, 2026-11-06): no PR merges without a Devin cloud review — session a81e22c41da44e05b7b640c546d54de9 is the reviewer; send each PR for APPROVE/BLOCKING before merge. Its first pass caught 3 real cross-PR bugs (emitter abuse path, token vocab, missing licence assert).
-- Orchestrator fixes on main: 20261106000000 (designation probe kinds + end_date expiry).
-- W1-09 note: pg_cron armed but dormant under securepath.test_fixtures=on; staging/prod need SUPABASE_SERVICE_ROLE_KEY in web.env for notify.ts.
-
-- ORCHESTRATOR PROACTIVENESS (Bruce, 2026-11-06): never end a turn idle. Always leave a background watcher running for pending CI/PRs, keep at least one session in flight while the backlog is non-empty, and use agent-run gaps for orchestrator work (diff review, orchestrator migrations, packet prep, schema fixes, tracker hygiene). Idle = bug, not rest.
 
 ## William's answers (email Fri 06/11/2026) — DECIDED
 - Mapping CONFIRMED: v0.2 sits under the existing build. Pipeline = implementation phase; assessment findings enter via §13 import routes; Stage 6 = Monthly Maintenance. Tenancy/auth/isolation/branding/audit/billing stay. -> W0-04 UNBLOCKED.
@@ -68,4 +60,19 @@ not new-schema shape).
 - Timeline: December, scope frozen at v0.2 as amended. LAUNCHED = v0.2 core on the existing platform + POPIA template + first client migrated. The other 5 templates are William's content, not launch blockers.
 - Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
 - Non-project ask to Bruce: send William his BIO for the services offering.
+
+## In-flight / last update (2026-11-06c)
+- MERGED since last update: #69 W1-07, #70 W1-08, #72 W1-05, #73 W1-10 shell, #74 W2-04 dashboard, #79 CI integrity.
+- APPROVED, awaiting fresh CI after merging main: #78 W0-04 bridge, #77 W2-11 KPI/RAID.
+- IN REVIEW (Devin): #75 W2-05 schedule (write-fallback BLOCKING fixed in 4c5562d), #76 W2-06 evidence, #80 W2-07 weekly.
+- BUILDING: claude/w1-followups (migration 20261106000012): FR-WKS-03 in DB, weekly_logs.attendees, programme_people() #81, update_activity_status() #82, week_due_date() #83.
+- Migration numbers taken: 000011 = W0-04 bridge (PR #78), 000012 = follow-ups. Next free: 000013.
+
+## Lessons (do not repeat)
+- CI: a suite step that only checks `! grep FAIL` passes on an empty log. My conflict-resolution script once dropped the cadence suite and emptied the notifications step while CI stayed green. Now `app/tests/check_ci_workflow.py` runs first in CI and enforces one suite per step plus FAIL and PASS assertions. Resolve e2e.yml conflicts by hand-merging step bodies, then run the checker.
+- UI screens: writes ONLY through RPCs. No direct-table fallback when an RPC is missing, because it skips RPC-side validation (caught on #75). Put this rule in every screen prompt.
+- Before re-spawning a rate-limited agent, confirm it is actually dead (read_subagent). I once ran two W2-06 agents in one worktree.
+- Orchestrator migrations go through a PR and Devin review like everything else, not straight to main.
+- `gh issue view` is broken on this repo (Projects-classic GraphQL). Use `gh api repos/vulcanhelix/securepath-privacy/issues/N`.
+- Check issue numbers against titles before writing a prompt (I once gave W2-11 #35 instead of #36).
 

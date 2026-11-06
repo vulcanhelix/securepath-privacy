@@ -22,6 +22,9 @@ jobs:
       - name: POPIA 2026 pack parity (zip vs migration)
         run: python3 app/tests/test_popia_2026_pack_parity.py
 
+      - name: CI workflow self-check (every SQL suite runs once, asserts PASS)
+        run: python3 app/tests/check_ci_workflow.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -74,6 +77,7 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_role_assignments.sql 2>&1 | tee /tmp/ra_checks.log
           ! grep -q "FAIL" /tmp/ra_checks.log
+          grep -q "PASS" /tmp/ra_checks.log
 
       - name: Template-engine checks (W0-03)
         run: |
@@ -81,6 +85,7 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_template_engine.sql 2>&1 | tee /tmp/te_checks.log
           ! grep -q "FAIL" /tmp/te_checks.log
+          grep -q "PASS" /tmp/te_checks.log
 
       - name: Rules-engine checks (W1-01)
         run: |
@@ -96,6 +101,7 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_rules_engine.sql 2>&1 | tee /tmp/re_checks.log
           ! grep -q "FAIL" /tmp/re_checks.log
+          grep -q "PASS" /tmp/re_checks.log
       - name: Ops-CRUD checks (W1-06)
         run: |
           # the W0-05 fixture pack is a no-op without the opt-in GUC — enable it
@@ -110,6 +116,7 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_ops_crud.sql 2>&1 | tee /tmp/ops_checks.log
           ! grep -q "FAIL" /tmp/ops_checks.log
+          grep -q "PASS" /tmp/ops_checks.log
 
       - name: Licences + support-grant checks (W1-07)
         run: |
@@ -117,6 +124,7 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_licences_grants.sql 2>&1 | tee /tmp/lic_checks.log
           ! grep -q "FAIL" /tmp/lic_checks.log
+          grep -q "PASS" /tmp/lic_checks.log
 
       - name: Programme-lifecycle checks (W1-05)
         run: |
@@ -124,10 +132,20 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_programme_lifecycle.sql 2>&1 | tee /tmp/pl_checks.log
           ! grep -q "FAIL" /tmp/pl_checks.log
+          grep -q "PASS" /tmp/pl_checks.log
 
       - name: Notification fan-out checks (W1-08)
         run: |
           # same TESTFIX world as the ops-CRUD step (fixture pack is re-runnable)
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_notifications.sql 2>&1 | tee /tmp/notif_checks.log
+          ! grep -q "FAIL" /tmp/notif_checks.log
+          grep -q "PASS" /tmp/notif_checks.log
 
       - name: Ops-registers checks (W1-04)
         run: |
@@ -142,20 +160,20 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_ops_registers.sql 2>&1 | tee /tmp/or_checks.log
           ! grep -q "FAIL" /tmp/or_checks.log
+          grep -q "PASS" /tmp/or_checks.log
       - name: Cadence checks (W1-03)
         run: |
           # fixture world is already opted-in + seeded by the ops-crud step;
           # re-apply it so this step is independent of ops-crud's mutations
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
           docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
-            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
-            < app/supabase/migrations/20261105000005_test_fixtures.sql
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
           docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
-            < app/tests/e2e_notifications.sql 2>&1 | tee /tmp/notif_checks.log
-          ! grep -q "FAIL" /tmp/notif_checks.log
-
             < app/tests/e2e_cadence.sql 2>&1 | tee /tmp/cad_checks.log
           ! grep -q "FAIL" /tmp/cad_checks.log
+          grep -q "PASS" /tmp/cad_checks.log
 
       - name: Evidence-chain checks (W1-02)
         run: |
@@ -168,6 +186,7 @@ jobs:
           | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
               psql -h 127.0.0.1 -U supabase_admin -d postgres 2>&1 | tee /tmp/ec_checks.log
           ! grep -q "FAIL" /tmp/ec_checks.log
+          grep -q "PASS" /tmp/ec_checks.log
 
       - name: Build web
         working-directory: web
@@ -225,6 +244,22 @@ jobs:
             psql -h 127.0.0.1 -U supabase_admin -d postgres \
             < app/tests/e2e_scheduler.sql 2>&1 | tee /tmp/sch_checks.log
           ! grep -q "FAIL" /tmp/sch_checks.log
+          grep -q "PASS" /tmp/sch_checks.log
+
+      - name: Tracks-programmes bridge checks (W0-04)
+        run: |
+          # suite is self-contained (own W004 namespace, never touches TESTFIX);
+          # the fixture pack is (re)applied in the same session only so the
+          # chain matches the other steps. Runs after the pipeline suite, which
+          # already proved the old Stage 0-6 flow green with the bridge applied.
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql \
+                app/tests/e2e_tracks_bridge.sql; } \
+          | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+              psql -h 127.0.0.1 -U supabase_admin -d postgres 2>&1 | tee /tmp/tb_checks.log
+          ! grep -q "FAIL" /tmp/tb_checks.log
+          grep -q "PASS" /tmp/tb_checks.log
+          grep -c "PASS" /tmp/tb_checks.log
 
       - name: Logs on failure
         if: failure()
