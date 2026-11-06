@@ -97,6 +97,18 @@ jobs:
             < app/tests/e2e_ops_crud.sql 2>&1 | tee /tmp/ops_checks.log
           ! grep -q "FAIL" /tmp/ops_checks.log
 
+      - name: Evidence-chain checks (W1-02)
+        run: |
+          # the W0-05 TESTFIX fixture world is gated behind the custom GUC —
+          # apply it in the same session as the suite (wipe-and-reseed, safe
+          # on this ephemeral db only)
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql \
+                app/tests/e2e_evidence_chain.sql; } \
+          | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+              psql -h 127.0.0.1 -U supabase_admin -d postgres 2>&1 | tee /tmp/ec_checks.log
+          ! grep -q "FAIL" /tmp/ec_checks.log
+
       - name: Build web
         working-directory: web
         env:
