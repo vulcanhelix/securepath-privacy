@@ -97,6 +97,7 @@ export function ReviewCard({
 
   async function sendBack() {
     if (!comment.trim()) {
+      setShowComment(true);
       setMsg({ err: 'Returning evidence requires a reason (FR-EVD-05).' });
       return;
     }

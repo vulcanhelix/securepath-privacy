@@ -113,7 +113,7 @@ export default async function EvidencePage({
     (users ?? []).map((u) => [u.id as string, (u.full_name as string) || (u.email as string)])
   );
 
-  const awaitingCount = verifyQueue.length + acceptQueue.length;
+  const awaitingCount = verifyQueue.length + (isAo ? acceptQueue.length : 0);
 
   return (
     <>
@@ -147,25 +147,22 @@ export default async function EvidencePage({
           )}
         </Card>
 
-        <Card
-          title="To accept"
-          pad={20}
-          style={{ flex: '1 1 340px', marginBottom: 0 }}
-          action={<Badge tone="warn">{acceptQueue.length}</Badge>}
-        >
-          {acceptQueue.length ? (
-            <ReviewQueue items={acceptQueue} mode="accept" canAct={isAo} names={names} base={base} />
-          ) : (
-            <EmptyState
-              icon="badge-check"
-              message={
-                isAo
-                  ? 'Nothing waiting for your decision.'
-                  : "The accountable officer's queue — only the AO or a named alternate accepts evidence (FR-ACC-02)."
-              }
-            />
-          )}
-        </Card>
+        {/* FR-ACC-02 — the AO queue renders only when the RPC says the
+            caller is the AO or a named alternate; never re-derived here */}
+        {isAo ? (
+          <Card
+            title="To accept"
+            pad={20}
+            style={{ flex: '1 1 340px', marginBottom: 0 }}
+            action={<Badge tone="warn">{acceptQueue.length}</Badge>}
+          >
+            {acceptQueue.length ? (
+              <ReviewQueue items={acceptQueue} mode="accept" canAct names={names} base={base} />
+            ) : (
+              <EmptyState icon="badge-check" message="Nothing waiting for your decision." />
+            )}
+          </Card>
+        ) : null}
       </div>
 
       {/* ------- screen 08 — capture ------- */}
