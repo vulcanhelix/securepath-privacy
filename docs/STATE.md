@@ -58,3 +58,14 @@ not new-schema shape).
 - W1-09 note: pg_cron armed but dormant under securepath.test_fixtures=on; staging/prod need SUPABASE_SERVICE_ROLE_KEY in web.env for notify.ts.
 
 - ORCHESTRATOR PROACTIVENESS (Bruce, 2026-11-06): never end a turn idle. Always leave a background watcher running for pending CI/PRs, keep at least one session in flight while the backlog is non-empty, and use agent-run gaps for orchestrator work (diff review, orchestrator migrations, packet prep, schema fixes, tracker hygiene). Idle = bug, not rest.
+
+## William's answers (email Fri 06/11/2026) — DECIDED
+- Mapping CONFIRMED: v0.2 sits under the existing build. Pipeline = implementation phase; assessment findings enter via §13 import routes; Stage 6 = Monthly Maintenance. Tenancy/auth/isolation/branding/audit/billing stay. -> W0-04 UNBLOCKED.
+- Hosting: self-hosted, one deploy per region (af-south-1 SA, eu-west-2 UK) chosen at onboarding. HostAfrica = dev/staging only. OPEN (Bruce to answer): which provider for SA production? Before any client data: DC location, security + backup arrangements, uptime commitment, POPIA s21 operator agreement.
+- NFR gap order: 1) support-access grants, 2) region per client at onboarding, 3) malware scan before real evidence, 4) exit export + deletion certificate (can follow launch, needed before any client leaves), 5) SSO = LATER RELEASE (MFA covers launch).
+- Custom domains: later. Release 1 = subdomains only.
+- Reports: HTML-rendered PDF in partner branding, NO Word. Partner report templates = brand settings on the HTML layout. -> W3-03 rescoped.
+- Timeline: December, scope frozen at v0.2 as amended. LAUNCHED = v0.2 core on the existing platform + POPIA template + first client migrated. The other 5 templates are William's content, not launch blockers.
+- Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
+- Non-project ask to Bruce: send William his BIO for the services offering.
+
