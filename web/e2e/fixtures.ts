@@ -31,32 +31,3 @@ export const stateFile = (role: Role) => `e2e/.auth/${role}.json`;
 
 /** Unique tag per test run, so assertions never match a previous run's rows. */
 export const RUN = Date.now().toString(36);
-
-// ---------------------------------------------------------------------------
-// Known screen defects found by this harness (W4-00). Tests hit by one call
-// knownDefect(id) first: Playwright then EXPECTS the test to fail, so CI stays
-// green while the defect is open, and goes RED the moment the screen is fixed
-// ("expected to fail, but passed") — at which point delete the call (and the
-// entry here once nothing references it). E2E_STRICT=1 disables the
-// expectation and shows the raw failures.
-// ---------------------------------------------------------------------------
-export const KNOWN_DEFECTS = {
-  'W4-D1':
-    'lib/nav.ts NavSlot objects (with their visible() function) are passed from server layouts to the ' +
-    'client ProgrammeNav — every (programme) page whose nav has a slot 500s with "Functions cannot be ' +
-    'passed directly to Client Components" (all /programmes/[id]/* screens; /programmes for partner users)',
-  'W4-D2':
-    'programme-scope-only users (programme_lead) can read the programmes row but not its client_orgs row, ' +
-    'so programmeContext() returns null and every /programmes/[id]/* screen 404s for the programme lead',
-  'W4-D3':
-    'workstream-scope-only users (workstream_lead) cannot read their own programme — every ' +
-    '/programmes/[id]/* screen 404s for the workstream lead (spec B.13 makes them the screen 08 user)',
-  'W4-D4':
-    'at 390px the programme context bar (.sp-ctx-crumb in programmes/[id]/layout.tsx: client / programme / ' +
-    'status / phase / RAG) does not wrap — the RAG badge ends at ~483px, so screen 08 scrolls sideways ' +
-    '(document scrollWidth 484 > 390)',
-} as const;
-
-export function knownDefect(t: { fail: (condition: boolean, description: string) => void }, id: keyof typeof KNOWN_DEFECTS) {
-  t.fail(process.env.E2E_STRICT !== '1', `${id}: ${KNOWN_DEFECTS[id]}`);
-}

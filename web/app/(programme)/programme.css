@@ -4,10 +4,13 @@
 
 /* context bar — breadcrumb + breach mount, top of every (programme) page */
 .sp-ctxbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-.sp-ctx-crumb { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-sm); }
-.sp-ctx-client { color: var(--muted); }
+/* W4-D4: the crumb wraps to a second line instead of overflowing the phone
+   viewport; over-long client/programme names truncate with ellipsis rather
+   than pushing the bar past 100% (previously scrollWidth 484 > 390). */
+.sp-ctx-crumb { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; flex-wrap: wrap; font-size: var(--fs-sm); }
+.sp-ctx-client { color: var(--muted); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sp-ctx-sep { color: var(--faint); }
-.sp-ctx-name { font-weight: var(--w-medium); color: var(--text); }
+.sp-ctx-name { font-weight: var(--w-medium); color: var(--text); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* module tab strip — role-filtered nav slots (lib/nav.ts) */
 .sp-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
