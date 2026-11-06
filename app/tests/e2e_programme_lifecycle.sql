@@ -506,17 +506,88 @@ SELECT pg_temp.t(
   '31 FR-SCH-06: start_date +7d → dates recalculated (apply re-synced A-02 to wk1–4; due Fri wk4 = Dec 4)');
 
 -- ============================================================================
--- transition_programme — legal moves only, logged
+-- transition_programme — legal moves only, logged; destination-scoped gates
+-- (closing is partner-side: client_admin + programme_lead can never close;
+--  programme_lead may move implementation→maintenance)
 -- ============================================================================
+-- mint fixture-style assignments for the role checks (idempotent, persists)
+INSERT INTO public.role_assignments (user_id, level, role, scope_type, scope_id, origin)
+SELECT 'aa000005-0000-0000-0000-000000000012','client','client_admin','client',
+       'cc000005-0000-0000-0000-000000000003','manual'
+ WHERE NOT EXISTS (SELECT 1 FROM public.role_assignments
+                    WHERE user_id='aa000005-0000-0000-0000-000000000012'
+                      AND role='client_admin' AND scope_type='client'
+                      AND scope_id='cc000005-0000-0000-0000-000000000003'
+                      AND end_date IS NULL);
+INSERT INTO public.role_assignments (user_id, level, role, scope_type, scope_id, origin)
+SELECT 'aa000005-0000-0000-0000-000000000017','client','programme_lead','programme',
+       p.id,'manual' FROM public.programmes p
+ WHERE p.name='W1-05 e2e programme'
+   AND NOT EXISTS (SELECT 1 FROM public.role_assignments
+                    WHERE user_id='aa000005-0000-0000-0000-000000000017'
+                      AND role='programme_lead' AND scope_type='programme'
+                      AND scope_id=p.id AND end_date IS NULL);
+
+-- client-side client_admin cannot even reach maintenance
 BEGIN;
 SET ROLE authenticated;
-SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000006","role":"authenticated"}';
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000012","role":"authenticated"}';
+DO $$
+DECLARE v_prog uuid := current_setting('e2e.prog')::uuid;
+BEGIN
+  BEGIN
+    PERFORM public.transition_programme(v_prog, 'maintenance');
+    PERFORM pg_temp.t(false, '32 client_admin transition to maintenance denied');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(true, '32 client_admin transition to maintenance denied: '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000012","role":"authenticated"}';
+DO $$
+DECLARE v_prog uuid := current_setting('e2e.prog')::uuid;
+BEGIN
+  BEGIN
+    PERFORM public.transition_programme(v_prog, 'closed');
+    PERFORM pg_temp.t(false, '33 client_admin close denied (partner-side act)');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(true, '33 client_admin close denied (partner-side act): '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+
+-- programme_lead cannot close either
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000017","role":"authenticated"}';
+DO $$
+DECLARE v_prog uuid := current_setting('e2e.prog')::uuid;
+BEGIN
+  BEGIN
+    PERFORM public.transition_programme(v_prog, 'closed');
+    PERFORM pg_temp.t(false, '34 programme_lead close denied (partner-side act)');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(true, '34 programme_lead close denied (partner-side act): '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+
+-- but programme_lead CAN move implementation→maintenance
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000017","role":"authenticated"}';
 SELECT public.transition_programme(:'prog'::uuid, 'maintenance');
 COMMIT;
 RESET ROLE;
 SELECT pg_temp.t(
   (SELECT status FROM public.programmes WHERE id=:'prog'::uuid) = 'maintenance',
-  '32 transition implementation→maintenance applied');
+  '35 programme_lead transition implementation→maintenance applied');
 
 BEGIN;
 SET ROLE authenticated;
@@ -526,9 +597,9 @@ DECLARE v_prog uuid := current_setting('e2e.prog')::uuid;
 BEGIN
   BEGIN
     PERFORM public.transition_programme(v_prog, 'implementation');
-    PERFORM pg_temp.t(false, '33 invalid transition maintenance→implementation rejected');
+    PERFORM pg_temp.t(false, '36 invalid transition maintenance→implementation rejected');
   EXCEPTION WHEN OTHERS THEN
-    PERFORM pg_temp.t(true, '33 invalid transition maintenance→implementation rejected: '||SQLERRM);
+    PERFORM pg_temp.t(true, '36 invalid transition maintenance→implementation rejected: '||SQLERRM);
   END;
 END $$;
 ROLLBACK;
@@ -546,7 +617,7 @@ SELECT pg_temp.t(
                WHERE action='programme.transitioned'
                  AND detail->>'programme_id' = :'prog'
                  AND detail->>'to' = 'closed'),
-  '34 transition maintenance→closed applied + audit_log row');
+  '37 partner_admin transition maintenance→closed applied + audit_log row');
 
 BEGIN;
 SET ROLE authenticated;
@@ -556,9 +627,9 @@ DECLARE v_prog uuid := current_setting('e2e.prog')::uuid;
 BEGIN
   BEGIN
     PERFORM public.transition_programme(v_prog, 'maintenance');
-    PERFORM pg_temp.t(false, '35 closed is terminal — exit transition rejected');
+    PERFORM pg_temp.t(false, '38 closed is terminal — exit transition rejected');
   EXCEPTION WHEN OTHERS THEN
-    PERFORM pg_temp.t(true, '35 closed is terminal — exit transition rejected: '||SQLERRM);
+    PERFORM pg_temp.t(true, '38 closed is terminal — exit transition rejected: '||SQLERRM);
   END;
 END $$;
 ROLLBACK;
@@ -576,7 +647,7 @@ SELECT pg_temp.t(
     WHERE co.practice_id='bb000005-0000-0000-0000-000000000002') >= 2
   AND NOT EXISTS (SELECT 1 FROM public.list_programmes(NULL) lp
                    WHERE lp.client_org_id='cc000005-0000-0000-0000-000000000001'),
-  '36 list_programmes: partner B sees own clients only (P3 + e2e programme)');
+  '39 list_programmes: partner B sees own clients only (P3 + e2e programme)');
 SELECT pg_temp.t(
   (SELECT activities_total FROM public.list_programmes(NULL) lp WHERE lp.programme_id=:'prog'::uuid) = 10
   AND (SELECT activities_complete FROM public.list_programmes(NULL) lp WHERE lp.programme_id=:'prog'::uuid) = 1
@@ -584,7 +655,7 @@ SELECT pg_temp.t(
   AND (SELECT framework FROM public.list_programmes(NULL) lp WHERE lp.programme_id=:'prog'::uuid) = 'popia_paia'
   AND (SELECT template_version_number FROM public.list_programmes(NULL) lp WHERE lp.programme_id=:'prog'::uuid) = 2
   AND (SELECT rag FROM public.list_programmes(NULL) lp WHERE lp.programme_id=:'prog'::uuid) IN ('Red','Amber','Green'),
-  '37 list_programmes rollup: 10 activities (8+X-01+A-09), 1 complete, 1 closed finding, framework+version, rag');
+  '40 list_programmes rollup: 10 activities (8+X-01+A-09), 1 complete, 1 closed finding, framework+version, rag');
 ROLLBACK;
 RESET ROLE;
 
@@ -595,6 +666,33 @@ SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000004","role":"
 SELECT pg_temp.t(
   NOT EXISTS (SELECT 1 FROM public.list_programmes(NULL) lp
                WHERE lp.programme_id=:'prog'::uuid),
-  '38 cross-partner: partner A list excludes the partner B programme');
+  '41 cross-partner: partner A list excludes the partner B programme');
+ROLLBACK;
+RESET ROLE;
+
+-- ============================================================================
+-- licence capacity on create (FR-ONB-02): Partner A's programme_limit=2 is
+-- fully used by P1+P2 — a third programme on C1 must fail once W1-07's
+-- assert_licence_capacity exists (probed; skips cleanly on pre-W1-07 chains)
+-- ============================================================================
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000004","role":"authenticated"}';
+DO $$
+BEGIN
+  IF to_regprocedure('public.assert_licence_capacity(uuid,text)') IS NULL THEN
+    PERFORM pg_temp.t(true,
+      '42 licence capacity: assert_licence_capacity absent (pre-W1-07 chain) — skipped');
+    RETURN;
+  END IF;
+  BEGIN
+    PERFORM public.create_programme('cc000005-0000-0000-0000-000000000001',
+              'f6000005-0000-0000-0000-000000000001','W1-05 e2e cap prog',DATE '2026-11-02');
+    PERFORM pg_temp.t(false, '42 licence capacity: at-limit partner create denied (FR-ONB-02)');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM ILIKE '%limit%',
+      '42 licence capacity: at-limit partner create denied (FR-ONB-02): '||SQLERRM);
+  END;
+END $$;
 ROLLBACK;
 RESET ROLE;

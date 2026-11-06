@@ -174,6 +174,16 @@ BEGIN
     RAISE EXCEPTION 'template version % carries no usable phases', p_template_version_id;
   END IF;
 
+  -- FR-ONB-02 licence capacity: block creation when the partner's programme
+  -- count is at the active licence cap. assert_licence_capacity ships in
+  -- W1-07's 000009 migration — one file AFTER this one. The call resolves at
+  -- RUNTIME inside this definer body (plpgsql does not bind call targets at
+  -- CREATE OR REPLACE time), so it is safe here; the to_regprocedure probe
+  -- keeps creation working on chains where W1-07 has not landed yet.
+  IF to_regprocedure('public.assert_licence_capacity(uuid,text)') IS NOT NULL THEN
+    PERFORM public.assert_licence_capacity(v_practice, 'programme');
+  END IF;
+
   INSERT INTO public.programmes
       (client_org_id, template_version_id, name, start_date, total_weeks,
        status, report_due_business_day)
@@ -1179,9 +1189,22 @@ BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
   SELECT * INTO v_prog FROM public.programmes WHERE id = p_programme_id FOR UPDATE;
   IF v_prog IS NULL THEN RAISE EXCEPTION 'programme % not found', p_programme_id; END IF;
-  IF NOT public.has_programme_role(p_programme_id,
-        ARRAY['partner_admin','partner_consultant','programme_lead','client_admin']) THEN
-    RAISE EXCEPTION 'programme transition requires a programme write role';
+  -- destination-scoped gates (review fix): closing is a partner-side act —
+  -- client-side roles (client_admin, programme_lead) can never close a
+  -- programme; implementation→maintenance additionally admits programme_lead.
+  IF p_to_status = 'closed' THEN
+    IF NOT public.has_programme_role(p_programme_id,
+          ARRAY['partner_admin','partner_consultant'])
+       AND NOT public.is_platform_role(ARRAY['platform_admin']) THEN
+      RAISE EXCEPTION
+        'closing a programme requires a partner-side role (partner_admin/partner_consultant)';
+    END IF;
+  ELSE
+    IF NOT public.has_programme_role(p_programme_id,
+          ARRAY['partner_admin','partner_consultant','programme_lead'])
+       AND NOT public.is_platform_role(ARRAY['platform_admin']) THEN
+      RAISE EXCEPTION 'programme transition requires a partner or programme_lead role';
+    END IF;
   END IF;
   IF p_to_status NOT IN ('implementation','maintenance','closed') THEN
     RAISE EXCEPTION 'invalid programme status "%"', p_to_status;
