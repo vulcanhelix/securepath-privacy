@@ -30,12 +30,13 @@ export interface PartnerRow {
   client_limit: number | null;
   programme_limit: number | null;
   clients_total: number;
-  clients_used: number;
-  programmes_used: number;
+  /** licence / usage / seat fields below are NULL for support (§4.1) */
+  clients_used: number | null;
+  programmes_used: number | null;
   over_client_limit: boolean | null;
   over_programme_limit: boolean | null;
-  seats_used: number;
-  pending_invites: number;
+  seats_used: number | null;
+  pending_invites: number | null;
 }
 
 export interface PlatformClientRow {
@@ -66,7 +67,8 @@ export interface LicenceRow {
 export interface PlatformMetrics {
   generated_at: string;
   partners: { total: number; active: number; suspended: number; closed: number; by_type: Record<string, number> };
-  licences: Record<string, number>;
+  /** omitted for support callers (§4.1 licence reports: None) */
+  licences?: Record<string, number>;
   clients: { total: number; with_open_programme: number };
   programmes: {
     total: number;

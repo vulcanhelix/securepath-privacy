@@ -16,8 +16,11 @@
 -- audited status transitions (suspend / reactivate / close, closed
 -- terminal, reason required); counts match the §9.8 counter; metrics
 -- totals; first partner_admin invite redeemed via the existing
--- accept_invite(); and NFR-04 — platform_admin gets NO tenant content
--- (evidence, register text) through these RPCs.
+-- accept_invite(); NFR-04 — platform_admin gets NO tenant content
+-- (evidence, register text) through these RPCs; the recreated
+-- create_invite allowlist (no practice_owner co-owner escalation, every
+-- legacy role + seat cap / practice scope still intact); and §4.1 — support
+-- gets no licence fields from list_partners / metrics.
 --
 -- Scratch runs: same auth shim as e2e_template_engine.sql (newer auth.users
 -- columns + coalesced auth.uid()) on a bare supabase/postgres.
@@ -363,6 +366,101 @@ SELECT pg_temp.t((SELECT count(*) FROM public.evidence_items) = 0
     AND (SELECT count(*) FROM public.register_items) = 0
     AND (SELECT count(*) FROM public.client_orgs) = 0,
     '32 platform_admin still sees no tenant rows directly after the calls (RLS)');
+ROLLBACK;
+
+-- ---------- 9. create_invite allowlist (review fix: no owner escalation) ----------
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2140000-0000-0000-0000-000000000004","role":"authenticated"}';
+DO $$
+DECLARE ok boolean := false;
+BEGIN
+  BEGIN PERFORM public.create_invite('coowner@w214.test', 'practice_owner');
+  EXCEPTION WHEN OTHERS THEN ok := SQLERRM LIKE '%invalid invite role%'; END;
+  PERFORM pg_temp.t(ok, '33 practice owner create_invite(..., practice_owner) rejected');
+  ok := false;
+  BEGIN PERFORM public.create_invite('x@w214.test', 'partner_admin');
+  EXCEPTION WHEN OTHERS THEN ok := SQLERRM LIKE '%invalid invite role%'; END;
+  PERFORM pg_temp.t(ok, '34 create_invite rejects non-allowlisted roles (partner_admin)');
+END $$;
+SELECT pg_temp.t(
+    public.create_invite('Cons@W214.test', 'practice_consultant') IS NOT NULL
+    AND public.create_invite('ro@w214.test', 'read_only') IS NOT NULL
+    AND public.create_invite('cadmin@w214.test', 'client_admin', 'c2140000-0000-0000-0000-000000000001') IS NOT NULL
+    AND public.create_invite('ccontrib@w214.test', 'client_contributor', 'c2140000-0000-0000-0000-000000000001') IS NOT NULL,
+    '35 every role the old CHECK allowed is still invitable via create_invite');
+DO $$
+DECLARE ok_scope boolean := false; ok_seat boolean := false; i int;
+BEGIN
+  -- carried-over checks: client org must be in the caller's practice …
+  BEGIN PERFORM public.create_invite('xp@w214.test', 'client_admin', 'cc000000-0000-0000-0000-00000000dead');
+  EXCEPTION WHEN OTHERS THEN ok_scope := SQLERRM LIKE '%not in your practice%'; END;
+  PERFORM pg_temp.t(ok_scope, '36 create_invite still rejects a client outside the practice');
+  -- … and the 5-seat cap counts pending invites (2 seat invites above + 3 more = 5)
+  FOR i IN 1..3 LOOP
+    PERFORM public.create_invite('seat' || i || '@w214.test', 'practice_consultant');
+  END LOOP;
+  BEGIN PERFORM public.create_invite('seat6@w214.test', 'read_only');
+  EXCEPTION WHEN OTHERS THEN ok_seat := SQLERRM LIKE '%seat limit%'; END;
+  PERFORM pg_temp.t(ok_seat, '37 create_invite still enforces the 5-seat cap incl. pending invites');
+END $$;
+RESET ROLE;
+SELECT pg_temp.t(
+    NOT EXISTS (SELECT 1 FROM public.invites
+                 WHERE practice_id = 'b2140000-0000-0000-0000-000000000001' AND role = 'practice_owner')
+    AND EXISTS (SELECT 1 FROM public.invites
+                 WHERE practice_id = 'b2140000-0000-0000-0000-000000000001'
+                   AND email = 'cons@w214.test' AND role = 'practice_consultant'
+                   AND expires_at > now() + interval '6 days'
+                   AND invited_by = 'a2140000-0000-0000-0000-000000000004')
+    AND EXISTS (SELECT 1 FROM public.audit_log
+                 WHERE practice_id = 'b2140000-0000-0000-0000-000000000001'
+                   AND action = 'invite.created' AND detail->>'role' = 'client_contributor'),
+    '38 no owner invite written; email lower-cased, 7-day expiry, audit unchanged');
+-- the platform first-admin path still mints a practice_owner invite
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2140000-0000-0000-0000-000000000001","role":"authenticated"}';
+CREATE TEMP TABLE w214_first ON COMMIT DROP AS
+  SELECT public.platform_create_partner('W214 Delta', 'msp', 'ZA', NULL, NULL, NULL, 'newadmin@w214.test') AS r;
+RESET ROLE;
+SELECT pg_temp.t(EXISTS (SELECT 1 FROM w214_first f JOIN public.invites i
+                           ON i.token = (f.r->>'invite_token')::uuid
+                          WHERE i.role = 'practice_owner'
+                            AND i.practice_id = (f.r->>'partner_id')::uuid),
+    '39 platform_create_partner first-admin invite still works');
+ROLLBACK;
+
+-- ---------- 10. support gets no licence fields (§4.1) ----------
+BEGIN;
+INSERT INTO public.licences (partner_id, plan, client_limit, programme_limit, starts_on, status)
+VALUES ('b2140000-0000-0000-0000-000000000001', 'W214-PLAN', 10, 20, CURRENT_DATE, 'active');
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2140000-0000-0000-0000-000000000002","role":"authenticated"}';
+SELECT pg_temp.t(EXISTS (
+    SELECT 1 FROM public.platform_list_partners('{"id":"b2140000-0000-0000-0000-000000000001"}') l
+     WHERE l.name = 'W214 Alpha' AND l.status = 'active' AND l.type = 'msp' AND l.country = 'ZA'
+       AND l.clients_total = 2
+       AND l.licence_id IS NULL AND l.licence_plan IS NULL AND l.licence_status IS NULL
+       AND l.licence_starts_on IS NULL AND l.licence_ends_on IS NULL
+       AND l.client_limit IS NULL AND l.programme_limit IS NULL
+       AND l.clients_used IS NULL AND l.programmes_used IS NULL
+       AND l.over_client_limit IS NULL AND l.over_programme_limit IS NULL
+       AND l.seats_used IS NULL AND l.pending_invites IS NULL),
+    '40 support: list_partners keeps routing metadata, every licence/usage column NULL');
+SELECT pg_temp.t(NOT (public.platform_metrics() ? 'licences')
+    AND public.platform_metrics()::text NOT LIKE '%W214-PLAN%',
+    '41 support: platform_metrics has no licence breakdown');
+SET request.jwt.claims = '{"sub":"a2140000-0000-0000-0000-000000000001","role":"authenticated"}';
+SELECT pg_temp.t(EXISTS (
+    SELECT 1 FROM public.platform_list_partners('{"id":"b2140000-0000-0000-0000-000000000001"}') l
+     WHERE l.licence_id IS NOT NULL AND l.licence_plan = 'W214-PLAN' AND l.licence_status = 'active'
+       AND l.client_limit = 10 AND l.programme_limit = 20
+       AND l.clients_used = 1 AND l.programmes_used = 1 AND l.over_client_limit = false
+       AND l.seats_used = 0 AND l.pending_invites = 0),
+    '42 platform_admin: list_partners still returns the full licence payload');
+SELECT pg_temp.t(public.platform_metrics() ? 'licences'
+    AND (public.platform_metrics()->'licences'->>'active')::int >= 1,
+    '43 platform_admin: platform_metrics still has the licence breakdown');
 ROLLBACK;
 
 -- ---------- teardown ----------

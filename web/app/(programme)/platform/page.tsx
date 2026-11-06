@@ -65,12 +65,15 @@ export default async function PlatformOverview() {
                 rows={rows(m.partners.by_type).map(([k, v]) => [k, <span key="v" className="mono">{v}</span>])}
               />
             </Card>
-            <Card title="Licences by status" pad={0} style={{ flex: '1 1 240px' }}>
-              <DataTable
-                columns={[{ label: 'Status' }, { label: 'Licences', align: 'right' }]}
-                rows={rows(m.licences).map(([k, v]) => [k, <span key="v" className="mono">{v}</span>])}
-              />
-            </Card>
+            {m.licences ? (
+              // platform_admin only — the RPC omits this key for support (§4.1)
+              <Card title="Licences by status" pad={0} style={{ flex: '1 1 240px' }}>
+                <DataTable
+                  columns={[{ label: 'Status' }, { label: 'Licences', align: 'right' }]}
+                  rows={rows(m.licences).map(([k, v]) => [k, <span key="v" className="mono">{v}</span>])}
+                />
+              </Card>
+            ) : null}
             <Card title="Evidence review queue" pad={0} style={{ flex: '1 1 240px' }}>
               <DataTable
                 columns={[{ label: 'Stage' }, { label: 'Items', align: 'right' }]}

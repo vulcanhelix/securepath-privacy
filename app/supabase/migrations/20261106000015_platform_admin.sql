@@ -41,10 +41,12 @@
 --
 -- 2. Role split (§4.1 "Create and suspend partners; issue licences": admin
 --    Full, support None). Writers are platform_admin only. Readers
---    (list_partners, list_clients, metrics) also admit `support` — the task
---    packet asks for read-only support views, and §3 says SecurePath "sees
---    partner and licence data". The per-partner usage report itself
---    (usage_report) stays platform_admin-only as W1-07 defined it.
+--    (list_partners, list_clients, metrics) also admit `support` for the
+--    read-only routing views — but §4.1 "Licence and usage reports" gives
+--    support None, so support callers get partner routing metadata + the
+--    raw client count only: every licence / usage / seat column of
+--    platform_list_partners is NULL and platform_metrics omits the
+--    licence breakdown. usage_report stays platform_admin-only (W1-07).
 --    content_author gets nothing here.
 --
 -- 3. First partner_admin invite: the invites.role CHECK did not admit
@@ -54,6 +56,12 @@
 --    redeems (practice_owner → partner/partner_admin; owner seats are not
 --    capped, matching practice_seats_used). The app server sends the mail
 --    exactly like /api/invites does. No second invite mechanism exists.
+--    Because the CHECK was the ONLY bound on create_invite's p_role, the
+--    widening would have let any practice owner mint co-owners outside the
+--    5-seat model. create_invite is therefore recreated below — identical
+--    signature, checks and behaviour — plus an explicit allowlist of the
+--    roles partner users may invite (exactly the set the old CHECK allowed).
+--    practice_owner invites come ONLY from platform_create_partner.
 --
 -- 4. Status machine: active → suspended | closed; suspended → active |
 --    closed; closed is TERMINAL (a closed partner's data is handled under
@@ -97,6 +105,45 @@ ALTER TABLE public.practices
 COMMENT ON COLUMN public.practices.status_reason IS
   'W2-14: reason recorded with the latest platform_set_partner_status call '
   '(full history lives in audit_log partner.status_changed rows).';
+
+-- ---------- 1b. create_invite: explicit role allowlist (decision 3) ----------
+-- Body is the 20260729000003 original verbatim (owner lookup via the
+-- memberships compat view, seat cap incl. pending unexpired invites, client
+-- org must belong to the caller's practice, lower-cased email, table-default
+-- 7-day expiry, invite.created audit, returns the token) + the allowlist.
+-- The allowlist sits after the owner check so non-owners keep the original
+-- error. The (role is client_*) = (client_org_id set) pairing stays enforced
+-- by the invites table CHECK, as before.
+CREATE OR REPLACE FUNCTION public.create_invite(p_email text, p_role text, p_client_org_id uuid DEFAULT NULL)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE pid uuid; tok uuid;
+BEGIN
+  SELECT practice_id INTO pid FROM memberships
+    WHERE user_id = auth.uid() AND role = 'practice_owner';
+  IF pid IS NULL THEN RAISE EXCEPTION 'only practice owners may invite'; END IF;
+  IF p_role IS NULL OR p_role NOT IN
+     ('practice_consultant','client_admin','client_contributor','read_only') THEN
+    RAISE EXCEPTION 'invalid invite role: % (owners are created by SecurePath only)', p_role;
+  END IF;
+  IF p_role IN ('practice_consultant','read_only')
+     AND public.practice_seats_used(pid)
+         + (SELECT count(*) FROM invites WHERE practice_id = pid AND accepted_at IS NULL
+            AND expires_at > now() AND role IN ('practice_consultant','read_only')) >= 5 THEN
+    RAISE EXCEPTION 'seat limit reached (5 team members)';
+  END IF;
+  IF p_client_org_id IS NOT NULL AND NOT EXISTS
+     (SELECT 1 FROM client_orgs WHERE id = p_client_org_id AND practice_id = pid) THEN
+    RAISE EXCEPTION 'client org not in your practice';
+  END IF;
+  INSERT INTO invites (practice_id, email, role, client_org_id, invited_by)
+    VALUES (pid, lower(p_email), p_role, p_client_org_id, auth.uid())
+    RETURNING token INTO tok;
+  INSERT INTO audit_log (user_id, practice_id, action, detail)
+    VALUES (auth.uid(), pid, 'invite.created', jsonb_build_object('email', lower(p_email), 'role', p_role));
+  RETURN tok;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.create_invite(text, text, uuid) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.create_invite(text, text, uuid) TO authenticated;
 
 -- ---------- 2. helpers (internal — not granted to authenticated) ----------
 CREATE FUNCTION public.platform_norm_subdomain(p_sub text) RETURNS text
@@ -323,6 +370,10 @@ RETURNS TABLE(partner_id uuid, name text, type text, status text,
               seats_used int, pending_invites int)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_f jsonb := COALESCE(p_filters, '{}'::jsonb); v_key text;
+        -- §4.1: licence + usage reports are platform_admin only (support
+        -- None). support keeps routing metadata + clients_total; every
+        -- licence / usage / seat column comes back NULL for them.
+        v_admin boolean := public.is_platform_role(ARRAY['platform_admin']);
 BEGIN
   IF NOT public.is_platform_role(ARRAY['platform_admin','support']) THEN
     RAISE EXCEPTION 'platform_list_partners: platform_admin or support required';
@@ -340,14 +391,22 @@ BEGIN
     SELECT p.id, p.name, p.type, p.status, p.status_reason, p.status_changed_at,
            p.country, p.subdomain, p.primary_contact, p.support_contact,
            p.data_region_default, p.created_at,
-           l.id, l.plan, l.status, l.starts_on, l.ends_on,
-           u.client_limit, u.programme_limit,
+           CASE WHEN v_admin THEN l.id END,
+           CASE WHEN v_admin THEN l.plan END,
+           CASE WHEN v_admin THEN l.status END,
+           CASE WHEN v_admin THEN l.starts_on END,
+           CASE WHEN v_admin THEN l.ends_on END,
+           CASE WHEN v_admin THEN u.client_limit END,
+           CASE WHEN v_admin THEN u.programme_limit END,
            (SELECT count(*)::int FROM public.client_orgs co WHERE co.practice_id = p.id),
-           u.clients_used, u.programmes_used,
-           u.over_client_limit, u.over_programme_limit,
-           public.practice_seats_used(p.id),
-           (SELECT count(*)::int FROM public.invites i
-             WHERE i.practice_id = p.id AND i.accepted_at IS NULL AND i.expires_at > now())
+           CASE WHEN v_admin THEN u.clients_used END,
+           CASE WHEN v_admin THEN u.programmes_used END,
+           CASE WHEN v_admin THEN u.over_client_limit END,
+           CASE WHEN v_admin THEN u.over_programme_limit END,
+           CASE WHEN v_admin THEN public.practice_seats_used(p.id) END,
+           CASE WHEN v_admin THEN
+             (SELECT count(*)::int FROM public.invites i
+               WHERE i.practice_id = p.id AND i.accepted_at IS NULL AND i.expires_at > now()) END
     FROM public.practices p
     -- §9.8 counting + active-licence caps: the W1-01 counter, not a copy
     CROSS JOIN LATERAL public.partner_licence_usage(p.id) u
@@ -370,8 +429,10 @@ END $$;
 COMMENT ON FUNCTION public.platform_list_partners(jsonb) IS
   'W2-14: partners with metadata, current licence, client/programme counts '
   '(partner_licence_usage §9.8) and seat usage (practice_seats_used). '
-  'platform_admin + support (read-only). Counts and partner metadata ONLY — '
-  'no tenant content (NFR-04). Filters: id, status, type, country, q.';
+  'platform_admin sees everything; support (read-only) gets routing '
+  'metadata + clients_total only — licence, usage and seat columns are NULL '
+  '(§4.1 licence reports: support None). No tenant content (NFR-04). '
+  'Filters: id, status, type, country, q.';
 
 -- ---------- 7. platform_list_clients (support-request directory) ----------
 CREATE FUNCTION public.platform_list_clients(p_partner uuid DEFAULT NULL)
@@ -456,13 +517,19 @@ BEGIN
                              WHERE revoked_at IS NULL AND starts_at <= now()
                                AND expires_at > now()))
   ) INTO v;
+  -- §4.1: licence reports are platform_admin only — support never gets the
+  -- licence breakdown
+  IF NOT public.is_platform_role(ARRAY['platform_admin']) THEN
+    v := v - 'licences';
+  END IF;
   RETURN v;
 END $$;
 COMMENT ON FUNCTION public.platform_metrics() IS
   'W2-14 FR-PLT-05: platform totals — partners by status/type, licences by '
   'status, clients, programmes by status + framework, active tenant users, '
   'evidence awaiting decision, support requests/grants. Counts only (NFR-04). '
-  'platform_admin + support. Monthly report completion rate deferred to W2-08.';
+  'platform_admin + support; the licences key is omitted for support (§4.1). '
+  'Monthly report completion rate deferred to W2-08.';
 
 -- ---------- 9. grants ----------
 REVOKE EXECUTE ON FUNCTION public.platform_norm_subdomain(text) FROM anon, public, authenticated;

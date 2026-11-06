@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic';
 
 // W2-14 — partner detail (FR-PLT-01/02). Partner metadata + counts come from
 // platform_list_partners({id}); licences are read under licences_read RLS
-// (platform_admin only — support sees the summary from the list RPC); the
+// (platform_admin only — support gets no licence data at all, §4.1); the
 // client directory is platform_list_clients (names + counts only, NFR-04).
 // Writes: platform_update_partner, platform_set_partner_status and the W1-07
 // licence RPCs — all admin-gated here and re-checked in the RPC bodies.
@@ -77,6 +77,8 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
         </Alert>
       ) : null}
 
+      {/* licence / usage tiles: platform_admin only (§4.1 — support gets NULLs from the RPC) */}
+      {gate.isAdmin ? (
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
         <Card pad={16} style={{ flex: '1 1 150px' }}>
           <div className="mono" style={{ fontSize: 24 }}>{capLabel(p.clients_used, p.client_limit)}</div>
@@ -87,8 +89,8 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
           <div className="muted">Programmes / cap</div>
         </Card>
         <Card pad={16} style={{ flex: '1 1 150px' }}>
-          <div className="mono" style={{ fontSize: 24 }}>{p.seats_used} / 5</div>
-          <div className="muted">Team seats ({p.pending_invites} invite{p.pending_invites === 1 ? '' : 's'} pending)</div>
+          <div className="mono" style={{ fontSize: 24 }}>{p.seats_used ?? 0} / 5</div>
+          <div className="muted">Team seats ({p.pending_invites ?? 0} invite{p.pending_invites === 1 ? '' : 's'} pending)</div>
         </Card>
         <Card pad={16} style={{ flex: '1 1 150px' }}>
           <div style={{ fontSize: 18, marginBottom: 4 }}>
@@ -97,6 +99,14 @@ export default async function PartnerDetail({ params }: { params: Promise<{ id: 
           <div className="muted">Current licence{p.licence_ends_on ? ` · ends ${dateLabel(p.licence_ends_on)}` : ''}</div>
         </Card>
       </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+          <Card pad={16} style={{ flex: '0 1 200px' }}>
+            <div className="mono" style={{ fontSize: 24 }}>{p.clients_total}</div>
+            <div className="muted">Clients on record</div>
+          </Card>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 16 }}>
         <div style={{ flex: '2 1 420px', minWidth: 0 }}>
