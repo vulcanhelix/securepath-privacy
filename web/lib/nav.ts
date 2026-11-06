@@ -10,8 +10,10 @@ import type { RoleContext } from './role-context';
 //
 // Visibility rules (spec §4.1/§4.2 capability tables — "what they see"):
 //   platform: platform_admin → admin + licences; content_author → template
-//             library; support → nothing without a scoped grant (their
-//             client-scope assignment surfaces the client modules instead).
+//             library; support → the read-only platform views + support
+//             access requests (W2-14), never client content without a scoped
+//             grant (their client-scope assignment surfaces the client
+//             modules instead).
 //   partner:  partner_admin → everything; partner_consultant → console (own
 //             clients) + programme modules on assigned scopes; read_only →
 //             console + programme read surfaces.
@@ -82,12 +84,15 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-17', implemented: false, visible: partnerSees(['partner_admin']) },
 
   // ---- platform level (SecurePath) ----
-  { key: 'platform', label: 'Partners', icon: 'shield', scope: 'platform', href: '/admin/partners',
-    w2: 'W2-14', implemented: false, visible: platformSees(['platform_admin']) },
+  // W2-14: /platform = metrics overview + partners/usage sub-tabs; support
+  // gets the read-only views (writes stay admin-gated in the RPCs)
+  { key: 'platform', label: 'Platform', icon: 'shield', scope: 'platform', href: '/platform',
+    w2: 'W2-14', implemented: true, visible: platformSees(['platform_admin', 'support']) },
   { key: 'templates', label: 'Templates', icon: 'library', scope: 'platform', href: '/admin/templates',
     w2: 'W2-14', implemented: false, visible: platformSees(['platform_admin', 'content_author']) },
-  { key: 'support', label: 'Support access', icon: 'key-round', scope: 'platform', href: '/admin/support',
-    w2: 'W4-01', implemented: false, visible: platformSees(['platform_admin', 'support']) },
+  // W2-14 built request + list; W4-01 finishes approve / in-grant access / revoke
+  { key: 'support', label: 'Support access', icon: 'key-round', scope: 'platform', href: '/platform/support',
+    w2: 'W2-14', implemented: true, visible: platformSees(['platform_admin', 'support']) },
 
   // ---- programme level (/programmes/[id]…) — spec §4.2 column ----
   { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard', scope: 'programme', href: '',
