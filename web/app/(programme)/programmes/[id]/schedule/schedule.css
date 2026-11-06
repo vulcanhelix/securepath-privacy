@@ -1,0 +1,80 @@
+/* W2-05 — schedule/Gantt styles. Additive: sp-sch-* / sp-gantt-* only, same
+   vocabulary + vars as programme.css. */
+
+/* toolbar: view switch + FR-SCH-01 filters */
+.sp-sch-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.sp-sch-views { display: inline-flex; gap: 2px; border: 1px solid var(--border); border-radius: var(--r-pill); padding: 2px; background: var(--inset); }
+.sp-sch-viewbtn { border: 0; background: none; padding: 6px 14px; border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: var(--w-medium); color: var(--muted); cursor: pointer; }
+.sp-sch-viewbtn.is-active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px var(--ring); }
+.sp-sch-filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sp-sch-filters .sp-select { padding: 6px 10px; font-size: var(--fs-sm); width: auto; }
+.sp-sch-win { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--muted); }
+.sp-sch-win .sp-input { width: 62px; padding: 6px 8px; font-size: var(--fs-sm); }
+
+/* ---------- gantt ---------- */
+.sp-gantt { overflow-x: auto; border-radius: 0 0 var(--r-card) var(--r-card); }
+.sp-gantt-inner { position: relative; min-width: 100%; }
+.sp-gantt-row { position: absolute; left: 0; right: 0; }
+.sp-gantt-label { position: sticky; left: 0; z-index: 30; display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 14px; background: var(--surface); border-right: 1px solid var(--border); font-size: var(--fs-xs); color: var(--text-2); overflow: hidden; white-space: nowrap; }
+.sp-gantt-hd-label { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--ls-label); color: var(--faint); }
+.sp-gantt-cell { position: absolute; top: 0; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; color: var(--faint); border-left: 1px solid var(--border); }
+.sp-gantt-hd.is-rc { background: repeating-linear-gradient(135deg, var(--inset), var(--inset) 3px, transparent 3px, transparent 7px); color: var(--warn); }
+.sp-gantt-hd.is-now { color: var(--accent-text); font-weight: var(--w-semibold); }
+.sp-gantt-rc { position: absolute; z-index: 0; background: repeating-linear-gradient(135deg, transparent, transparent 4px, var(--inset) 4px, var(--inset) 8px); }
+.sp-gantt-now { position: absolute; z-index: 1; border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); background: color-mix(in oklab, var(--accent) 6%, transparent); pointer-events: none; }
+
+.sp-gantt-phase { z-index: 2; border-top: 1px solid var(--border); }
+.sp-gantt-phase-label { font-weight: var(--w-semibold); color: var(--text); background: var(--inset); }
+.sp-gantt-phase-band { position: absolute; top: 6px; height: calc(100% - 12px); border-radius: var(--r-pill); background: var(--accent-soft); border: 1px solid var(--accent-soft-border); display: flex; align-items: center; justify-content: center; }
+.sp-gantt-phase-weeks { font-family: var(--font-mono); font-size: 10px; color: var(--accent-text); }
+.sp-gantt-ws { z-index: 2; }
+.sp-gantt-ws-label { padding-left: 28px; font-weight: var(--w-medium); color: var(--muted); }
+.sp-gantt-ws-lead { color: var(--faint); font-weight: var(--w-regular); }
+.sp-gantt-act { z-index: 2; }
+.sp-gantt-act.is-deferred .sp-gantt-act-label { opacity: .6; font-style: italic; }
+.sp-gantt-act-label { border: 0; cursor: pointer; text-align: left; }
+.sp-gantt-act-label:hover { background: var(--inset); }
+.sp-gantt-act-label.is-sel { background: var(--accent-soft); }
+.sp-gantt-ref { font-family: var(--font-mono); font-size: 11px; color: var(--text); flex: none; }
+.sp-gantt-act-text { overflow: hidden; text-overflow: ellipsis; }
+.sp-gantt-track { position: absolute; top: 0; height: 100%; border-bottom: 1px dashed var(--border); }
+.sp-gantt-bar { position: absolute; top: 8px; height: 16px; border: 0; border-radius: var(--r-pill); cursor: pointer; overflow: hidden; }
+.sp-gantt-bar.rag-pass { background: var(--pass); }
+.sp-gantt-bar.rag-warn { background: var(--warn); }
+.sp-gantt-bar.rag-fail { background: var(--fail); }
+.sp-gantt-bar.rag-ink { background: var(--ink); }
+.sp-gantt-bar.rag-neutral { background: var(--faint); }
+.sp-gantt-bar.is-sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-gantt-bar.is-deferred { background: transparent; border: 1.5px dashed var(--faint); }
+.sp-gantt-pct { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255, 255, 255, .35); }
+.sp-gantt-ms { position: absolute; top: 5px; width: 22px; height: 22px; border: 0; transform: rotate(45deg); border-radius: 4px; cursor: pointer; }
+.sp-gantt-ms.is-sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sp-gantt-ms-line { position: absolute; top: 15px; height: 2px; background: var(--border-strong); }
+.sp-gantt-depchip { position: absolute; top: 4px; z-index: 4; padding: 2px 7px; border-radius: var(--r-pill); background: var(--panel); color: var(--panel-text); font-size: 10px; font-family: var(--font-mono); white-space: nowrap; pointer-events: none; }
+.sp-gantt-arrows { position: absolute; z-index: 5; pointer-events: none; }
+.sp-gantt-legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); font-size: var(--fs-xs); color: var(--muted); }
+.sp-gantt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sp-gantt-lg { display: inline-block; width: 14px; height: 8px; border-radius: var(--r-pill); }
+.sp-gantt-lg-ms { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); background: var(--faint); }
+.sp-gantt-lg-rc { background: repeating-linear-gradient(135deg, transparent, transparent 2px, var(--border-strong) 2px, var(--border-strong) 4px); border: 1px solid var(--border-strong); }
+.sp-gantt-lg-now { border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent); }
+
+/* ---------- table ---------- */
+.sp-sch-refbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 0; cursor: pointer; color: var(--accent-text); font-weight: var(--w-medium); }
+.sp-sch-refbtn:hover { text-decoration: underline; }
+.sp-sch-deferred-text { opacity: .6; font-style: italic; }
+
+/* ---------- detail ---------- */
+.sp-sch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 24px; margin: 14px 0 18px; }
+.sp-sch-kv { display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-sm); }
+.sp-sch-deps { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 14px; }
+.sp-sch-reorder { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 6px; }
+.sp-sch-hist { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 16px; }
+.sp-sch-hist-list { list-style: none; margin: 0; padding: 0; font-size: var(--fs-sm); color: var(--text-2); display: flex; flex-direction: column; gap: 4px; }
+
+/* add form predecessor picker */
+.sp-sch-predlist { max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r-ctl); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 720px) {
+  .sp-sch-grid { grid-template-columns: 1fr 1fr; }
+}

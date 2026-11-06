@@ -93,7 +93,7 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard', scope: 'programme', href: '',
     w2: 'W2-04', implemented: true, visible: clientSees(CLIENT_ALL) },
   { key: 'schedule', label: 'Schedule', icon: 'calendar-range', scope: 'programme', href: '/schedule',
-    w2: 'W2-05', implemented: false, visible: clientSees(CLIENT_READ) },
+    w2: 'W2-05', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'register', label: 'Register', icon: 'list-checks', scope: 'programme', href: '/register',
     w2: 'W2-16', implemented: false, visible: clientSees(CLIENT_READ) },
   { key: 'evidence', label: 'Evidence', icon: 'file-check-2', scope: 'programme', href: '/evidence',
