@@ -1,0 +1,12 @@
+# W1-09 scheduler — one-shot service driven by jobs-tick.timer.
+# Fallback firing path for the DB scheduler when pg_cron is unavailable
+# (primary path: pg_cron 'securepath-tick', armed by the migration itself).
+[Unit]
+Description=SecurePath scheduler tick (SELECT public.tick(now()))
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# .env path is relative to the compose dir; keep in sync if it moves
+ExecStart=/opt/securepath/jobs-tick.sh
