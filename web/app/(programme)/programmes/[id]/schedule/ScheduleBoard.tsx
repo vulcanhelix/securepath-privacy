@@ -139,7 +139,7 @@ export function ScheduleBoard({
     const payload: Record<string, unknown> = { status: target };
     if (extra.dependency_override_reason) payload.dependency_override_reason = extra.dependency_override_reason;
     if (extra.rescheduled_date) payload.rescheduled_date = extra.rescheduled_date;
-    const err = await updateActivity(supabase, programmeId, a.id, payload);
+    const err = await updateActivity(supabase, a.id, payload);
     setBusy(false);
     setPending(null);
     if (err) {
@@ -180,7 +180,7 @@ export function ScheduleBoard({
   async function onReorder(a: ScheduleActivity, start: number, end: number, ws: string | null) {
     setBusy(true);
     setMsg({});
-    const err = await reorderActivity(supabase, programmeId, a.id, start, end, ws);
+    const err = await reorderActivity(supabase, a.id, start, end, ws);
     setBusy(false);
     if (err) {
       setMsg({ err });
@@ -339,8 +339,8 @@ export function ScheduleBoard({
 
       {showAdd && canWrite ? (
         <AddActivityForm
-          programmeId={programmeId}
           workstreams={workstreams}
+          leadNames={leadNames}
           activities={activities}
           totalWeeks={totalWeeks}
           busy={busy}

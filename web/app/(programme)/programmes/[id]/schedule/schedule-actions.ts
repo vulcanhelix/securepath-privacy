@@ -1,32 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ---------------------------------------------------------------------------
-// W2-05 — write helpers for the schedule screen. Primary path is the W1-05
-// lifecycle RPCs (migration 20261106000008): they enforce the FR-SCH-04
-// predecessor gate, ref uniqueness, week bounds and recompute every CALC
-// column (start_date/due_date/month/phase/rag) in the same call.
+// W2-05 — write helpers for the schedule screen. RPC-ONLY by design: the W1-05
+// lifecycle RPCs (migration 20261106000008) are the sole write path because
+// they enforce what no table constraint does — ref uniqueness, week bounds,
+// same-programme workstream/dependency checks, the payload allowlist, the
+// FR-SCH-04 predecessor-override rule, the initial status-history row,
+// audit_log entries — and recompute every CALC column in the same call.
 //
-// While that migration is unapplied on an environment the RPCs 404 — same
-// situation lib/programme.ts handles for list_programmes. The fallback then
-// writes the RLS-permitted columns directly (activities_insert/_update +
-// column grants) and best-effort calls recompute_programme_progress so CALC
-// columns refresh; a caller without the programme write role can't recompute,
-// which mirrors the RPC gate anyway.
+// There is deliberately NO direct-table fallback. If an RPC is missing or
+// rejects the call, its error message is returned for the UI to surface and
+// nothing is written.
 // ---------------------------------------------------------------------------
 
-function isMissingFunction(err: { code?: string; message?: string } | null): boolean {
-  if (!err) return false;
-  return (
-    err.code === 'PGRST202' ||
-    err.code === '42883' ||
-    /could not find the function|does not exist/i.test(err.message ?? '')
-  );
+function rpcError(err: { code?: string; message?: string } | null, fn: string): string | null {
+  if (!err) return null;
+  if (err.code === 'PGRST202' || err.code === '42883') {
+    return `${fn} is not available on this environment (migration 20261106000008 not applied) — nothing was changed.`;
+  }
+  return err.message ?? `${fn} failed — nothing was changed.`;
 }
 
 /** merge-style field update — update_activity(uuid, jsonb) */
 export async function updateActivity(
   supabase: SupabaseClient,
-  programmeId: string,
   activityId: string,
   payload: Record<string, unknown>
 ): Promise<string | null> {
@@ -34,23 +31,12 @@ export async function updateActivity(
     p_activity_id: activityId,
     p_payload: payload,
   });
-  if (!error) return null;
-  if (!isMissingFunction(error)) return error.message;
-
-  const { error: tErr } = await supabase
-    .from('activities')
-    .update(payload)
-    .eq('id', activityId);
-  if (tErr) return tErr.message;
-  // best effort — CALC columns (rag etc.) refresh if the caller can recompute
-  await supabase.rpc('recompute_programme_progress', { p_programme: programmeId });
-  return null;
+  return rpcError(error, 'update_activity');
 }
 
 /** schedule reposition — reorder_activity(uuid, int, int, uuid) */
 export async function reorderActivity(
   supabase: SupabaseClient,
-  programmeId: string,
   activityId: string,
   startWeek: number,
   endWeek: number,
@@ -62,15 +48,7 @@ export async function reorderActivity(
     p_end_week: endWeek,
     p_workstream_id: workstreamId,
   });
-  if (!error) return null;
-  if (!isMissingFunction(error)) return error.message;
-
-  const patch: Record<string, unknown> = { start_week: startWeek, end_week: endWeek };
-  if (workstreamId) patch.workstream_id = workstreamId; // RPC can't clear it either
-  const { error: tErr } = await supabase.from('activities').update(patch).eq('id', activityId);
-  if (tErr) return tErr.message;
-  await supabase.rpc('recompute_programme_progress', { p_programme: programmeId });
-  return null;
+  return rpcError(error, 'reorder_activity');
 }
 
 export interface NewActivity {
@@ -82,9 +60,10 @@ export interface NewActivity {
   milestone: boolean;
   evidenceRequired: boolean;
   predecessorIds: string[];
+  leads: string[];
 }
 
-/** add_activity(uuid, text, text, uuid, int, int, bool, bool, uuid[], uuid[]) */
+/** add_activity(uuid, text, text, uuid, int, int, bool, bool, uuid[] deps, uuid[] leads) */
 export async function addActivity(
   supabase: SupabaseClient,
   programmeId: string,
@@ -100,32 +79,7 @@ export async function addActivity(
     p_milestone: a.milestone,
     p_evidence_required: a.evidenceRequired,
     p_dependencies: a.predecessorIds,
-    p_leads: [],
+    p_leads: a.leads,
   });
-  if (!error) return null;
-  if (!isMissingFunction(error)) return error.message;
-
-  const { data: row, error: iErr } = await supabase
-    .from('activities')
-    .insert({
-      programme_id: programmeId,
-      workstream_id: a.workstreamId,
-      ref: a.ref,
-      text: a.text,
-      start_week: a.startWeek,
-      end_week: a.endWeek,
-      milestone: a.milestone,
-      evidence_required: a.evidenceRequired,
-    })
-    .select('id')
-    .single();
-  if (iErr) return iErr.message;
-  if (a.predecessorIds.length) {
-    const { error: dErr } = await supabase.from('activity_deps').insert(
-      a.predecessorIds.map((p) => ({ activity_id: row.id, depends_on_activity_id: p }))
-    );
-    if (dErr) return dErr.message;
-  }
-  await supabase.rpc('recompute_programme_progress', { p_programme: programmeId });
-  return null;
+  return rpcError(error, 'add_activity');
 }
