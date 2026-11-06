@@ -1,0 +1,31 @@
+/* W2-08 — monthly report body. Print-safe: plain flow layout, no sticky or
+   fixed positioning, no viewport units, tables never split across rows, and
+   colours that survive black-and-white printing (RAG carries its text). W3-03
+   prints this same markup to PDF. */
+
+.doc { background: var(--surface, #fff); color: var(--text, #111); border: 1px solid var(--border, #ddd); border-radius: 12px; padding: 32px 36px; line-height: 1.5; }
+.brand { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 16px; margin-bottom: 20px; border-bottom: 3px solid var(--report-accent, var(--accent, #333)); }
+.brandName { font-weight: 600; font-size: 15px; }
+.brandLogo { max-height: 40px; max-width: 180px; object-fit: contain; }
+.title { margin: 0 0 4px; font-size: 24px; font-weight: 600; }
+.meta { color: var(--muted, #555); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.banner { margin: 16px 0 0; padding: 10px 14px; border: 1px solid var(--border, #ccc); border-left: 4px solid var(--warn, #b7791f); border-radius: 6px; font-size: 13px; }
+.headline { margin: 24px 0 8px; font-size: 17px; font-weight: 600; }
+.section { margin-top: 28px; break-inside: avoid-page; page-break-inside: avoid; }
+.sectionTitle { margin: 0 0 10px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.lock { font-size: 11px; font-weight: 500; color: var(--muted, #666); border: 1px solid var(--border, #ccc); border-radius: 999px; padding: 1px 8px; }
+.figures { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+.figures th, .figures td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border, #e5e5e5); vertical-align: top; }
+.figures th { font-weight: 500; color: var(--muted, #555); width: 55%; }
+.figures td { font-family: var(--font-mono, ui-monospace, monospace); }
+.figures tr { break-inside: avoid; page-break-inside: avoid; }
+.narrative { white-space: pre-wrap; margin: 0; }
+.empty { color: var(--faint, #888); font-style: italic; margin: 0; }
+.signoff { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border, #ddd); font-size: 13px; break-inside: avoid; page-break-inside: avoid; }
+.signoff ul { margin: 6px 0 0; padding-left: 18px; }
+
+@media print {
+  .doc { border: 0; border-radius: 0; padding: 0; background: #fff; color: #000; }
+  .lock { display: none; }
+  .noPrint { display: none !important; }
+}
