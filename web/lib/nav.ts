@@ -106,7 +106,7 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'sessions', label: 'Weekly sessions', icon: 'calendar-clock', scope: 'programme', href: '/weekly',
     w2: 'W2-07', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'reports', label: 'Monthly report', icon: 'file-text', scope: 'programme', href: '/reports',
-    w2: 'W2-08', implemented: false, visible: clientSees(CLIENT_MANAGE) },
+    w2: 'W2-08', implemented: true, visible: clientSees(CLIENT_MANAGE) },
   { key: 'registers', label: 'Operational registers', icon: 'siren', scope: 'programme', href: '/registers',
     w2: 'W2-09', implemented: true, visible: clientSees(CLIENT_MANAGE) },
   { key: 'maintenance', label: 'Maintenance', icon: 'refresh-cw', scope: 'programme', href: '/maintenance',
