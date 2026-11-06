@@ -490,8 +490,15 @@ BEGIN
                      WHERE fco.practice_id = p.id AND pr.status <> 'closed'
                      GROUP BY 1) fw), '{}'::jsonb)
     FROM public.practices p
+    -- §9.8 usage counted DIRECTLY here (definer reads; platform staff hold no
+    -- tenant visibility, so guarded helpers are deliberately not called for
+    -- this partner-level aggregate)
     LEFT JOIN LATERAL (
-      SELECT * FROM public.partner_licence_usage(p.id)
+      SELECT count(*)::int AS programmes_used,
+             count(DISTINCT pr.client_org_id)::int AS clients_used
+        FROM public.programmes pr
+        JOIN public.client_orgs uco ON uco.id = pr.client_org_id
+       WHERE uco.practice_id = p.id AND pr.status <> 'closed'
     ) u ON true
     LEFT JOIN LATERAL (
       SELECT * FROM public.licences ll
@@ -507,7 +514,9 @@ COMMENT ON FUNCTION public.usage_report(uuid) IS
   'W1-07 FR-LIC-02/FR-PLT-05: per-partner usage vs licence caps — clients, '
   'non-closed programmes (with by-framework split), active tenant users. '
   'NULL = all partners (platform_admin only); a partner_admin may report '
-  'on their own partner. Powers the W2-17 usage page.';
+  'on their own partner. Powers the W2-17 usage page. Reads tables directly '
+  '(definer, partner-level aggregate) — §9.8 counting mirrored inline so no '
+  'tenant-visibility-guarded helper is in the call path.';
 
 -- ---------- 5. support-access grant flow (NFR-04 / FR-PLT-04) ----------------
 

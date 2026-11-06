@@ -582,13 +582,18 @@ ROLLBACK;
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
+-- NOTE: other suites share this fixture world (e.g. W1-02 seeds a second
+-- programme on C1), so usage is asserted against the live §9.8 counter
+-- rather than magic constants.
 SELECT pg_temp.t(
   (SELECT count(*) FROM public.usage_report(NULL)) >= 3
   AND EXISTS (SELECT 1 FROM public.usage_report(NULL) u
+              JOIN public.partner_licence_usage('bb000005-0000-0000-0000-000000000001') lu
+                ON lu.clients_used = u.clients_used
+               AND lu.programmes_used = u.programmes_used
               WHERE u.partner_id='bb000005-0000-0000-0000-000000000001'
-                AND u.clients_used=2 AND u.programmes_used=2
                 AND u.active_users >= 1),
-  '44 usage_report: platform_admin all-partner view (Partner A 2/2, users>0)');
+  '44 usage_report: platform_admin all-partner view (Partner A = §9.8 counter, users>0)');
 SELECT pg_temp.t(
   EXISTS (SELECT 1 FROM public.usage_report(NULL) u
           WHERE u.partner_id='bb000005-0000-0000-0000-000000000001'
