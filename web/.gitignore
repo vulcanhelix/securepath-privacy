@@ -1,0 +1,4 @@
+# Playwright (W4-00)
+/e2e/.auth/
+/test-results/
+/playwright-report/
