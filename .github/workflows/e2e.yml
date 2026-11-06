@@ -332,6 +332,18 @@ jobs:
           ! grep -q "FAIL" /tmp/ri_checks.log
           grep -q "PASS" /tmp/ri_checks.log
 
+      - name: Retired-row freeze + checklist item checks (#92, #90)
+        run: |
+          # self-contained (own W1RC namespace, never touches TESTFIX): a
+          # retired activity is frozen on every edit path while CALC
+          # recomputes pass; complete_checklist_item accepts only accepted
+          # same-programme evidence, enforces roles, and its completion
+          # ledger is append-only. Wipes + tears down its namespace.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_retired_checklists.sql 2>&1 | tee /tmp/rc_checks.log
+          ! grep -q "FAIL" /tmp/rc_checks.log
+          grep -q "PASS" /tmp/rc_checks.log
       - name: Documents, training + designations checks (W2-12)
         run: |
           # self-contained (own W2DT namespace + test jurisdiction pack, never

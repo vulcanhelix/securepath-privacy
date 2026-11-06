@@ -102,10 +102,11 @@ export default async function ProgrammeDashboardPage({ params }: { params: Promi
       .eq('programme_id', id).order('name'),
     supabase.from('activities')
       .select('id, ref, text, workstream_id, leads, start_week, end_week, milestone, status, pct_complete, due_date, rescheduled_date, rag, comments')
-      .eq('programme_id', id).order('ref'),
+      // #92: retired rows (FR-TPL-04) are out of scope — same as the rollups
+      .eq('programme_id', id).eq('active', true).order('ref'),
     supabase.from('register_items')
       .select('id, ref, finding, priority, status, lead, planned_close_week, planned_close_date, days_overdue')
-      .eq('programme_id', id).order('ref'),
+      .eq('programme_id', id).eq('active', true).order('ref'),
     supabase.from('evidence_items').select('id, review_stage').eq('programme_id', id),
     supabase.from('raid_items').select('id, type, description, owner, review_by, status')
       .eq('programme_id', id).order('raised_on', { ascending: false }),

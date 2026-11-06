@@ -20,6 +20,8 @@ export interface RegisterItemRow {
   days_overdue: number | null; // CALC
   source_assessment_session_id: string | null; // bridge provenance (20261106000011)
   source_question_ref: string | null;
+  active: boolean; // #87/#92 FR-TPL-04 soft retire (false = retired)
+  retired_reason: string | null;
   created_at: string;
 }
 
@@ -29,6 +31,7 @@ export interface RegisterActivity {
   text: string;
   status: string;
   workstream_id: string | null;
+  active?: boolean; // #92: false = retired (FR-TPL-04)
 }
 
 export interface RegisterEvidence {
@@ -44,7 +47,8 @@ export interface RegisterEvidence {
 export const REGISTER_COLS =
   'id, ref, finding, priority, assessment_window, lead, planned_close_week, status, ' +
   'accepted_on, accepted_by, accepted_evidence_refs, reopen_reason, planned_close_date, ' +
-  'days_overdue, source_assessment_session_id, source_question_ref, created_at';
+  'days_overdue, source_assessment_session_id, source_question_ref, active, retired_reason, ' +
+  'created_at';
 
 // pre-bridge column set — retried if 20261106000011 is not applied yet
 export const REGISTER_COLS_LEGACY =

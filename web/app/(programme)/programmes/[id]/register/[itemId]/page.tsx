@@ -33,7 +33,7 @@ const ACTIVITY_COLS =
   'id, ref, text, workstream_id, phase, start_week, end_week, milestone, ' +
   'evidence_required, status, pct_complete, actual_completion, flag, comments, ' +
   'recovery_date, dependency_override_reason, rescheduled_date, start_date, ' +
-  'due_date, month, rag, leads';
+  'due_date, month, rag, leads, active';
 
 export default async function RegisterItemPage({
   params,
@@ -47,7 +47,8 @@ export default async function RegisterItemPage({
   if (!ctx) notFound();
   const base = `/programmes/${id}`;
 
-  const { items, error } = await loadRegisterItems(supabase, id, itemId);
+  // #92: a retired finding stays reachable here as history (marked retired)
+  const { items, error } = await loadRegisterItems(supabase, id, itemId, { includeRetired: true });
   const item = items[0];
   if (!item) {
     if (error) {
@@ -85,8 +86,14 @@ export default async function RegisterItemPage({
   ]);
 
   const linkedIds = new Set((links ?? []).map((l) => l.activity_id as string));
-  const acts = (allActivities ?? []) as unknown as ScheduleActivity[];
+  // #92: retired activities (FR-TPL-04) are frozen and out of the §9.4 leg, so
+  // the editor/link list only gets live rows; retired links are listed as
+  // history below, and evidence filed through them keeps a marked ref.
+  const everyAct = (allActivities ?? []) as unknown as (ScheduleActivity & { active?: boolean })[];
+  const acts = everyAct.filter((a) => a.active !== false);
   const linked = acts.filter((a) => linkedIds.has(a.id));
+  const retiredLinked = everyAct.filter((a) => a.active === false && linkedIds.has(a.id));
+  const retired = item.active === false;
 
   // evidence directly on the item + evidence on its linked activities
   const evQueries = [
@@ -107,7 +114,9 @@ export default async function RegisterItemPage({
   const evMap = new Map<string, RegisterEvidence>();
   for (const r of evRes) for (const e of (r.data ?? []) as RegisterEvidence[]) evMap.set(e.id, e);
   const evidence = [...evMap.values()].sort((a, b) => b.uploaded_at.localeCompare(a.uploaded_at));
-  const actRef = new Map(acts.map((a) => [a.id, a.ref]));
+  const actRef = new Map(
+    everyAct.map((a) => [a.id, a.active === false ? `${a.ref} (retired)` : a.ref])
+  );
 
   const readinessRow = Array.isArray(readinessRes.data)
     ? (readinessRes.data[0] as { can_close: boolean; reason: string } | undefined)
@@ -160,10 +169,17 @@ export default async function RegisterItemPage({
           <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <Badge tone={PRIORITY_TONE[item.priority] ?? 'neutral'}>{item.priority}</Badge>
             <StatusPill status={item.status} />
-            <RagBadge rag={rag} />
+            {retired ? <Badge tone="neutral">Retired</Badge> : <RagBadge rag={rag} />}
           </span>
         }
       />
+
+      {retired ? (
+        <Alert tone="info">
+          {`This finding is retired (FR-TPL-04)${item.retired_reason ? `: ${item.retired_reason}` : ''}. ` +
+            'It is kept as history only: it is out of the register rollups and cannot be edited, linked or closed.'}
+        </Alert>
+      ) : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
         <Card title="Finding" pad={20}>
@@ -205,7 +221,9 @@ export default async function RegisterItemPage({
         </Card>
 
         <Card title="Closure (§9.4)" pad={20}>
-          {closed ? (
+          {retired ? (
+            <Alert tone="info">Retired — not closable (FR-TPL-04).</Alert>
+          ) : closed ? (
             <Alert tone="ok">
               {`Closed — accepted ${item.accepted_on ? item.accepted_on.slice(0, 10) : '—'} by ${who(item.accepted_by)}.`}
             </Alert>
@@ -223,7 +241,7 @@ export default async function RegisterItemPage({
               <span className="muted">none recorded</span>
             )}
           </div>
-          {!closed && isAo === true ? (
+          {retired ? null : !closed && isAo === true ? (
             <CloseItem
               itemId={item.id}
               itemRef={item.ref}
@@ -246,8 +264,14 @@ export default async function RegisterItemPage({
         workstreams={(workstreams ?? []) as ScheduleWorkstream[]}
         leadNames={leadNames}
         totalWeeks={(prog?.total_weeks as number | undefined) ?? ctx.programme.total_weeks}
-        canWrite={canWrite === true}
+        canWrite={canWrite === true && !retired}
       />
+      {retiredLinked.length ? (
+        <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 8 }}>
+          Retired linked activities (out of scope, kept as history):{' '}
+          <span className="mono">{retiredLinked.map((a) => a.ref).join(', ')}</span>
+        </p>
+      ) : null}
 
       <Card title="Evidence" pad={0} style={{ marginTop: 16 }}>
         {evidence.length ? (
