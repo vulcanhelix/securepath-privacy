@@ -59,7 +59,12 @@ END $$;
 
 -- teardown-safe cleanup of earlier runs (client-level docs may persist —
 -- instantiation dedupes them on ref+version)
+-- (#87: the suite now stages decided evidence, which NFR-09 makes
+-- undeletable — suspend that guard for this teardown only, as the fixture
+-- pack does)
+ALTER TABLE public.evidence_items DISABLE TRIGGER evidence_immutable;
 DELETE FROM public.programmes WHERE name LIKE 'W1-05 e2e%';
+ALTER TABLE public.evidence_items ENABLE TRIGGER evidence_immutable;
 SELECT set_config('e2e.prog', '', false);
 
 
@@ -431,7 +436,21 @@ END $$;
 ROLLBACK;
 RESET ROLE;
 
--- AO closes R-04: linked activity A-01 Complete; acceptance record supplied
+-- AO closes R-04: linked activity A-01 Complete; acceptance record supplied.
+-- #87: the supplied ref must be REAL accepted evidence linked to R-04 in this
+-- programme, so stage it admin-side (uploader U6, AO U16 accept review).
+-- Claims from an earlier COMMITted block outlive it — clear them so this
+-- staging runs as a true service write.
+RESET request.jwt.claims;
+INSERT INTO public.evidence_items (programme_id, register_item_id, file_key,
+                                   uploaded_by, review_stage, outcome, evidence_ref)
+SELECT :'prog'::uuid, r.id, 'w105/r04-io-appointment.pdf',
+       'aa000005-0000-0000-0000-000000000006', 'decided', 'closes_finding', 'EV-R-04-901'
+  FROM public.register_items r WHERE r.programme_id = :'prog'::uuid AND r.ref = 'R-04';
+INSERT INTO public.evidence_reviews (evidence_item_id, stage, reviewer, decision)
+SELECT e.id, 'accept', 'aa000005-0000-0000-0000-000000000016', 'accepted'
+  FROM public.evidence_items e
+ WHERE e.programme_id = :'prog'::uuid AND e.evidence_ref = 'EV-R-04-901';
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000016","role":"authenticated"}';

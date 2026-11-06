@@ -10,8 +10,10 @@ import type { RoleContext } from './role-context';
 //
 // Visibility rules (spec §4.1/§4.2 capability tables — "what they see"):
 //   platform: platform_admin → admin + licences; content_author → template
-//             library; support → nothing without a scoped grant (their
-//             client-scope assignment surfaces the client modules instead).
+//             library; support → the read-only platform views + support
+//             access requests (W2-14), never client content without a scoped
+//             grant (their client-scope assignment surfaces the client
+//             modules instead).
 //   partner:  partner_admin → everything; partner_consultant → console (own
 //             clients) + programme modules on assigned scopes; read_only →
 //             console + programme read surfaces.
@@ -26,8 +28,8 @@ export type NavKey =
   | 'console' | 'onboarding' | 'branding' | 'team' | 'licences' // partner level
   | 'platform' | 'templates' | 'support' // platform level
   | 'dashboard' | 'schedule' | 'register' | 'evidence' | 'sessions' | 'reports'
-  | 'registers' | 'maintenance' | 'kpis' | 'raid' | 'documents' | 'executive'
-  | 'actions'; // programme level
+  | 'registers' | 'maintenance' | 'kpis' | 'raid' | 'documents' | 'training'
+  | 'designations' | 'executive' | 'actions'; // programme level
 
 export interface NavSlot {
   key: NavKey;
@@ -82,12 +84,15 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-17', implemented: false, visible: partnerSees(['partner_admin']) },
 
   // ---- platform level (SecurePath) ----
-  { key: 'platform', label: 'Partners', icon: 'shield', scope: 'platform', href: '/admin/partners',
-    w2: 'W2-14', implemented: false, visible: platformSees(['platform_admin']) },
+  // W2-14: /platform = metrics overview + partners/usage sub-tabs; support
+  // gets the read-only views (writes stay admin-gated in the RPCs)
+  { key: 'platform', label: 'Platform', icon: 'shield', scope: 'platform', href: '/platform',
+    w2: 'W2-14', implemented: true, visible: platformSees(['platform_admin', 'support']) },
   { key: 'templates', label: 'Templates', icon: 'library', scope: 'platform', href: '/admin/templates',
     w2: 'W2-14', implemented: false, visible: platformSees(['platform_admin', 'content_author']) },
-  { key: 'support', label: 'Support access', icon: 'key-round', scope: 'platform', href: '/admin/support',
-    w2: 'W4-01', implemented: false, visible: platformSees(['platform_admin', 'support']) },
+  // W2-14 built request + list; W4-01 finishes approve / in-grant access / revoke
+  { key: 'support', label: 'Support access', icon: 'key-round', scope: 'platform', href: '/platform/support',
+    w2: 'W2-14', implemented: true, visible: platformSees(['platform_admin', 'support']) },
 
   // ---- programme level (/programmes/[id]…) — spec §4.2 column ----
   { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard', scope: 'programme', href: '',
@@ -95,7 +100,7 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'schedule', label: 'Schedule', icon: 'calendar-range', scope: 'programme', href: '/schedule',
     w2: 'W2-05', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'register', label: 'Register', icon: 'list-checks', scope: 'programme', href: '/register',
-    w2: 'W2-16', implemented: false, visible: clientSees(CLIENT_READ) },
+    w2: 'W2-16', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'evidence', label: 'Evidence', icon: 'file-check-2', scope: 'programme', href: '/evidence',
     w2: 'W2-06', implemented: true, visible: clientSees(CLIENT_ALL) },
   { key: 'sessions', label: 'Weekly sessions', icon: 'calendar-clock', scope: 'programme', href: '/weekly',
@@ -103,15 +108,19 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'reports', label: 'Monthly report', icon: 'file-text', scope: 'programme', href: '/reports',
     w2: 'W2-08', implemented: true, visible: clientSees(CLIENT_MANAGE) },
   { key: 'registers', label: 'Operational registers', icon: 'siren', scope: 'programme', href: '/registers',
-    w2: 'W2-09', implemented: false, visible: clientSees(CLIENT_MANAGE) },
+    w2: 'W2-09', implemented: true, visible: clientSees(CLIENT_MANAGE) },
   { key: 'maintenance', label: 'Maintenance', icon: 'refresh-cw', scope: 'programme', href: '/maintenance',
-    w2: 'W2-10', implemented: false, visible: clientSees(CLIENT_ALL.filter((r) => r !== 'assessor')) },
+    w2: 'W2-10', implemented: true, visible: clientSees(CLIENT_ALL.filter((r) => r !== 'assessor')) },
   { key: 'kpis', label: 'KPIs', icon: 'gauge', scope: 'programme', href: '/kpis',
     w2: 'W2-11', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'raid', label: 'RAID & decisions', icon: 'alert-triangle', scope: 'programme', href: '/raid',
     w2: 'W2-11', implemented: true, visible: clientSees(CLIENT_READ) },
-  { key: 'documents', label: 'Documents & training', icon: 'folder-open', scope: 'programme', href: '/documents',
-    w2: 'W2-12', implemented: false, visible: clientSees(CLIENT_READ) },
+  { key: 'documents', label: 'Documents', icon: 'folder-open', scope: 'programme', href: '/documents',
+    w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
+  { key: 'training', label: 'Training', icon: 'graduation-cap', scope: 'programme', href: '/training',
+    w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
+  { key: 'designations', label: 'Designations', icon: 'id-card', scope: 'programme', href: '/designations',
+    w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'executive', label: 'Executive view', icon: 'presentation', scope: 'programme', href: '/executive',
     w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
   { key: 'actions', label: 'My actions', icon: 'check-square', scope: 'programme', href: '/actions',

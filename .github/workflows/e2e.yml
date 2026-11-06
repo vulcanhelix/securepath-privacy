@@ -143,6 +143,15 @@ jobs:
           ! grep -q "FAIL" /tmp/fu_checks.log
           grep -q "PASS" /tmp/fu_checks.log
 
+      - name: Platform-admin checks (W2-14)
+        run: |
+          # self-contained: seeds and tears down its own W214 namespace
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_platform_admin.sql 2>&1 | tee /tmp/pa_checks.log
+          ! grep -q "FAIL" /tmp/pa_checks.log
+          grep -q "PASS" /tmp/pa_checks.log
+
       - name: Notification fan-out checks (W1-08)
         run: |
           # same TESTFIX world as the ops-CRUD step (fixture pack is re-runnable)
@@ -236,6 +245,33 @@ jobs:
           done
           curl -sf -o /dev/null http://127.0.0.1:8080/login
 
+      - name: Browser suite — Playwright (W4-00)
+        working-directory: web
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8080
+          E2E_ANON_KEY: ${{ env.ANON_KEY }}
+          E2E_SERVICE_KEY: ${{ env.SERVICE_KEY }}
+        run: |
+          # Fresh TESTFIX world in the same session as its opt-in GUC (wipe +
+          # reseed) so this suite never depends on what earlier steps mutated.
+          { echo "SET securepath.test_fixtures='on';";
+            cat ../app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -q -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
+          npx playwright install --with-deps chromium
+          npx playwright test
+
+      - name: Upload Playwright report + traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Isolation suite (22 checks)
         env:
           SUPABASE_URL: http://127.0.0.1:8080
@@ -278,6 +314,30 @@ jobs:
           ! grep -q "FAIL" /tmp/tb_checks.log
           grep -q "PASS" /tmp/tb_checks.log
           grep -c "PASS" /tmp/tb_checks.log
+
+      - name: Register-integrity checks (#87)
+        run: |
+          # self-contained (own W1RI namespace, never touches TESTFIX): §9.4
+          # closure refs must be accepted, linked, same-programme evidence on
+          # every write path, plus the register RPCs (create/update/link/
+          # reopen/retire). Wipes + tears down its namespace — re-runnable.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_register_integrity.sql 2>&1 | tee /tmp/ri_checks.log
+          ! grep -q "FAIL" /tmp/ri_checks.log
+          grep -q "PASS" /tmp/ri_checks.log
+
+      - name: Documents, training + designations checks (W2-12)
+        run: |
+          # self-contained (own W2DT namespace + test jurisdiction pack, never
+          # touches TESTFIX): FR-DOC-01 versioned register + NFR-09 issued
+          # immutability, FR-TRN-01 records (void-and-re-record), FR-ACC-03
+          # designation appoint/end gates and the is_ao_or_alternate effect.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_docs_training.sql 2>&1 | tee /tmp/dt_checks.log
+          ! grep -q "FAIL" /tmp/dt_checks.log
+          grep -q "PASS" /tmp/dt_checks.log
 
       - name: Logs on failure
         if: failure()
