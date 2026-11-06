@@ -318,6 +318,18 @@ jobs:
           ! grep -q "FAIL" /tmp/ri_checks.log
           grep -q "PASS" /tmp/ri_checks.log
 
+      - name: Documents, training + designations checks (W2-12)
+        run: |
+          # self-contained (own W2DT namespace + test jurisdiction pack, never
+          # touches TESTFIX): FR-DOC-01 versioned register + NFR-09 issued
+          # immutability, FR-TRN-01 records (void-and-re-record), FR-ACC-03
+          # designation appoint/end gates and the is_ao_or_alternate effect.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_docs_training.sql 2>&1 | tee /tmp/dt_checks.log
+          ! grep -q "FAIL" /tmp/dt_checks.log
+          grep -q "PASS" /tmp/dt_checks.log
+
       - name: Logs on failure
         if: failure()
         run: |

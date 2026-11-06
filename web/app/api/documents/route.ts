@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
+  // evidence uploads (e.g. W2-12 designation appointment letters) opt out of
+  // the gap-map slot proposal — they are not policy documents
+  if (form.get('classify') === 'false') return NextResponse.json({ id: docId, sha256, proposed: null });
+
   // auto-propose a checklist slot from the filename (advisor still confirms — never auto-fills)
   const { data: checklist } = await supabase
     .from('document_checklists').select('id, name, slot_key')

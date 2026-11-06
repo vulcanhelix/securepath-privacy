@@ -28,8 +28,8 @@ export type NavKey =
   | 'console' | 'onboarding' | 'branding' | 'team' | 'licences' // partner level
   | 'platform' | 'templates' | 'support' // platform level
   | 'dashboard' | 'schedule' | 'register' | 'evidence' | 'sessions' | 'reports'
-  | 'registers' | 'maintenance' | 'kpis' | 'raid' | 'documents' | 'executive'
-  | 'actions'; // programme level
+  | 'registers' | 'maintenance' | 'kpis' | 'raid' | 'documents' | 'training'
+  | 'designations' | 'executive' | 'actions'; // programme level
 
 export interface NavSlot {
   key: NavKey;
@@ -115,8 +115,12 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-11', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'raid', label: 'RAID & decisions', icon: 'alert-triangle', scope: 'programme', href: '/raid',
     w2: 'W2-11', implemented: true, visible: clientSees(CLIENT_READ) },
-  { key: 'documents', label: 'Documents & training', icon: 'folder-open', scope: 'programme', href: '/documents',
-    w2: 'W2-12', implemented: false, visible: clientSees(CLIENT_READ) },
+  { key: 'documents', label: 'Documents', icon: 'folder-open', scope: 'programme', href: '/documents',
+    w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
+  { key: 'training', label: 'Training', icon: 'graduation-cap', scope: 'programme', href: '/training',
+    w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
+  { key: 'designations', label: 'Designations', icon: 'id-card', scope: 'programme', href: '/designations',
+    w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'executive', label: 'Executive view', icon: 'presentation', scope: 'programme', href: '/executive',
     w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
   { key: 'actions', label: 'My actions', icon: 'check-square', scope: 'programme', href: '/actions',
