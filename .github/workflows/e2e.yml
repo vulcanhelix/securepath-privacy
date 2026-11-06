@@ -82,6 +82,21 @@ jobs:
             < app/tests/e2e_template_engine.sql 2>&1 | tee /tmp/te_checks.log
           ! grep -q "FAIL" /tmp/te_checks.log
 
+      - name: Ops-CRUD checks (W1-06)
+        run: |
+          # the W0-05 fixture pack is a no-op without the opt-in GUC — enable it
+          # on this throwaway DB, (re)apply the pack, then run the checks
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
+            -c "ALTER DATABASE postgres SET securepath.test_fixtures = 'on'"
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
+            < app/supabase/migrations/20261105000005_test_fixtures.sql
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_ops_crud.sql 2>&1 | tee /tmp/ops_checks.log
+          ! grep -q "FAIL" /tmp/ops_checks.log
+
       - name: Build web
         working-directory: web
         env:
