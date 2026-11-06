@@ -117,10 +117,11 @@ export async function getRoleContext(sb?: SupabaseClient): Promise<RoleContext |
         (d) => d.client_org_id === clientOrgId && (roles.length === 0 || roles.includes(d.role))
       ),
     isAoOrAlternate: async (clientOrgId) => {
-      // Mirror of migration 20261105000003 is_ao_or_alternate(uuid):
+      // Mirror of is_ao_or_alternate(uuid) as defined by
+      // 20261106000000_designation_probe_fix.sql:
       //   client-level 'accountable_officer' assignment at client scope OR at
       //   programme scope under that client (active) — OR a live designation
-      //   in ('named_alternate','alternate','Deputy Information Officer','dio').
+      //   in ('named_alternate','deputy_information_officer','dpo').
       // Delegating is deliberate: a client reimplementation can't resolve
       // programme scope without a second lookup, and any drift from the
       // server predicate mis-renders AO-gated UI. STABLE definer, EXECUTE
