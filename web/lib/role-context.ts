@@ -57,10 +57,15 @@ export interface RoleContext {
   hasRole(level: RoleLevel, ...roles: string[]): boolean;
   /** caller holds role at `level` scoped to `scopeId` (any scope type) */
   hasScopedRole(level: RoleLevel, roles: string[], scopeId: string): boolean;
-  /** current designation(s) the caller holds for a client — FR-ACC-02/03 */
+  /** current designation(s) the caller holds for a client. Raw designation
+      check only — FR-ACC-02 consumers MUST use isAoOrAlternate, whose kind
+      list and role-assignment branch are NOT the same as this. */
   holdsDesignation(clientOrgId: string, ...roles: DesignationRole[]): boolean;
-  /** FR-ACC-02: accountable officer or named alternate for that client */
-  isAoOrAlternate(clientOrgId: string): boolean;
+  /** FR-ACC-02 (T5): accountable officer or named alternate for that client.
+      ASYNC — delegates to the server predicate is_ao_or_alternate(uuid) so
+      the UI can never drift from the write gate (programme-scope AO needs a
+      programme→client lookup this context doesn't carry). Fails closed. */
+  isAoOrAlternate(clientOrgId: string): Promise<boolean>;
 }
 
 const LEVEL_ORDER: RoleLevel[] = ['platform', 'partner', 'client'];
@@ -111,12 +116,21 @@ export async function getRoleContext(sb?: SupabaseClient): Promise<RoleContext |
       designations.some(
         (d) => d.client_org_id === clientOrgId && (roles.length === 0 || roles.includes(d.role))
       ),
-    isAoOrAlternate: (clientOrgId) =>
-      designations.some(
-        (d) =>
-          d.client_org_id === clientOrgId &&
-          (d.role === 'information_officer' || d.role === 'named_alternate')
-      ),
+    isAoOrAlternate: async (clientOrgId) => {
+      // Mirror of migration 20261105000003 is_ao_or_alternate(uuid):
+      //   client-level 'accountable_officer' assignment at client scope OR at
+      //   programme scope under that client (active) — OR a live designation
+      //   in ('named_alternate','alternate','Deputy Information Officer','dio').
+      // Delegating is deliberate: a client reimplementation can't resolve
+      // programme scope without a second lookup, and any drift from the
+      // server predicate mis-renders AO-gated UI. STABLE definer, EXECUTE
+      // granted to authenticated (20261105000003 tail). Fail closed if the
+      // function isn't deployed yet — same posture as the write gate.
+      const { data, error } = await supabase.rpc('is_ao_or_alternate', {
+        p_client_org: clientOrgId,
+      });
+      return !error && data === true;
+    },
   };
   return ctx;
 }
