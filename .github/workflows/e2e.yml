@@ -70,6 +70,11 @@ jobs:
             docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
               psql -q -v ON_ERROR_STOP=1 -h 127.0.0.1 -U supabase_admin -d postgres < "$f"
           done
+          # New RPCs/tables aren't visible to PostgREST until its schema cache
+          # reloads — without this, the first calls to a fresh RPC can PGRST202.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -c "NOTIFY pgrst, 'reload schema';"
+          sleep 2
 
       - name: Role-assignments predicate checks (W0-00)
         run: |
