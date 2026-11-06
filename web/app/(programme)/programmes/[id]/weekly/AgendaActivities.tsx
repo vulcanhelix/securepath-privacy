@@ -12,7 +12,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LocalDate } from './LocalDate';
 import {
   ACTIVITY_STATUSES,
-  addToExecutivePack,
   needsRecoveryDate,
   notifyLeads,
   updateActivity,
@@ -185,17 +184,8 @@ function ActivityRow({
               >
                 Notify lead
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                icon="presentation"
-                disabled={busy}
-                onClick={() =>
-                  run(() => addToExecutivePack(browserClient(), programmeId, a.id), 'Added to executive pack')
-                }
-              >
-                Exec pack
-              </Button>
+              {/* FR-WKS-02 "add to the executive pack" waits on an executive-pack
+                  RPC — the executive view and pack belong to W2-13 (#38). */}
             </div>
           </td>
         ) : null}

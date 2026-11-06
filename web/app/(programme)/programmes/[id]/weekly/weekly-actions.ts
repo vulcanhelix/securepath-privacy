@@ -101,19 +101,8 @@ export async function notifyLeads(
   return errText('queue_notification', error);
 }
 
-/** FR-WKS-02 — add to the executive pack. No W1 RPC exists for this yet, so
-    the call is attempted and the missing-RPC error is shown — never faked. */
-export async function addToExecutivePack(
-  supabase: SupabaseClient,
-  programmeId: string,
-  activityId: string
-): Promise<string | null> {
-  const { error } = await supabase.rpc('add_to_executive_pack', {
-    p_programme_id: programmeId,
-    p_activity_id: activityId,
-  });
-  return errText('add_to_executive_pack', error);
-}
+// FR-WKS-02 "add to the executive pack" waits on an executive-pack RPC
+// (executive view + pack belong to W2-13, #38) — no helper until it exists.
 
 /** FR-WKS-03 — an Amber activity cannot be saved from the session without a
     recovery date. update_activity does not enforce this server-side yet, so
