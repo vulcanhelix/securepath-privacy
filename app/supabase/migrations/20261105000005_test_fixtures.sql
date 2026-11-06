@@ -142,6 +142,10 @@ DO $$ BEGIN
   -- the invariant itself is intentional and stays on for every other path).
   ALTER TABLE public.evidence_items    DISABLE TRIGGER evidence_immutable;
   ALTER TABLE public.programme_reports DISABLE TRIGGER report_transition_gate;
+  -- W1-06 append-only ledgers (added by a LATER migration — ALTER ... IF EXISTS
+  -- + DISABLE TRIGGER USER keeps this no-op when it is not applied yet).
+  ALTER TABLE IF EXISTS public.decisions           DISABLE TRIGGER USER;
+  ALTER TABLE IF EXISTS public.raid_status_history DISABLE TRIGGER USER;
 
   -- FR-MNT-05 CHECK vs cascade: mti.evidence_id is ON DELETE SET NULL, so
   -- wiping a client's evidence would leave Complete rows that violate the
@@ -165,6 +169,8 @@ DO $$ BEGIN
 
   ALTER TABLE public.evidence_items    ENABLE TRIGGER evidence_immutable;
   ALTER TABLE public.programme_reports ENABLE TRIGGER report_transition_gate;
+  ALTER TABLE IF EXISTS public.decisions           ENABLE TRIGGER USER;
+  ALTER TABLE IF EXISTS public.raid_status_history ENABLE TRIGGER USER;
   -- practices cascade: licences, import_runs (client_orgs already gone).
   DELETE FROM public.practices   WHERE name LIKE 'TESTFIX%';
   -- auth.users cascade: public.users → role_assignments, notification_prefs,
@@ -1202,9 +1208,13 @@ END $$;
 -- WIPE (documented — run ONLY in test databases):
 --   ALTER TABLE evidence_items    DISABLE TRIGGER evidence_immutable;
 --   ALTER TABLE programme_reports DISABLE TRIGGER report_transition_gate;
+--   ALTER TABLE IF EXISTS decisions           DISABLE TRIGGER USER;  -- W1-06
+--   ALTER TABLE IF EXISTS raid_status_history DISABLE TRIGGER USER;  -- W1-06
 --   DELETE FROM client_orgs WHERE name LIKE 'TESTFIX%';   -- cascades all
 --   ALTER TABLE evidence_items    ENABLE TRIGGER evidence_immutable;
 --   ALTER TABLE programme_reports ENABLE TRIGGER report_transition_gate;
+--   ALTER TABLE IF EXISTS decisions           ENABLE TRIGGER USER;   -- W1-06
+--   ALTER TABLE IF EXISTS raid_status_history ENABLE TRIGGER USER;   -- W1-06
 --   DELETE FROM practices  WHERE name LIKE 'TESTFIX%';    -- cascades licences
 --   DELETE FROM auth.users u WHERE u.email LIKE '%@testfix.test'
 --     AND NOT EXISTS (SELECT 1 FROM programme_template_versions v
