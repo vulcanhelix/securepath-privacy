@@ -255,6 +255,21 @@ jobs:
           ! grep -q "FAIL" /tmp/sch_checks.log
           grep -q "PASS" /tmp/sch_checks.log
 
+      - name: Tracks-programmes bridge checks (W0-04)
+        run: |
+          # suite is self-contained (own W004 namespace, never touches TESTFIX);
+          # the fixture pack is (re)applied in the same session only so the
+          # chain matches the other steps. Runs after the pipeline suite, which
+          # already proved the old Stage 0-6 flow green with the bridge applied.
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql \
+                app/tests/e2e_tracks_bridge.sql; } \
+          | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+              psql -h 127.0.0.1 -U supabase_admin -d postgres 2>&1 | tee /tmp/tb_checks.log
+          ! grep -q "FAIL" /tmp/tb_checks.log
+          grep -q "PASS" /tmp/tb_checks.log
+          grep -c "PASS" /tmp/tb_checks.log
+
       - name: Logs on failure
         if: failure()
         run: |
