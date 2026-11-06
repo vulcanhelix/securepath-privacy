@@ -57,3 +57,4 @@ not new-schema shape).
 - Orchestrator fixes on main: 20261106000000 (designation probe kinds + end_date expiry).
 - W1-09 note: pg_cron armed but dormant under securepath.test_fixtures=on; staging/prod need SUPABASE_SERVICE_ROLE_KEY in web.env for notify.ts.
 
+- ORCHESTRATOR PROACTIVENESS (Bruce, 2026-11-06): never end a turn idle. Always leave a background watcher running for pending CI/PRs, keep at least one session in flight while the backlog is non-empty, and use agent-run gaps for orchestrator work (diff review, orchestrator migrations, packet prep, schema fixes, tracker hygiene). Idle = bug, not rest.
