@@ -61,12 +61,13 @@ not new-schema shape).
 - Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
 - Non-project ask to Bruce: send William his BIO for the services offering.
 
-## In-flight / last update (2026-11-06c)
-- MERGED since last update: #69 W1-07, #70 W1-08, #72 W1-05, #73 W1-10 shell, #74 W2-04 dashboard, #79 CI integrity.
-- APPROVED, awaiting fresh CI after merging main: #78 W0-04 bridge, #77 W2-11 KPI/RAID.
-- IN REVIEW (Devin): #75 W2-05 schedule (write-fallback BLOCKING fixed in 4c5562d), #76 W2-06 evidence, #80 W2-07 weekly.
-- BUILDING: claude/w1-followups (migration 20261106000012): FR-WKS-03 in DB, weekly_logs.attendees, programme_people() #81, update_activity_status() #82, week_due_date() #83.
-- Migration numbers taken: 000011 = W0-04 bridge (PR #78), 000012 = follow-ups. Next free: 000013.
+## In-flight / last update (2026-11-06d)
+- MERGED: #78 W0-04, #75 W2-05, #76 W2-06, #77 W2-11, #80 W2-07, #84 notes, #85 W1 follow-ups (000012), #86 W2-16, #88 W2-09, #89 W2-10, #91 register integrity (000013), #93 W2-14 platform admin (000015), #94 W2-08 report builder (000014), #97 W4-00 Playwright harness, #98 W2-12 docs/training/designations (000017), #96 retired guards + checklist RPC (000016). Board ~34/51.
+- IN GATE: #101 redirect of approved W4-D fixes to main (000018 scoped_programme_context; was wrongly merged into claude/w4-00); its CI now reloads PostgREST schema cache post-migrations (PGRST202 flake fix). #100 W4-01 support-access E2E — Devin APPROVE, green; reconcile its duplicated nav.ts against main after #101 lands.
+- BUILDING: none at this instant — next: remaining W2 screens (exec view, partner onboarding/branding), W3 imports/outputs, W4 NFRs + AT-01..22.
+- Migration numbers taken through 000019 (W4-01 support_access). Next free: 000020.
+- Devin review session: a81e22c41da44e05b7b640c546d54de9 (use ~/.claude/skills/devin-chat/scripts/devin.py). Every PR gates on CI green + Devin APPROVE.
+- Hourly update cadence for Bruce requested — keep a sleep-3600 watcher armed; re-arm each time it fires.
 
 ## Lessons (do not repeat)
 - CI: a suite step that only checks `! grep FAIL` passes on an empty log. My conflict-resolution script once dropped the cadence suite and emptied the notifications step while CI stayed green. Now `app/tests/check_ci_workflow.py` runs first in CI and enforces one suite per step plus FAIL and PASS assertions. Resolve e2e.yml conflicts by hand-merging step bodies, then run the checker.
