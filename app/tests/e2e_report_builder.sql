@@ -381,5 +381,54 @@ SELECT pg_temp.t(
 SELECT pg_temp.refused($$UPDATE public.programme_reports SET headline = 'post-sign' WHERE id = '$$ || :'r09' || $$'$$,
   '%content is locked%', '46 signed report content is locked (NFR-09)');
 
+-- ============================================================================
+-- 7. the direct-UPDATE grant path is held to the same contract
+--    (trg_report_transition now owns FR-RPT-03 + issue stamping + audit)
+-- ============================================================================
+-- r2 is a draft on programme two (fallback structure requires 'commentary',
+-- still blank): a write role's direct UPDATE cannot skip the FR-RPT-03 check
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2080000-0000-0000-0000-000000000005","role":"authenticated"}';
+SELECT pg_temp.refused($$UPDATE public.programme_reports SET status = 'inputs_complete' WHERE id = '$$ || :'r2' || $$'$$,
+  '%narrative still missing%', '47 direct draft→inputs_complete refused with a blank required narrative');
+RESET ROLE; SET request.jwt.claims = '';
+
+-- and once the narrative is in (via the RPC), the same direct UPDATE is legal
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2080000-0000-0000-0000-000000000005","role":"authenticated"}';
+SELECT public.update_report_draft(:'r2', '{"narrative":{"commentary":"W208 P2 commentary."}}');
+UPDATE public.programme_reports SET status = 'inputs_complete' WHERE id = :'r2';
+RESET ROLE; SET request.jwt.claims = '';
+SELECT pg_temp.t(
+  (SELECT status = 'inputs_complete' FROM public.programme_reports WHERE id = :'r2'),
+  '48 direct draft→inputs_complete allowed once required narrative is present');
+
+-- r09 is signed: a direct signed→issued UPDATE must mint the reference, stamp
+-- issuer + time and leave the audit row — no reference-less issued report
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2080000-0000-0000-0000-000000000001","role":"authenticated"}';
+UPDATE public.programme_reports SET status = 'issued' WHERE id = :'r09';
+RESET ROLE; SET request.jwt.claims = '';
+SELECT pg_temp.t(
+  (SELECT status = 'issued' AND reference = 'RPT-2026-09-v1'
+      AND issued_by = 'a2080000-0000-0000-0000-000000000001'
+      AND issued_on IS NOT NULL
+     FROM public.programme_reports WHERE id = :'r09'),
+  '49 direct signed→issued mints the reference and stamps issuer + time');
+SELECT pg_temp.t(
+  EXISTS (SELECT 1 FROM public.audit_log
+           WHERE action = 'report.transition'
+             AND detail ->> 'report_id' = :'r09'
+             AND detail ->> 'from' = 'signed' AND detail ->> 'to' = 'issued'),
+  '50 direct issue wrote the report.transition audit row');
+-- the RPC path is unchanged: r10 was issued through transition_report and the
+-- trigger wrote exactly one audit row for that transition (no double-write)
+SELECT pg_temp.t(
+  (SELECT count(*) FROM public.audit_log
+    WHERE action = 'report.transition'
+      AND detail ->> 'report_id' = :'r10'
+      AND detail ->> 'to' = 'issued') = 1,
+  '51 RPC-issued report left exactly one transition audit row');
+
 -- ---------- teardown ----------
 SELECT pg_temp.w208_wipe();

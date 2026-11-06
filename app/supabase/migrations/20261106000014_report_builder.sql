@@ -24,6 +24,13 @@
 --   draft → inputs_complete → ao_review → signed → issued
 --   back-edges: inputs_complete → draft, ao_review → inputs_complete.
 --
+-- trg_report_transition is REPLACED here (§3b): authenticated write roles
+-- hold a direct UPDATE(status) grant on programme_reports, so every rule of
+-- the workflow — FR-RPT-03 narrative completeness, AO-signing, issue-time
+-- reference/issued_by minting and the report.transition audit row — lives in
+-- the trigger, not only in the RPC. A direct UPDATE is held to exactly the
+-- same contract as transition_report.
+--
 -- DECISIONS (flagged for review):
 --   1. SNAPSHOT LOCK (FR-RPT-02, §9.5). Figures are NEVER copied into the
 --      editable sections jsonb. The report row binds snapshot_id (write-
@@ -268,6 +275,88 @@ BEFORE UPDATE ON public.programme_reports
 FOR EACH ROW EXECUTE FUNCTION public.trg_report_content_lock();
 
 
+-- ---------- 3b. transition gate — completeness + issue stamping ----------
+-- W0-02's trg_report_transition enforced the legal FR-RPT-04 edges and the
+-- AO-signing check, but the rest of the contract lived only inside
+-- transition_report — and authenticated write roles hold a direct
+-- UPDATE(status) grant on programme_reports. Replaced here (CREATE OR
+-- REPLACE; the report_transition_gate trigger name is unchanged) so EVERY
+-- write path enforces the whole contract:
+--   · draft→inputs_complete requires every required-structure narrative
+--     filled (FR-RPT-03) — previously RPC-only, so a direct UPDATE could
+--     push an incomplete report forward;
+--   · →issued stamps issued_on/issued_by and mints the reference when the
+--     row lands without one — a direct signed→issued can no longer produce
+--     a reference-less issued report;
+--   · EVERY status transition writes the 'report.transition' audit_log row
+--     here (trg_raid_status_history precedent), so a direct write cannot
+--     change state silently. transition_report passes the caller's note
+--     through the securepath.report_transition_note GUC and no longer
+--     inserts its own row — one audit row per transition on every path.
+CREATE OR REPLACE FUNCTION public.trg_report_transition() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_view jsonb; v_missing text; v_practice uuid;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.status = 'issued' THEN
+      RAISE EXCEPTION 'an issued report cannot be deleted (§9.5)';
+    END IF;
+    RETURN OLD;
+  END IF;
+  IF OLD.status = 'issued' THEN
+    RAISE EXCEPTION 'an issued report cannot change afterwards (§9.5)';
+  END IF;
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
+    IF NOT ( (OLD.status = 'draft'           AND NEW.status = 'inputs_complete')
+          OR (OLD.status = 'inputs_complete' AND NEW.status IN ('ao_review','draft'))
+          OR (OLD.status = 'ao_review'       AND NEW.status IN ('signed','inputs_complete'))
+          OR (OLD.status = 'signed'          AND NEW.status = 'issued') ) THEN
+      RAISE EXCEPTION 'illegal report transition % → % (FR-RPT-04)', OLD.status, NEW.status;
+    END IF;
+    -- FR-RPT-03 on every write path: a required narrative cannot be blank
+    -- when the draft's inputs are declared complete.
+    IF OLD.status = 'draft' AND NEW.status = 'inputs_complete' THEN
+      v_view := public.report_sections_view(NEW.sections);
+      SELECT string_agg(s ->> 'title', ', ' ORDER BY ord) INTO v_missing
+        FROM jsonb_array_elements(v_view -> 'structure') WITH ORDINALITY u(s, ord)
+       WHERE s ->> 'narrative' = 'required'
+         AND coalesce(btrim(v_view -> 'narrative' ->> (s ->> 'key')), '') = '';
+      IF v_missing IS NOT NULL THEN
+        RAISE EXCEPTION 'inputs are not complete — narrative still missing for: % (FR-RPT-03)', v_missing;
+      END IF;
+    END IF;
+    IF NEW.status = 'signed' AND auth.uid() IS NOT NULL
+       AND NOT public.is_ao_or_alternate(
+                 (SELECT client_org_id FROM public.programmes WHERE id = NEW.programme_id)) THEN
+      RAISE EXCEPTION 'only the accountable officer or named alternate may sign the monthly report';
+    END IF;
+    IF NEW.status = 'issued' THEN
+      NEW.issued_on := now();
+      NEW.issued_by := coalesce(NEW.issued_by, auth.uid());
+      NEW.reference := coalesce(nullif(btrim(NEW.reference), ''),
+                                'RPT-' || NEW.period || '-v' || NEW.version);
+    END IF;
+    SELECT c.practice_id INTO v_practice
+      FROM public.programmes p JOIN public.client_orgs c ON c.id = p.client_org_id
+     WHERE p.id = NEW.programme_id;
+    INSERT INTO public.audit_log (user_id, practice_id, action, detail)
+    VALUES (auth.uid(), v_practice, 'report.transition',
+            jsonb_build_object('report_id', NEW.id, 'programme_id', NEW.programme_id,
+                               'period', NEW.period, 'version', NEW.version,
+                               'from', OLD.status, 'to', NEW.status,
+                               'note', nullif(current_setting('securepath.report_transition_note', true), ''),
+                               'gate_override_reason', NEW.gate_override_reason));
+  END IF;
+  RETURN NEW;
+END $$;
+COMMENT ON FUNCTION public.trg_report_transition() IS
+  'W0-02 FR-RPT-04 edges + AO-signing + §9.5 issued immutability; W2-08 adds '
+  'the FR-RPT-03 narrative-completeness check, issue-time stamping '
+  '(issued_on/issued_by/reference) and the report.transition audit row — all '
+  'enforced on every write path, not just transition_report.';
+
+
 -- ---------- 4. create_monthly_report ----------
 CREATE OR REPLACE FUNCTION public.create_monthly_report(
     p_programme_id uuid, p_period text, p_now timestamptz DEFAULT now())
@@ -452,15 +541,14 @@ CREATE OR REPLACE FUNCTION public.transition_report(
 RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
-  r public.programme_reports; v_client uuid; v_practice uuid;
+  r public.programme_reports; v_client uuid;
   v_write boolean; v_ao boolean; v_missing text; v_role text;
   v_reason text := nullif(btrim(coalesce(p_gate_override_reason, '')), '');
   v_note text := nullif(btrim(coalesce(p_note, '')), '');
 BEGIN
   r := public.report_for_caller(p_report_id);
-  SELECT p.client_org_id, c.practice_id INTO v_client, v_practice
-    FROM public.programmes p JOIN public.client_orgs c ON c.id = p.client_org_id
-   WHERE p.id = r.programme_id;
+  SELECT p.client_org_id INTO v_client
+    FROM public.programmes p WHERE p.id = r.programme_id;
   v_write := auth.uid() IS NULL
              OR public.has_programme_role(r.programme_id, public.report_write_roles());
   v_ao    := auth.uid() IS NOT NULL AND public.is_ao_or_alternate(v_client);
@@ -521,9 +609,14 @@ BEGIN
     END IF;
   END IF;
 
-  -- the legal edge itself, the FR-MNT-07 gate and the AO-sign check are
-  -- enforced by the existing triggers on this UPDATE; their messages surface
-  -- to the caller unchanged.
+  -- the legal edge itself, the FR-RPT-03 completeness check, the FR-MNT-07
+  -- gate, the AO-sign check, issue-time stamping (issued_on/issued_by/
+  -- reference) and the 'report.transition' audit row are ALL enforced by
+  -- trg_report_transition on this UPDATE, so the direct-UPDATE grant path is
+  -- held to exactly the same contract; trigger messages surface unchanged.
+  -- The caller's note reaches the trigger-written audit row through the GUC
+  -- (securepath.report_transition_note — the raid_status_history pattern).
+  PERFORM set_config('securepath.report_transition_note', coalesce(v_note, ''), true);
   IF p_to_state = 'signed' THEN
     v_role := CASE WHEN EXISTS (
                 SELECT 1 FROM public.role_assignments ra
@@ -541,10 +634,7 @@ BEGIN
              'role', v_role, 'user', auth.uid(), 'at', now(), 'note', v_note))
      WHERE id = r.id;
   ELSIF p_to_state = 'issued' THEN
-    UPDATE public.programme_reports
-       SET status = 'issued', issued_by = auth.uid(),
-           reference = 'RPT-' || r.period || '-v' || r.version
-     WHERE id = r.id;
+    UPDATE public.programme_reports SET status = 'issued' WHERE id = r.id;
   ELSIF p_to_state = 'ao_review' THEN
     UPDATE public.programme_reports
        SET status = 'ao_review',
@@ -553,19 +643,16 @@ BEGIN
   ELSE
     UPDATE public.programme_reports SET status = p_to_state WHERE id = r.id;
   END IF;
+  PERFORM set_config('securepath.report_transition_note', '', true);
 
-  INSERT INTO public.audit_log (user_id, practice_id, action, detail)
-  VALUES (auth.uid(), v_practice, 'report.transition',
-          jsonb_build_object('report_id', r.id, 'programme_id', r.programme_id,
-                             'period', r.period, 'version', r.version,
-                             'from', r.status, 'to', p_to_state, 'note', v_note,
-                             'gate_override_reason', v_reason));
   RETURN p_to_state;
 END $$;
 COMMENT ON FUNCTION public.transition_report(uuid, text, text, text) IS
   'W2-08 FR-RPT-04: draft→inputs_complete→ao_review→signed→issued (+ the two '
-  'back-edges). Role per edge in body (decision 7); legal edges, AO-sign and '
-  'the FR-MNT-07 maintenance gate enforced by the existing triggers.';
+  'back-edges). Role per edge in body (decision 7); legal edges, FR-RPT-03 '
+  'completeness, AO-sign, the FR-MNT-07 gate, issue stamping and the '
+  'report.transition audit row all enforced by trg_report_transition so the '
+  'direct UPDATE grant path is held to the same contract.';
 
 
 -- ---------- 8. create_report_correction (NFR-09) ----------
@@ -739,6 +826,7 @@ REVOKE EXECUTE ON FUNCTION
   public.report_write_roles(),
   public.report_for_caller(uuid),
   public.trg_report_content_lock(),
+  public.trg_report_transition(),
   public.create_monthly_report(uuid, text, timestamptz),
   public.update_report_draft(uuid, jsonb),
   public.report_inputs_outstanding(uuid),
