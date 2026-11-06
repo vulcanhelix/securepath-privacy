@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
 import { Button } from '@/components/ui/Button';
-import { Select, Input, Textarea, Field } from '@/components/ui/forms';
+import { Select, Input, Field } from '@/components/ui/forms';
 import { Alert } from '@/components/ui/Alert';
 
 // W2-06 — evidence capture (spec §8.4 screens 03/08, FR-EVD-01/02, FR-MOB-02).
