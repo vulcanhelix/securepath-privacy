@@ -1,4 +1,4 @@
--- 20261106000012_scoped_programme_context.sql — W4-D fixes (found by the
+-- 20261106000018_scoped_programme_context.sql — W4-D fixes (found by the
 -- W4-00 Playwright harness, PR #97). Two scoped-role access defects:
 --
 -- W4-D3 — a workstream-scope-only caller (workstream_lead — the spec B.13
