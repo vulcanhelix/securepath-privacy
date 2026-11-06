@@ -71,6 +71,8 @@ export default async function SchedulePage({ params }: { params: Promise<{ id: s
       .from('activities')
       .select(ACTIVITY_COLS)
       .eq('programme_id', id)
+      // #92: retired activities (FR-TPL-04) are out of scope and frozen
+      .eq('active', true)
       .order('start_week')
       .order('ref'),
     supabase
@@ -99,8 +101,10 @@ export default async function SchedulePage({ params }: { params: Promise<{ id: s
           .select('activity_id, register_item_id')
           .in('activity_id', actIds)
       : { data: [] as { activity_id: string; register_item_id: string }[] },
-    supabase.from('register_items').select('id, ref, status').eq('programme_id', id),
+    supabase.from('register_items').select('id, ref, status').eq('programme_id', id).eq('active', true),
   ]);
+  const actIdSet = new Set(actIds);
+  const regIdSet = new Set((regItems ?? []).map((r) => r.id as string));
 
   // lead name resolution — users_self only exposes the caller's own row and
   // (partner_admin) their partner's users; unresolvable leads fall back to a
@@ -115,16 +119,23 @@ export default async function SchedulePage({ params }: { params: Promise<{ id: s
     ? await supabase.from('users').select('id, full_name, email').in('id', leadIds)
     : { data: [] as { id: string; full_name: string | null; email: string }[] };
 
-  const registerLinks: RegisterLink[] = (regLinks ?? []).map((l) => ({
-    activityId: l.activity_id as string,
-    registerItemId: l.register_item_id as string,
-    ref:
-      ((regItems ?? []).find((r) => r.id === l.register_item_id)?.ref as string | undefined) ??
-      null,
-    status:
-      ((regItems ?? []).find((r) => r.id === l.register_item_id)?.status as string | undefined) ??
-      null,
-  }));
+  // edges to a retired predecessor/successor and links to a retired finding
+  // are dropped with the retired rows themselves (#92)
+  const liveDeps = ((deps ?? []) as ScheduleDep[]).filter(
+    (d) => actIdSet.has(d.activity_id) && actIdSet.has(d.depends_on_activity_id)
+  );
+  const registerLinks: RegisterLink[] = (regLinks ?? [])
+    .filter((l) => regIdSet.has(l.register_item_id as string))
+    .map((l) => ({
+      activityId: l.activity_id as string,
+      registerItemId: l.register_item_id as string,
+      ref:
+        ((regItems ?? []).find((r) => r.id === l.register_item_id)?.ref as string | undefined) ??
+        null,
+      status:
+        ((regItems ?? []).find((r) => r.id === l.register_item_id)?.status as string | undefined) ??
+        null,
+    }));
 
   const evidenceCounts: ScheduleEvidenceCount[] = Object.values(
     (evidence ?? []).reduce<Record<string, ScheduleEvidenceCount>>((acc, e) => {
@@ -166,7 +177,7 @@ export default async function SchedulePage({ params }: { params: Promise<{ id: s
         phases={(phases ?? []) as SchedulePhase[]}
         workstreams={(workstreams ?? []) as ScheduleWorkstream[]}
         activities={acts}
-        deps={(deps ?? []) as ScheduleDep[]}
+        deps={liveDeps}
         registerLinks={registerLinks}
         evidenceCounts={evidenceCounts}
         leadNames={Object.fromEntries(

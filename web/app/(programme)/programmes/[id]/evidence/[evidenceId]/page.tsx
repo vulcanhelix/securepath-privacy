@@ -80,10 +80,10 @@ export default async function EvidenceDetailPage({
         .eq('supersedes', evidenceId),
       supabase.rpc('list_pending_reviews', { p_programme_id: id }),
       item.activity_id
-        ? supabase.from('activities').select('id, ref, text').eq('id', item.activity_id).maybeSingle()
+        ? supabase.from('activities').select('id, ref, text, active').eq('id', item.activity_id).maybeSingle()
         : Promise.resolve({ data: null }),
       item.register_item_id
-        ? supabase.from('register_items').select('id, ref, finding').eq('id', item.register_item_id).maybeSingle()
+        ? supabase.from('register_items').select('id, ref, finding, active').eq('id', item.register_item_id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
 
@@ -165,6 +165,8 @@ export default async function EvidenceDetailPage({
                 <dd style={{ margin: 0 }}>
                   <Badge tone="accent" dot>{activity.ref}</Badge>{' '}
                   <span className="muted">{activity.text}</span>
+                  {/* #92: history keeps the link; the retired row is marked */}
+                  {activity.active === false ? <> <Badge tone="neutral">Retired</Badge></> : null}
                 </dd>
               </>
             ) : null}
@@ -174,6 +176,7 @@ export default async function EvidenceDetailPage({
                 <dd style={{ margin: 0 }}>
                   <Badge tone="warn" dot>{registerItem.ref}</Badge>{' '}
                   <span className="muted">{registerItem.finding}</span>
+                  {registerItem.active === false ? <> <Badge tone="neutral">Retired</Badge></> : null}
                 </dd>
               </>
             ) : null}
