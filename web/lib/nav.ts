@@ -97,7 +97,7 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'register', label: 'Register', icon: 'list-checks', scope: 'programme', href: '/register',
     w2: 'W2-16', implemented: false, visible: clientSees(CLIENT_READ) },
   { key: 'evidence', label: 'Evidence', icon: 'file-check-2', scope: 'programme', href: '/evidence',
-    w2: 'W2-06', implemented: false, visible: clientSees(CLIENT_ALL) },
+    w2: 'W2-06', implemented: true, visible: clientSees(CLIENT_ALL) },
   { key: 'sessions', label: 'Weekly sessions', icon: 'calendar-clock', scope: 'programme', href: '/sessions',
     w2: 'W2-07', implemented: false, visible: clientSees(CLIENT_READ) },
   { key: 'reports', label: 'Monthly report', icon: 'file-text', scope: 'programme', href: '/reports',
