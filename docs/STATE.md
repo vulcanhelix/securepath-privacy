@@ -50,9 +50,11 @@ not new-schema shape).
 - `notifications` is practice-broadcast (no per-user rows) — rebuild, don't extend.
 - `monthly_reports` lacks snapshot/signatures/workflow — `programme_reports` replaces it.
 
-## In-flight / last update (2026-11-06)
-- MERGED+green: W0-00 (#9), W0-01 (#10), W0-02 (#11), W0-03 (#12), W0-05 (#14). W0 wave complete except W0-04 (parked on William's pipeline-vs-programme answer).
-- Orchestrator fix on main: `20261106000000_designation_probe_fix.sql` — is_ao_or_alternate now probes the real designation enum (named_alternate/deputy_information_officer/dpo).
-- IN-FLIGHT W1: W1-01 rules engine (fa748f82), W1-02 evidence chain (be38770e), W1-06 KPI/RAID/log RPCs (98539848), W1-09 scheduler (9be01535) — branches claude/w1-*, worktrees .claude/worktrees/w1-*.
-- Next on merge: W1-03 cadence gen (needs W1-01), W1-04 registers, W1-05 lifecycle, W1-07 licences, W1-08 notifications.
+## In-flight / last update (2026-11-06b)
+- MERGED: W0-00/01/02/03/05 (all of W0 except W0-04); W1-01 rules, W1-02 evidence, W1-03 cadence, W1-04 registers, W1-06 ops-crud, W1-08 notifications, W1-09 scheduler.
+- PENDING CI: #69 (W1-07 licences, post-review-fix rerun), #72 (W1-05 lifecycle, conflict resolved + rerun). Then W1-10 app shell opens the W2 screen wave.
+- STANDING RULE (Bruce, 2026-11-06): no PR merges without a Devin cloud review — session a81e22c41da44e05b7b640c546d54de9 is the reviewer; send each PR for APPROVE/BLOCKING before merge. Its first pass caught 3 real cross-PR bugs (emitter abuse path, token vocab, missing licence assert).
+- Orchestrator fixes on main: 20261106000000 (designation probe kinds + end_date expiry).
+- W1-09 note: pg_cron armed but dormant under securepath.test_fixtures=on; staging/prod need SUPABASE_SERVICE_ROLE_KEY in web.env for notify.ts.
 
+- ORCHESTRATOR PROACTIVENESS (Bruce, 2026-11-06): never end a turn idle. Always leave a background watcher running for pending CI/PRs, keep at least one session in flight while the backlog is non-empty, and use agent-run gaps for orchestrator work (diff review, orchestrator migrations, packet prep, schema fixes, tracker hygiene). Idle = bug, not rest.

@@ -118,6 +118,13 @@ jobs:
             < app/tests/e2e_licences_grants.sql 2>&1 | tee /tmp/lic_checks.log
           ! grep -q "FAIL" /tmp/lic_checks.log
 
+      - name: Programme-lifecycle checks (W1-05)
+        run: |
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_programme_lifecycle.sql 2>&1 | tee /tmp/pl_checks.log
+          ! grep -q "FAIL" /tmp/pl_checks.log
+
       - name: Notification fan-out checks (W1-08)
         run: |
           # same TESTFIX world as the ops-CRUD step (fixture pack is re-runnable)
