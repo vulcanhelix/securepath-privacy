@@ -105,7 +105,7 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'registers', label: 'Operational registers', icon: 'siren', scope: 'programme', href: '/registers',
     w2: 'W2-09', implemented: true, visible: clientSees(CLIENT_MANAGE) },
   { key: 'maintenance', label: 'Maintenance', icon: 'refresh-cw', scope: 'programme', href: '/maintenance',
-    w2: 'W2-10', implemented: false, visible: clientSees(CLIENT_ALL.filter((r) => r !== 'assessor')) },
+    w2: 'W2-10', implemented: true, visible: clientSees(CLIENT_ALL.filter((r) => r !== 'assessor')) },
   { key: 'kpis', label: 'KPIs', icon: 'gauge', scope: 'programme', href: '/kpis',
     w2: 'W2-11', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'raid', label: 'RAID & decisions', icon: 'alert-triangle', scope: 'programme', href: '/raid',
