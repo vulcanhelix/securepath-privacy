@@ -110,9 +110,20 @@ INSERT INTO activities (id, programme_id, workstream_id, ref, text, leads, start
   ('f1ec0000-0000-0000-0000-000000000003','d1ec0000-0000-0000-0000-000000000001','e1ec0000-0000-0000-0000-000000000001','RC-X3','drill planned',
      '{}',2,8,'Not started'),
   ('f1ec0000-0000-0000-0000-000000000005','d1ec0000-0000-0000-0000-000000000002',NULL,'RC-Y1','P2 work',
-     '{}',1,4,'In progress');
+     '{}',1,4,'In progress'),
+  -- FR-SCH-04 pair: X4 waits only on X1 (to be retired, never Complete);
+  -- X5 waits on the live, In-progress X2
+  ('f1ec0000-0000-0000-0000-000000000006','d1ec0000-0000-0000-0000-000000000001',NULL,'RC-X4','after X1',
+     '{}',1,20,'Not started'),
+  ('f1ec0000-0000-0000-0000-000000000007','d1ec0000-0000-0000-0000-000000000001',NULL,'RC-X5','after X2',
+     '{}',1,20,'Not started');
+INSERT INTO activity_deps (activity_id, depends_on_activity_id) VALUES
+  ('f1ec0000-0000-0000-0000-000000000006','f1ec0000-0000-0000-0000-000000000001'),
+  ('f1ec0000-0000-0000-0000-000000000007','f1ec0000-0000-0000-0000-000000000002');
 INSERT INTO register_items (id, programme_id, ref, finding, priority, planned_close_week, status) VALUES
   ('91ec0000-0000-0000-0000-000000000001','d1ec0000-0000-0000-0000-000000000001','RC-R1','no operator clauses','High',7,'In progress'),
+  ('91ec0000-0000-0000-0000-000000000002','d1ec0000-0000-0000-0000-000000000001','RC-R2','no DPIA process','Medium',9,'Not started'),
+  ('91ec0000-0000-0000-0000-000000000003','d1ec0000-0000-0000-0000-000000000001','RC-R3','no records schedule','Low',9,'In progress'),
   ('91ec0000-0000-0000-0000-000000000005','d1ec0000-0000-0000-0000-000000000002','RC-Q1','P2 finding','High',5,'In progress');
 INSERT INTO register_item_activities (register_item_id, activity_id) VALUES
   ('91ec0000-0000-0000-0000-000000000001','f1ec0000-0000-0000-0000-000000000002'),
@@ -126,15 +137,19 @@ INSERT INTO checklist_instances (id, programme_id, kind, period, items) VALUES
      {"ref":"Q-2","label":"training refresher booked","evidence_required":false,"evidence_id":null,"done":false},
      {"ref":"Q-3","label":"breach drill evidence","evidence_required":true,"evidence_id":null,"done":false}]');
 
+UPDATE register_items SET lead = 'a1ec0000-0000-0000-0000-000000000004'
+ WHERE id = '91ec0000-0000-0000-0000-000000000002';
+
 CREATE TEMP TABLE w1rc (k text PRIMARY KEY, v text);
 GRANT SELECT, INSERT, UPDATE, DELETE ON w1rc TO authenticated;
 
 SELECT pg_temp.t(
-  (SELECT count(*) FROM activities WHERE ref LIKE 'RC-%') = 4
+  (SELECT count(*) FROM activities WHERE ref LIKE 'RC-%') = 6
+  AND (SELECT count(*) FROM register_items WHERE ref LIKE 'RC-%') = 4
   AND (SELECT bool_and(active) FROM activities WHERE ref LIKE 'RC-%')
   AND (SELECT jsonb_array_length(items) FROM checklist_instances
         WHERE id='c7ec0000-0000-0000-0000-000000000001') = 3,
-  '00 seed: W1RC namespace (4 live activities, one 3-item quarterly checklist)');
+  '00 seed: W1RC namespace (6 live activities, 4 findings, one 3-item quarterly checklist)');
 
 
 -- ============================================================================
@@ -324,6 +339,182 @@ RESET request.jwt.claims;
 
 
 -- ============================================================================
+-- A2. #92 — retired register items are frozen too
+-- ============================================================================
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+DO $$ BEGIN
+  PERFORM public.retire_register_item('91ec0000-0000-0000-0000-000000000002', 'out of scope');
+END $$;
+COMMIT;
+RESET ROLE;
+RESET request.jwt.claims;
+
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+DO $$ BEGIN
+  BEGIN
+    UPDATE public.register_items SET finding = 'direct edit', priority = 'High'
+     WHERE id = '91ec0000-0000-0000-0000-000000000002';
+    PERFORM pg_temp.t(false, '14 direct column-grant UPDATE of a retired register item rejected');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLSTATE = '55000' AND SQLERRM LIKE '%RC-R2 is retired%cannot be edited%',
+      '14 direct column-grant UPDATE of a retired register item rejected: '||SQLERRM);
+  END;
+  BEGIN
+    UPDATE public.register_items SET status = 'In progress'
+     WHERE id = '91ec0000-0000-0000-0000-000000000002';
+    PERFORM pg_temp.t(false, '15 direct status UPDATE of a retired register item rejected');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%is retired%',
+      '15 direct status UPDATE of a retired register item rejected: '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+RESET request.jwt.claims;
+
+DO $$ BEGIN
+  BEGIN
+    UPDATE public.register_items SET planned_close_week = 12
+     WHERE id = '91ec0000-0000-0000-0000-000000000002';
+    PERFORM pg_temp.t(false, '16 service-path edit of a retired register item rejected');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%is retired%',
+      '16 service-path edit of a retired register item rejected: '||SQLERRM);
+  END;
+END $$;
+
+-- 17 CALC-only writes pass: blank them, then recompute refreshes them
+UPDATE public.register_items SET planned_close_date = NULL, days_overdue = NULL
+ WHERE id = '91ec0000-0000-0000-0000-000000000002';
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+SELECT public.recompute_programme_progress('d1ec0000-0000-0000-0000-000000000001');
+COMMIT;
+RESET ROLE;
+RESET request.jwt.claims;
+SELECT pg_temp.t(
+  (SELECT planned_close_date = DATE '2027-01-01' AND finding = 'no DPIA process' AND NOT active
+     FROM register_items WHERE id='91ec0000-0000-0000-0000-000000000002'),
+  '17 retired finding: CALC planned_close_date recomputed (Fri wk 9), other columns unchanged');
+
+-- 18 FK ON DELETE SET NULL (the lead's user row deleted) passes
+BEGIN;
+DO $$ BEGIN
+  DELETE FROM public.role_assignments WHERE user_id = 'a1ec0000-0000-0000-0000-000000000004';
+  DELETE FROM public.users WHERE id = 'a1ec0000-0000-0000-0000-000000000004';
+  PERFORM pg_temp.t(
+    (SELECT lead IS NULL AND NOT active FROM public.register_items
+      WHERE id='91ec0000-0000-0000-0000-000000000002'),
+    '18 FK SET NULL action (lead user deleted) passes on a retired register item');
+EXCEPTION WHEN OTHERS THEN
+  PERFORM pg_temp.t(false, '18 FK SET NULL action (lead user deleted) passes on a retired register item: '||SQLERRM);
+END $$;
+ROLLBACK;
+
+-- 19 apply_template_version skips a retired finding (no re-sync, no relink)
+BEGIN;
+INSERT INTO programme_templates (id, framework, name)
+VALUES ('f5ec0000-0000-0000-0000-000000000002', 'popia_paia', 'W1RC template R');
+INSERT INTO programme_template_versions (id, template_id, number, status, published_by, published_at, content)
+VALUES
+  ('f6ec0000-0000-0000-0000-000000000011','f5ec0000-0000-0000-0000-000000000002',1,'published',
+   'a1ec0000-0000-0000-0000-000000000001', now(),
+   '{"phases":[],"workstreams":[],"kpis":[],"maintenance_set":[],"document_set":[],"activity_library":[],
+     "findings_map":[{"ref":"RC-R2","finding":"no DPIA process","priority":"Medium","planned_close_week":9},
+                     {"ref":"RC-R3","finding":"no records schedule","priority":"Low","planned_close_week":9}]}'),
+  ('f6ec0000-0000-0000-0000-000000000012','f5ec0000-0000-0000-0000-000000000002',2,'published',
+   'a1ec0000-0000-0000-0000-000000000001', now(),
+   '{"phases":[],"workstreams":[],"kpis":[],"maintenance_set":[],"document_set":[],"activity_library":[],
+     "findings_map":[{"ref":"RC-R2","finding":"DPIA process REWRITTEN","priority":"High","planned_close_week":10,
+                      "linked_activities":["RC-X2"]},
+                     {"ref":"RC-R3","finding":"records schedule v2","priority":"Low","planned_close_week":9}]}');
+UPDATE programmes SET template_version_id = 'f6ec0000-0000-0000-0000-000000000011'
+ WHERE id = 'd1ec0000-0000-0000-0000-000000000001';
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+DO $$ DECLARE d jsonb; BEGIN
+  d := public.apply_template_version('d1ec0000-0000-0000-0000-000000000001',
+                                     'f6ec0000-0000-0000-0000-000000000012');
+  PERFORM pg_temp.t(
+    (SELECT finding = 'no DPIA process' AND priority = 'Medium' AND NOT active
+       FROM public.register_items WHERE id='91ec0000-0000-0000-0000-000000000002')
+    AND NOT EXISTS (SELECT 1 FROM public.register_item_activities
+                     WHERE register_item_id='91ec0000-0000-0000-0000-000000000002')
+    AND (SELECT finding FROM public.register_items WHERE id='91ec0000-0000-0000-0000-000000000003')
+        = 'records schedule v2'
+    AND (d #>> '{register_items,retained}')::int >= 1,
+    '19 apply_template_version: retired RC-R2 untouched + not relinked (retained), live RC-R3 re-synced');
+EXCEPTION WHEN OTHERS THEN
+  PERFORM pg_temp.t(false, '19 apply_template_version skips retired findings: '||SQLERRM);
+END $$;
+ROLLBACK;
+RESET ROLE;
+RESET request.jwt.claims;
+
+
+-- ============================================================================
+-- A3. #92 — FR-SCH-04 ignores retired predecessors
+-- ============================================================================
+SELECT pg_temp.t(
+  public.activity_open_predecessors('f1ec0000-0000-0000-0000-000000000006') = 0
+  AND public.activity_open_predecessors('f1ec0000-0000-0000-0000-000000000007') = 1,
+  '41 activity_open_predecessors: retired In-progress X1 not counted (X4 = 0), live X2 counted (X5 = 1)');
+
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+DO $$ BEGIN
+  BEGIN
+    PERFORM public.update_activity('f1ec0000-0000-0000-0000-000000000006', '{"status":"In progress"}');
+    PERFORM pg_temp.t((SELECT status FROM public.activities
+                        WHERE id='f1ec0000-0000-0000-0000-000000000006') = 'In progress',
+      '42 update_activity starts X4 with no override (its only predecessor is retired)');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(false, '42 update_activity starts X4 with no override: '||SQLERRM);
+  END;
+  BEGIN
+    PERFORM public.update_activity('f1ec0000-0000-0000-0000-000000000007', '{"status":"In progress"}');
+    PERFORM pg_temp.t(false, '43 update_activity still gates X5 on its live incomplete predecessor');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%1 predecessor(s) incomplete%FR-SCH-04%',
+      '43 update_activity still gates X5 on its live incomplete predecessor: '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+RESET request.jwt.claims;
+
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000004","role":"authenticated"}';
+DO $$ BEGIN
+  BEGIN
+    PERFORM public.update_activity_status('f1ec0000-0000-0000-0000-000000000006', 'In progress');
+    PERFORM pg_temp.t((SELECT status FROM public.activities
+                        WHERE id='f1ec0000-0000-0000-0000-000000000006') = 'In progress',
+      '44 update_activity_status starts X4 with no override (retired predecessor ignored)');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(false, '44 update_activity_status starts X4 with no override: '||SQLERRM);
+  END;
+  BEGIN
+    PERFORM public.update_activity_status('f1ec0000-0000-0000-0000-000000000007', 'In progress');
+    PERFORM pg_temp.t(false, '45 update_activity_status still gates X5 on its live incomplete predecessor');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%1 predecessor(s) incomplete%FR-SCH-04%',
+      '45 update_activity_status still gates X5 on its live incomplete predecessor: '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+RESET request.jwt.claims;
+
+
+-- ============================================================================
 -- B. accept evidence through the REAL chain
 -- ============================================================================
 -- E1 on R1/X2 (P1)      → accepted
@@ -360,6 +551,80 @@ SELECT pg_temp.t(
   AND public.evidence_item_is_accepted((SELECT v FROM w1rc WHERE k='e3')::uuid)
   AND (SELECT review_stage FROM evidence_items WHERE id=(SELECT v FROM w1rc WHERE k='e2')::uuid) = 'acceptance',
   '20 evidence_item_is_accepted (the shared 000013 rule): E1/E3 accepted, E2 verified but not accepted');
+
+
+-- ============================================================================
+-- B2. #92 — no evidence against a retired activity / finding
+-- ============================================================================
+-- E4 is filed on live RC-R3 first; RC-R3 is then retired (history case)
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000004","role":"authenticated"}';
+DO $$ BEGIN
+  INSERT INTO w1rc VALUES ('e4', public.upload_evidence(NULL,
+      '91ec0000-0000-0000-0000-000000000003','w1rc/e4.pdf',NULL,'W1RC e4',NULL,NULL)::text);
+END $$;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+DO $$ BEGIN
+  PERFORM public.retire_register_item('91ec0000-0000-0000-0000-000000000003', 'merged into R1');
+END $$;
+COMMIT;
+RESET ROLE;
+RESET request.jwt.claims;
+
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000004","role":"authenticated"}';
+DO $$ BEGIN
+  BEGIN
+    PERFORM public.upload_evidence('f1ec0000-0000-0000-0000-000000000001', NULL,
+              'w1rc/x1.pdf', NULL, 'on a retired activity', NULL, NULL);
+    PERFORM pg_temp.t(false, '46 upload_evidence against a retired activity rejected');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%RC-X1 is retired%evidence cannot be filed%',
+      '46 upload_evidence against a retired activity rejected: '||SQLERRM);
+  END;
+  BEGIN
+    PERFORM public.upload_evidence('f1ec0000-0000-0000-0000-000000000002',
+              '91ec0000-0000-0000-0000-000000000002', 'w1rc/r2.pdf', NULL, 'on a retired finding', NULL, NULL);
+    PERFORM pg_temp.t(false, '47 upload_evidence against a retired register item rejected');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%RC-R2 is retired%evidence cannot be filed%',
+      '47 upload_evidence against a retired register item (live activity) rejected: '||SQLERRM);
+  END;
+END $$;
+ROLLBACK;
+RESET ROLE;
+RESET request.jwt.claims;
+
+DO $$ BEGIN
+  BEGIN
+    INSERT INTO public.evidence_items (programme_id, activity_id, file_key, uploaded_by)
+    VALUES ('d1ec0000-0000-0000-0000-000000000001','f1ec0000-0000-0000-0000-000000000003',
+            'w1rc/direct.pdf','a1ec0000-0000-0000-0000-000000000004');
+    PERFORM pg_temp.t(false, '48 service-path INSERT of evidence on a retired activity rejected');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%RC-X3 is retired%',
+      '48 service-path INSERT of evidence on a retired activity rejected (trigger, every path): '||SQLERRM);
+  END;
+END $$;
+
+-- 49 evidence filed before retirement stays and still moves through review
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a1ec0000-0000-0000-0000-000000000001","role":"authenticated"}';
+DO $$ BEGIN
+  PERFORM public.verify_evidence((SELECT v FROM w1rc WHERE k='e4')::uuid, 'approved');
+  PERFORM pg_temp.t(
+    (SELECT review_stage = 'acceptance' AND register_item_id = '91ec0000-0000-0000-0000-000000000003'
+       FROM public.evidence_items WHERE id = (SELECT v FROM w1rc WHERE k='e4')::uuid),
+    '49 pre-retirement evidence kept and still verifiable (the guard only checks new links)');
+EXCEPTION WHEN OTHERS THEN
+  PERFORM pg_temp.t(false, '49 pre-retirement evidence kept and still verifiable: '||SQLERRM);
+END $$;
+ROLLBACK;
+RESET ROLE;
+RESET request.jwt.claims;
 
 
 -- ============================================================================
@@ -595,6 +860,13 @@ SELECT pg_temp.t(
   AND has_function_privilege('authenticated', 'public.complete_checklist_item(uuid,text,uuid,text)', 'EXECUTE')
   AND NOT has_function_privilege('anon', 'public.complete_checklist_item(uuid,text,uuid,text)', 'EXECUTE'),
   '39 execute surface: only complete_checklist_item is granted (authenticated only)');
+SELECT pg_temp.t(
+  NOT has_function_privilege('authenticated', 'public.activity_open_predecessors(uuid)', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'public.trg_register_retired_guard()', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'public.trg_evidence_retired_target()', 'EXECUTE')
+  AND has_function_privilege('authenticated', 'public.update_activity(uuid,jsonb)', 'EXECUTE')
+  AND has_function_privilege('authenticated', 'public.update_activity_status(uuid,text,text,text,date,date)', 'EXECUTE'),
+  '50 execute surface: new helpers private; re-created update RPCs keep their grants');
 
 
 -- ---------- teardown ----------
@@ -616,4 +888,4 @@ SELECT pg_temp.t(NOT EXISTS (SELECT 1 FROM programmes p JOIN client_orgs c ON c.
                               WHERE c.name LIKE 'W1RC%')
   AND NOT EXISTS (SELECT 1 FROM checklist_item_completions
                    WHERE checklist_id = 'c7ec0000-0000-0000-0000-000000000001'),
-  '40 teardown: W1RC namespace removed (ledger rows cascaded with the programme)');
+  '51 teardown: W1RC namespace removed (ledger rows cascaded with the programme)');

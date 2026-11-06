@@ -1,13 +1,14 @@
 -- ============================================================================
--- #92 RETIRED ACTIVITIES ARE FROZEN  +  #90 CHECKLIST ITEM COMPLETION RPC
+-- #92 RETIRED ACTIVITIES + FINDINGS ARE FROZEN  +  #90 CHECKLIST ITEM RPC
 -- (GitHub #90, #92 · follow-ups to #87 / PR #91 and W2-10 / PR #89 ·
 --  spec SP-SPC-PLT-001 §6.2, §8.11, §9.4, FR-TPL-04, FR-QTR-01/02, NFR-08)
 -- ============================================================================
 --
--- Additive only: no earlier migration file is edited. Two existing functions
--- are re-created with CREATE OR REPLACE and their original signatures
--- (register_closure_ref_problem, apply_template_version); both are noted
--- below with the exact delta.
+-- Additive only: no earlier migration file is edited. Four existing
+-- functions are re-created with CREATE OR REPLACE and their original
+-- signatures (register_closure_ref_problem, apply_template_version,
+-- update_activity, update_activity_status); each is noted below with the
+-- exact delta, and every changed line is marked "#92".
 --
 -- HARD RULE (unchanged): every SECURITY DEFINER below checks tenant + role
 -- scope in its own body, because a definer owned by supabase_admin bypasses
@@ -64,11 +65,44 @@
 -- rebuild), and the dependency pass for Not-started rows skips retired ones
 -- too. Every other line of the body is identical to 20261106000008.
 --
--- Known adjacent gap, deliberately out of scope (#92 asks for activities):
--- register_items has the same direct column grants, and the retire block for
--- a retired finding is in the register RPCs only (000013). Also, the
--- FR-SCH-04 predecessor gate in update_activity / update_activity_status still
--- counts a retired, incomplete predecessor. Both are flagged in the PR.
+-- RETIRED REGISTER ITEMS get the same freeze: trg_register_retired_guard,
+-- a BEFORE UPDATE trigger on register_items. 000013 blocked edits of a
+-- retired finding in the register RPCs only, and the W0-02 column grants
+-- (UPDATE of ref, finding, priority, assessment_window, lead,
+-- planned_close_week, status, reopen_reason) still reached it. The CALC
+-- columns there are planned_close_date and days_overdue (written by
+-- recompute_programme_progress and the scheduler's daily sweep). The same
+-- nested-trigger exemption covers ON DELETE SET NULL of lead, accepted_by
+-- and retired_by. apply_template_version skips retired findings the same
+-- way it skips retired activities (no re-sync, no link rebuild).
+--
+-- ---------------------------------------------------------------------------
+-- #92 — 1b. FR-SCH-04 IGNORES RETIRED PREDECESSORS
+-- ---------------------------------------------------------------------------
+-- "Cannot leave 'Not started' while a predecessor is incomplete unless a
+-- dependency_override_reason is recorded" lived as an identical inline
+-- count in exactly two places: update_activity (20261106000008) and
+-- update_activity_status (20261106000012). No trigger enforces it (the
+-- activity_deps triggers only check cycles and programme scope), and the
+-- schedule screen's hint counts only the live predecessors it is given.
+-- It is now ONE definition, public.activity_open_predecessors(activity):
+-- the number of predecessors that are active AND not Complete. Both RPCs
+-- are re-created with that inline count replaced by a call to it; every
+-- other line is verbatim, error messages included. A retired predecessor is
+-- out of scope, so it no longer forces an override reason.
+--
+-- ---------------------------------------------------------------------------
+-- #92 — 1c. NO EVIDENCE AGAINST A RETIRED ROW
+-- ---------------------------------------------------------------------------
+-- trg_evidence_retired_target, a BEFORE INSERT OR UPDATE OF activity_id,
+-- register_item_id trigger on evidence_items, refuses a row whose activity or
+-- register item is retired. A trigger rather than an upload_evidence edit,
+-- because three paths insert evidence: upload_evidence, accept_evidence_offer
+-- (which files a copy against a target activity/finding), and the direct
+-- INSERT grant. All three are covered, for every caller. On UPDATE it acts
+-- only when the link changes to a non-NULL retired target, so FK SET NULL and
+-- the review-stage writes on existing evidence are untouched. Evidence filed
+-- BEFORE the row was retired stays as it is (history).
 --
 -- ---------------------------------------------------------------------------
 -- #92 — 2. NO UN-RETIRE RPC (decision)
@@ -455,11 +489,14 @@ COMMENT ON FUNCTION public.complete_checklist_item(uuid, text, uuid, text) IS
 -- ============================================================================
 -- #92 — apply_template_version re-created: retired activities are skipped
 -- ============================================================================
--- Body = 20261106000008 verbatim except three places marked "#92": the
--- v_active declaration, the retired branch at the top of the existing-
--- activity merge (counted as retained, nothing re-synced), and "AND
--- v_active" on the Not-started dependency pass. Signature, grants and
--- comment unchanged (CREATE OR REPLACE keeps the ACL).
+-- Body = 20261106000008 verbatim except the places marked "#92": the
+-- v_active declaration; the retired branch at the top of the existing-
+-- activity merge (counted as retained, nothing re-synced); "AND v_active"
+-- on the Not-started dependency pass; and, for register items, "AND
+-- v_active" on the finding re-sync (a retired finding is counted as
+-- retained) and on the link rebuild (a retired finding's links are left
+-- as they are). Signature, grants and comment unchanged (CREATE OR REPLACE
+-- keeps the ACL).
 CREATE OR REPLACE FUNCTION public.apply_template_version(
     p_programme_id   uuid,
     p_new_version_id uuid)
@@ -496,7 +533,7 @@ DECLARE
   v_status   text;
   v_has_ev   boolean;
   v_started  boolean;
-  v_active   boolean;   -- #92: retired activities are skipped
+  v_active   boolean;   -- #92: retired activities / findings are skipped
   v_practice uuid;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
@@ -732,8 +769,9 @@ BEGIN
       v_diff := jsonb_set(v_diff, '{register_items,added}',
                           to_jsonb((v_diff#>>'{register_items,added}')::int + 1));
     ELSE
-      SELECT r.status INTO v_status FROM public.register_items r WHERE r.id = v_id;
-      IF v_status <> 'Closed' THEN
+      SELECT r.status, r.active INTO v_status, v_active
+        FROM public.register_items r WHERE r.id = v_id;
+      IF v_status <> 'Closed' AND v_active THEN   -- #92: retired → retained
         UPDATE public.register_items
            SET finding = v_el->>'finding',
                priority = coalesce(v_el->>'priority', priority),
@@ -749,8 +787,9 @@ BEGIN
       END IF;
     END IF;
     -- rebuild links for non-Closed items from both content directions
-    SELECT r.status INTO v_status FROM public.register_items r WHERE r.id = v_id;
-    IF v_status <> 'Closed' THEN
+    SELECT r.status, r.active INTO v_status, v_active
+      FROM public.register_items r WHERE r.id = v_id;
+    IF v_status <> 'Closed' AND v_active THEN   -- #92: retired links frozen
       DELETE FROM public.register_item_activities WHERE register_item_id = v_id;
       FOR v_dep IN SELECT * FROM jsonb_array_elements_text(
                       coalesce(v_el->'linked_activities','[]'::jsonb)) LOOP
@@ -956,10 +995,343 @@ COMMENT ON FUNCTION public.apply_template_version(uuid, uuid) IS
 
 
 -- ============================================================================
+-- #92 — 1a. retired register items are frozen too
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.trg_register_retired_guard() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  -- engine-written CALC columns (§9.1/§9.3): recompute_programme_progress
+  -- and the scheduler's daily days_overdue sweep write only these
+  c_calc text[] := ARRAY['planned_close_date','days_overdue'];
+BEGIN
+  IF OLD.active THEN
+    RETURN NEW;                       -- live row (incl. the retire write itself)
+  END IF;
+  IF pg_trigger_depth() > 1 THEN
+    RETURN NEW;                       -- FK ON DELETE SET NULL action
+  END IF;
+  IF (to_jsonb(NEW) - c_calc) IS DISTINCT FROM (to_jsonb(OLD) - c_calc) THEN
+    RAISE EXCEPTION
+      'register item % is retired (FR-TPL-04): a retired finding cannot be edited',
+      OLD.ref
+      USING ERRCODE = 'object_not_in_prerequisite_state';
+  END IF;
+  RETURN NEW;                         -- CALC-only recompute write
+END $$;
+COMMENT ON FUNCTION public.trg_register_retired_guard() IS
+  '#92 FR-TPL-04: a retired register item (active=false) is frozen on every '
+  'write path (register RPCs, direct column-grant UPDATEs, service writes). '
+  'Only the CALC columns planned_close_date / days_overdue may still change. '
+  'FK SET NULL actions (pg_trigger_depth() > 1) are exempt.';
+
+DROP TRIGGER IF EXISTS register_retired_guard ON public.register_items;
+CREATE TRIGGER register_retired_guard
+BEFORE UPDATE ON public.register_items
+FOR EACH ROW EXECUTE FUNCTION public.trg_register_retired_guard();
+
+
+-- ============================================================================
+-- #92 — 1b. FR-SCH-04: one definition of "open predecessors"
+-- ============================================================================
+-- Private helper (no client EXECUTE): called by the two definer RPCs below
+-- after their own guards. INVOKER so it reads with the definer's rights.
+CREATE OR REPLACE FUNCTION public.activity_open_predecessors(p_activity uuid)
+RETURNS int
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
+  SELECT count(*)::int
+    FROM public.activity_deps d
+    JOIN public.activities a ON a.id = d.depends_on_activity_id
+   WHERE d.activity_id = p_activity
+     AND a.active                       -- #92: a retired predecessor is out of scope
+     AND a.status <> 'Complete'
+$$;
+COMMENT ON FUNCTION public.activity_open_predecessors(uuid) IS
+  '#92 FR-SCH-04: THE count of predecessors that still block a start — live '
+  '(active) and not Complete. Used by update_activity and '
+  'update_activity_status. Private: no client EXECUTE.';
+
+-- update_activity: body = 20261106000008 verbatim except the FR-SCH-04 count
+-- (marked "#92"), which now calls activity_open_predecessors().
+CREATE OR REPLACE FUNCTION public.update_activity(
+    p_activity_id uuid,
+    p_payload     jsonb)
+RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_act      public.activities;
+  v_allowed  text[] := ARRAY['ref','text','workstream_id','leads','start_week',
+                             'end_week','milestone','evidence_required','status',
+                             'pct_complete','actual_completion','flag','comments',
+                             'recovery_date','dependency_override_reason',
+                             'rescheduled_date'];
+  v_key      text;
+  v_new_status text;
+  v_open_deps int;
+  v_override  text;
+  v_total    int;
+  v_practice uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT * INTO v_act FROM public.activities a WHERE a.id = p_activity_id;
+  IF v_act IS NULL THEN RAISE EXCEPTION 'activity % not found', p_activity_id; END IF;
+  IF NOT public.has_programme_role(v_act.programme_id,
+        ARRAY['partner_admin','partner_consultant','programme_lead','client_admin']) THEN
+    RAISE EXCEPTION 'activity update requires a programme write role (FR-TPL-04)';
+  END IF;
+  IF p_payload IS NULL OR jsonb_typeof(p_payload) <> 'object' THEN
+    RAISE EXCEPTION 'payload must be a jsonb object of editable fields';
+  END IF;
+  FOR v_key IN SELECT k FROM jsonb_object_keys(p_payload) k LOOP
+    IF NOT (v_key = ANY(v_allowed)) THEN
+      RAISE EXCEPTION 'update_activity: field "%" is not editable', v_key;
+    END IF;
+  END LOOP;
+
+  SELECT p.total_weeks INTO v_total FROM public.programmes p
+   WHERE p.id = v_act.programme_id;
+
+  -- week bounds stay inside the programme and ordered
+  IF coalesce((p_payload->>'end_week')::int, v_act.end_week)
+     < coalesce((p_payload->>'start_week')::int, v_act.start_week) THEN
+    RAISE EXCEPTION 'end_week must be >= start_week';
+  END IF;
+  IF coalesce((p_payload->>'end_week')::int, v_act.end_week) > v_total
+     OR coalesce((p_payload->>'start_week')::int, v_act.start_week) < 1 THEN
+    RAISE EXCEPTION 'week bounds must stay inside 1..% (programme length)', v_total;
+  END IF;
+
+  -- ref uniqueness inside the programme (decision 4 — no DB constraint)
+  IF (p_payload->>'ref') IS NOT NULL
+     AND p_payload->>'ref' IS DISTINCT FROM v_act.ref
+     AND EXISTS (SELECT 1 FROM public.activities a
+                  WHERE a.programme_id = v_act.programme_id
+                    AND a.ref = p_payload->>'ref' AND a.id <> v_act.id) THEN
+    RAISE EXCEPTION 'activity ref "%" already exists in this programme', p_payload->>'ref';
+  END IF;
+
+  -- workstream must belong to the same programme
+  IF (p_payload->>'workstream_id') IS NOT NULL
+     AND NOT EXISTS (SELECT 1 FROM public.workstreams w
+                      WHERE w.id = (p_payload->>'workstream_id')::uuid
+                        AND w.programme_id = v_act.programme_id) THEN
+    RAISE EXCEPTION 'workstream % is not part of this programme', p_payload->>'workstream_id';
+  END IF;
+
+  -- FR-SCH-04: leaving 'Not started' with incomplete predecessors requires a
+  -- dependency override reason (decision 7)
+  v_new_status := coalesce(p_payload->>'status', v_act.status);
+  IF v_act.status = 'Not started' AND v_new_status <> 'Not started' THEN
+    v_open_deps := public.activity_open_predecessors(v_act.id);   -- #92
+    v_override := coalesce(p_payload->>'dependency_override_reason',
+                           v_act.dependency_override_reason);
+    IF v_open_deps > 0 AND (v_override IS NULL OR btrim(v_override) = '') THEN
+      RAISE EXCEPTION
+        'cannot start activity: % predecessor(s) incomplete — record a dependency_override_reason (FR-SCH-04)',
+        v_open_deps;
+    END IF;
+  END IF;
+
+  UPDATE public.activities SET
+      ref            = coalesce(p_payload->>'ref', ref),
+      text           = coalesce(p_payload->>'text', text),
+      workstream_id  = coalesce((p_payload->>'workstream_id')::uuid, workstream_id),
+      leads          = coalesce((SELECT array_agg(x::uuid)
+                                   FROM jsonb_array_elements_text(p_payload->'leads') x),
+                                leads),
+      start_week     = coalesce((p_payload->>'start_week')::int, start_week),
+      end_week       = coalesce((p_payload->>'end_week')::int, end_week),
+      milestone      = coalesce((p_payload->>'milestone')::boolean, milestone),
+      evidence_required = coalesce((p_payload->>'evidence_required')::boolean,
+                                   evidence_required),
+      status         = v_new_status,
+      pct_complete   = coalesce((p_payload->>'pct_complete')::int, pct_complete),
+      actual_completion = coalesce((p_payload->>'actual_completion')::date,
+                                   actual_completion),
+      flag           = coalesce((p_payload->>'flag')::boolean, flag),
+      comments       = coalesce(p_payload->>'comments', comments),
+      recovery_date  = coalesce((p_payload->>'recovery_date')::date, recovery_date),
+      dependency_override_reason = coalesce(p_payload->>'dependency_override_reason',
+                                            dependency_override_reason),
+      rescheduled_date = coalesce((p_payload->>'rescheduled_date')::date,
+                                  rescheduled_date)
+   WHERE id = p_activity_id;
+  -- status change → trg_activity_status_history appends the ledger row itself
+
+  PERFORM public.recompute_programme_progress(v_act.programme_id);
+
+  SELECT c.practice_id INTO v_practice
+    FROM public.programmes p JOIN public.client_orgs c ON c.id = p.client_org_id
+   WHERE p.id = v_act.programme_id;
+  INSERT INTO public.audit_log (user_id, practice_id, action, detail)
+  VALUES (auth.uid(), v_practice, 'activity.updated',
+          jsonb_build_object('activity_id', p_activity_id,
+                             'programme_id', v_act.programme_id,
+                             'fields', (SELECT jsonb_agg(k) FROM jsonb_object_keys(p_payload) k)));
+  RETURN p_activity_id;
+END $$;
+COMMENT ON FUNCTION public.update_activity(uuid, jsonb) IS
+  'W1-05 FR-TPL-04: partner edits of an activity via a jsonb payload '
+  '(merge semantics — absent keys keep stored values). Status changes append '
+  'to activity_status_history via the existing trigger; FR-SCH-04 predecessor '
+  'gate enforced; calc columns recomputed by the engine.';
+
+
+-- update_activity_status: body = 20261106000012 verbatim except the FR-SCH-04
+-- count (marked "#92"), which now calls activity_open_predecessors().
+CREATE OR REPLACE FUNCTION public.update_activity_status(
+    p_activity_id      uuid,
+    p_status           text,
+    p_comment          text DEFAULT NULL,
+    p_override_reason  text DEFAULT NULL,
+    p_recovery_date    date DEFAULT NULL,
+    p_rescheduled_date date DEFAULT NULL)
+RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_act        public.activities;
+  v_uid        uuid := auth.uid();
+  v_new_status text;
+  v_open_deps  int;
+  v_override   text;
+  v_practice   uuid;
+  v_claims     text;
+  v_claim_sub  text;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT * INTO v_act FROM public.activities a WHERE a.id = p_activity_id;
+  IF v_act IS NULL THEN RAISE EXCEPTION 'activity % not found', p_activity_id; END IF;
+
+  -- authz: WRITE role (as update_activity) OR listed lead OR workstream lead
+  IF NOT (
+       public.has_programme_role(v_act.programme_id,
+         ARRAY['partner_admin','partner_consultant','programme_lead','client_admin'])
+    OR v_uid = ANY(v_act.leads)
+    OR (v_act.workstream_id IS NOT NULL AND (
+          EXISTS (SELECT 1 FROM public.role_assignments ra
+                   WHERE ra.user_id = v_uid
+                     AND ra.role = 'workstream_lead'
+                     AND ra.scope_type = 'workstream'
+                     AND ra.scope_id = v_act.workstream_id
+                     AND ra.start_date <= CURRENT_DATE
+                     AND (ra.end_date IS NULL OR ra.end_date > CURRENT_DATE))
+       OR EXISTS (SELECT 1 FROM public.workstreams w
+                   WHERE w.id = v_act.workstream_id
+                     AND w.accountable_lead = v_uid)))
+  ) THEN
+    RAISE EXCEPTION 'status update requires being a lead of this activity, its workstream lead, or a programme write role (§4.2)'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
+  v_new_status := coalesce(p_status, v_act.status);
+  IF v_new_status NOT IN ('Not started','In progress','At risk','Blocked','Deferred','Complete') THEN
+    RAISE EXCEPTION 'unknown activity status "%"', v_new_status;
+  END IF;
+
+  -- FR-SCH-04 (same rule as update_activity)
+  IF v_act.status = 'Not started' AND v_new_status <> 'Not started' THEN
+    v_open_deps := public.activity_open_predecessors(v_act.id);   -- #92
+    v_override := coalesce(p_override_reason, v_act.dependency_override_reason);
+    IF v_open_deps > 0 AND (v_override IS NULL OR btrim(v_override) = '') THEN
+      RAISE EXCEPTION
+        'cannot start activity: % predecessor(s) incomplete — record a dependency_override_reason (FR-SCH-04)',
+        v_open_deps;
+    END IF;
+  END IF;
+
+  -- Deferred needs a rescheduled date (rules-engine decision 3)
+  IF v_new_status = 'Deferred'
+     AND coalesce(p_rescheduled_date, v_act.rescheduled_date) IS NULL THEN
+    RAISE EXCEPTION 'a Deferred activity needs a rescheduled_date (§9.2 / §15-#13)';
+  END IF;
+
+  -- status fields only; FR-WKS-03 is enforced by trg_activity_session_guard
+  UPDATE public.activities SET
+      status                     = v_new_status,
+      comments                   = coalesce(p_comment, comments),
+      dependency_override_reason = coalesce(p_override_reason, dependency_override_reason),
+      recovery_date              = coalesce(p_recovery_date, recovery_date),
+      rescheduled_date           = coalesce(p_rescheduled_date, rescheduled_date)
+   WHERE id = p_activity_id;
+  -- status change → trg_activity_status_history appends the ledger row
+
+  -- recompute on the service path (see header §4): blank the claim GUCs
+  -- transaction-locally, recompute, restore
+  v_claims    := current_setting('request.jwt.claims', true);
+  v_claim_sub := current_setting('request.jwt.claim.sub', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  PERFORM public.recompute_programme_progress(v_act.programme_id);
+  PERFORM set_config('request.jwt.claims', coalesce(v_claims, ''), true);
+  PERFORM set_config('request.jwt.claim.sub', coalesce(v_claim_sub, ''), true);
+
+  SELECT c.practice_id INTO v_practice
+    FROM public.programmes p JOIN public.client_orgs c ON c.id = p.client_org_id
+   WHERE p.id = v_act.programme_id;
+  INSERT INTO public.audit_log (user_id, practice_id, action, detail)
+  VALUES (v_uid, v_practice, 'activity.status_updated',
+          jsonb_build_object('activity_id', p_activity_id,
+                             'programme_id', v_act.programme_id,
+                             'old_status', v_act.status,
+                             'new_status', v_new_status,
+                             'comment', p_comment,
+                             'override_reason', p_override_reason,
+                             'recovery_date', p_recovery_date,
+                             'rescheduled_date', p_rescheduled_date));
+  RETURN p_activity_id;
+END $$;
+COMMENT ON FUNCTION public.update_activity_status(uuid, text, text, text, date, date) IS
+  '#82 (§4.2 "Update activity status: Own"): status-only update for listed '
+  'leads, the workstream lead, or programme WRITE roles. FR-SCH-04 override, '
+  'Deferred→rescheduled_date, FR-WKS-03 (trigger), status history (trigger) '
+  'and engine recompute all apply.';
+
+
+-- ============================================================================
+-- #92 — 1c. no evidence against a retired activity / register item
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.trg_evidence_retired_target() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_ref text;
+BEGIN
+  IF NEW.activity_id IS NOT NULL
+     AND (TG_OP = 'INSERT' OR NEW.activity_id IS DISTINCT FROM OLD.activity_id) THEN
+    SELECT a.ref INTO v_ref FROM public.activities a
+     WHERE a.id = NEW.activity_id AND NOT a.active;
+    IF FOUND THEN
+      RAISE EXCEPTION 'activity % is retired (FR-TPL-04): evidence cannot be filed against it', v_ref
+        USING ERRCODE = 'object_not_in_prerequisite_state';
+    END IF;
+  END IF;
+  IF NEW.register_item_id IS NOT NULL
+     AND (TG_OP = 'INSERT' OR NEW.register_item_id IS DISTINCT FROM OLD.register_item_id) THEN
+    SELECT r.ref INTO v_ref FROM public.register_items r
+     WHERE r.id = NEW.register_item_id AND NOT r.active;
+    IF FOUND THEN
+      RAISE EXCEPTION 'register item % is retired (FR-TPL-04): evidence cannot be filed against it', v_ref
+        USING ERRCODE = 'object_not_in_prerequisite_state';
+    END IF;
+  END IF;
+  RETURN NEW;
+END $$;
+COMMENT ON FUNCTION public.trg_evidence_retired_target() IS
+  '#92 FR-TPL-04: evidence cannot be filed against a retired activity or '
+  'register item — upload_evidence, accept_evidence_offer and direct INSERTs '
+  'alike. Existing evidence on a since-retired row is untouched.';
+
+DROP TRIGGER IF EXISTS evidence_retired_target ON public.evidence_items;
+CREATE TRIGGER evidence_retired_target
+BEFORE INSERT OR UPDATE OF activity_id, register_item_id ON public.evidence_items
+FOR EACH ROW EXECUTE FUNCTION public.trg_evidence_retired_target();
+
+
+-- ============================================================================
 -- function surface
 -- ============================================================================
 REVOKE EXECUTE ON FUNCTION
   public.trg_activity_retired_guard(),
+  public.trg_register_retired_guard(),
+  public.activity_open_predecessors(uuid),
+  public.trg_evidence_retired_target(),
   public.evidence_item_is_accepted(uuid),
   public.trg_checklist_completion_append_only(),
   public.complete_checklist_item(uuid, text, uuid, text)
@@ -968,7 +1340,8 @@ FROM anon, public, authenticated;
 GRANT EXECUTE ON FUNCTION
   public.complete_checklist_item(uuid, text, uuid, text)
 TO authenticated;
--- register_closure_ref_problem / apply_template_version keep their existing
--- ACLs (CREATE OR REPLACE preserves them).
+-- register_closure_ref_problem, apply_template_version, update_activity and
+-- update_activity_status keep their existing ACLs (CREATE OR REPLACE
+-- preserves them).
 
 COMMIT;

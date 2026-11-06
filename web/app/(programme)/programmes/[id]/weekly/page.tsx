@@ -103,6 +103,8 @@ export default async function WeeklySessionPage({
       .from('activities')
       .select(ACTIVITY_COLS)
       .eq('programme_id', id)
+      // #92: retired activities (FR-TPL-04) are out of scope and frozen
+      .eq('active', true)
       .neq('status', 'Complete')
       .order('end_week')
       .order('ref'),
