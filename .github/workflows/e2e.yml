@@ -118,6 +118,50 @@ jobs:
             < app/tests/e2e_licences_grants.sql 2>&1 | tee /tmp/lic_checks.log
           ! grep -q "FAIL" /tmp/lic_checks.log
 
+      - name: Notification fan-out checks (W1-08)
+        run: |
+          # same TESTFIX world as the ops-CRUD step (fixture pack is re-runnable)
+
+      - name: Ops-registers checks (W1-04)
+        run: |
+          # same-session GUC + fixture (re)apply, then the W1-04 suite —
+          # mirrors the W1-01 step (the ops registers need the rules engine
+          # already applied, which the migrations loop guarantees).
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_ops_registers.sql 2>&1 | tee /tmp/or_checks.log
+          ! grep -q "FAIL" /tmp/or_checks.log
+      - name: Cadence checks (W1-03)
+        run: |
+          # fixture world is already opted-in + seeded by the ops-crud step;
+          # re-apply it so this step is independent of ops-crud's mutations
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 \
+            < app/supabase/migrations/20261105000005_test_fixtures.sql
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_notifications.sql 2>&1 | tee /tmp/notif_checks.log
+          ! grep -q "FAIL" /tmp/notif_checks.log
+
+            < app/tests/e2e_cadence.sql 2>&1 | tee /tmp/cad_checks.log
+          ! grep -q "FAIL" /tmp/cad_checks.log
+
+      - name: Evidence-chain checks (W1-02)
+        run: |
+          # the W0-05 TESTFIX fixture world is gated behind the custom GUC —
+          # apply it in the same session as the suite (wipe-and-reseed, safe
+          # on this ephemeral db only)
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql \
+                app/tests/e2e_evidence_chain.sql; } \
+          | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+              psql -h 127.0.0.1 -U supabase_admin -d postgres 2>&1 | tee /tmp/ec_checks.log
+          ! grep -q "FAIL" /tmp/ec_checks.log
+
       - name: Build web
         working-directory: web
         env:
@@ -159,6 +203,21 @@ jobs:
           BASE_URL: http://127.0.0.1:8080
         run: |
           ANON_KEY="$ANON_KEY" SERVICE_ROLE_KEY="$SERVICE_KEY" python3 app/tests/e2e_pipeline.py
+
+      - name: Scheduler checks (W1-09)
+        run: |
+          # seed the W0-05 TESTFIX world for the scheduler suite (flag-gated;
+          # the migration loop applied it as a no-op with the flag off)
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -c \
+            "ALTER DATABASE postgres SET securepath.test_fixtures='on';"
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -q -v ON_ERROR_STOP=1 -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/supabase/migrations/20261105000005_test_fixtures.sql
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_scheduler.sql 2>&1 | tee /tmp/sch_checks.log
+          ! grep -q "FAIL" /tmp/sch_checks.log
 
       - name: Logs on failure
         if: failure()
