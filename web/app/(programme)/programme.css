@@ -1,0 +1,46 @@
+/* W2-00 — programme-world shell additions. Additive only: new classes live
+   here so globals.css (shared with the legacy workspace) stays untouched.
+   Vocabulary matches globals.css: sp-* prefix, CSS vars, pill radii. */
+
+/* context bar — breadcrumb + breach mount, top of every (programme) page */
+.sp-ctxbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.sp-ctx-crumb { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-sm); }
+.sp-ctx-client { color: var(--muted); }
+.sp-ctx-sep { color: var(--faint); }
+.sp-ctx-name { font-weight: var(--w-medium); color: var(--text); }
+
+/* module tab strip — role-filtered nav slots (lib/nav.ts) */
+.sp-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+.sp-tab { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: var(--fs-sm); font-weight: var(--w-medium); color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
+.sp-tab:hover { color: var(--text); }
+.sp-tab.is-active { color: var(--text); border-bottom-color: var(--accent); }
+.sp-tab.is-disabled { opacity: .45; cursor: default; }
+
+/* FR-BRN-05 attribution line */
+.sp-attr { margin: 56px 0 0; font-size: var(--fs-xs); color: var(--faint); text-align: center; }
+
+/* WeekPicker */
+.sp-wpick { display: inline-flex; align-items: center; gap: 4px; }
+.sp-wpick-cur { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--text-2); }
+.sp-wpick-input { width: 56px; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--r-ctl); font-family: var(--font-mono); font-size: var(--fs-sm); text-align: center; background: var(--surface); color: var(--text); }
+
+/* SortableTable header buttons */
+.sp-thsort { display: inline-flex; align-items: center; gap: 5px; font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
+.sp-thsort:hover { color: var(--text); }
+.sp-thsort-dim { opacity: .4; }
+
+/* report-a-breach mount (FR-OPS-04) */
+.sp-breach { position: relative; }
+.sp-btn--danger { background: var(--fail); color: #fff; }
+.sp-btn--danger:hover { background: color-mix(in oklab, var(--fail) 85%, black); }
+.sp-breach-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 320px; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px var(--scrim); }
+.sp-breach-field { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-xs); color: var(--muted); }
+.sp-breach-field .sp-input, .sp-breach-field .sp-select, .sp-breach-field .sp-textarea { padding: 9px 12px; font-size: var(--fs-sm); }
+.sp-breach-actions { display: flex; gap: 8px; }
+.sp-breach-msg { margin: 0; font-size: var(--fs-xs); }
+.sp-breach-msg.is-ok { color: var(--pass); }
+.sp-breach-msg.is-err { color: var(--fail); }
+
+@media (max-width: 720px) {
+  .sp-breach-pop { position: fixed; left: 20px; right: 20px; top: auto; bottom: 24px; width: auto; }
+}
