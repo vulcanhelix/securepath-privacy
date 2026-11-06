@@ -128,10 +128,13 @@ FROM public.users u WHERE u.id IN
 
 BEGIN;
 SET ROLE authenticated;
-SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000012","role":"authenticated"}';
--- a staff member reports a suspected breach (spec: any user, any screen)
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000009","role":"authenticated"}';
+-- programme lead escalates the breach report U12 filed (the report itself
+-- lands via an ops RPC — the raw emitter requires write capability; U12's
+-- contributor emit attempt is the negative check at #30 below)
 SELECT public.queue_notification('breach_reported',
   '{"client_org_id":"cc000005-0000-0000-0000-000000000001",
+    "programme_id":"dd000005-0000-0000-0000-000000000001",
     "user_id":"aa000005-0000-0000-0000-000000000012"}'::jsonb,
   '{"suite":"w1n8","subject":"TESTFIX breach reported",
     "recipients":["programme_lead","accountable_officer","partner_consultant"]}'::jsonb) AS evb \gset
@@ -408,6 +411,64 @@ SELECT pg_temp.t(
                WHERE event_id = :'ev_raw'::uuid
                  AND user_id = 'aa000005-0000-0000-0000-000000000011'),
   '29 claim sweep lazily resolves un-expanded events (raw emitters still fan out)');
+
+-- ============================================================================
+-- 9. emission write-gate (review fix) + platform-staff token aliases
+-- ============================================================================
+-- U12 (client_contributor — visible on C1 but no write role) emits breach → denied
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000012","role":"authenticated"}';
+DO $$
+BEGIN
+  BEGIN
+    PERFORM public.queue_notification('breach_reported',
+      '{"client_org_id":"cc000005-0000-0000-0000-000000000001"}'::jsonb,
+      '{"suite":"w1n8","recipients":["accountable_officer"]}'::jsonb);
+    PERFORM pg_temp.t(false, '30 read-only/contributor breach emit denied');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(true, '30 read-only/contributor breach emit denied');
+  END;
+END $$;
+-- same user, ordinary kind → still denied (write-capability, not just alerts)
+DO $$
+BEGIN
+  BEGIN
+    PERFORM public.queue_notification('activity_due',
+      '{"client_org_id":"cc000005-0000-0000-0000-000000000001"}'::jsonb,
+      '{"suite":"w1n8","recipients":["accountable_officer"]}'::jsonb);
+    PERFORM pg_temp.t(false, '31 contributor emit denied for ordinary kinds too');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(true, '31 contributor emit denied for ordinary kinds too');
+  END;
+END $$;
+ROLLBACK;
+
+-- positive control: U4 partner_admin (partner-write) CAN emit breach on C1
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000004","role":"authenticated"}';
+SELECT public.queue_notification('breach_reported',
+  '{"client_org_id":"cc000005-0000-0000-0000-000000000001"}'::jsonb,
+  '{"suite":"w1n8","recipients":["programme_lead","accountable_officer"]}'::jsonb) AS evb2 \gset
+COMMIT;
+RESET ROLE; SET request.jwt.claims = '';
+SELECT pg_temp.t(EXISTS (SELECT 1 FROM public.notification_events
+    WHERE id = :'evb2'::uuid AND kind = 'breach_reported'),
+  '32 partner_admin (partner-write) may emit breach on an owned client');
+
+-- 'platform_admin' / 'platform_support' tokens alias to platform staff
+SELECT public.queue_notification('licence_near_limit',
+  '{"practice_id":"bb000005-0000-0000-0000-000000000001"}'::jsonb,
+  '{"suite":"w1n8","recipients":["platform_admin","platform_support"]}'::jsonb) AS ev_pa \gset
+SELECT pg_temp.t(
+  EXISTS (SELECT 1 FROM public.notification_recipients
+           WHERE event_id = :'ev_pa'::uuid
+             AND user_id = 'aa000005-0000-0000-0000-000000000001')
+  AND EXISTS (SELECT 1 FROM public.notification_recipients
+           WHERE event_id = :'ev_pa'::uuid
+             AND user_id = 'aa000005-0000-0000-0000-000000000003'),
+  '33 platform_admin/platform_support tokens resolve to platform staff');
 
 -- ============================================================================
 -- teardown (suite-scoped only — never touch other suites' rows)

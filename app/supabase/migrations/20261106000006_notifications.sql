@@ -32,9 +32,20 @@
 --         holders on the client (information_officer / deputy_information_
 --         officer / dpo / named_alternate — FR-ACC-02/03: the AO function is
 --         held by designation in SA law as much as by assignment);
---         'programme_lead' additionally matches programmes.programme_lead;
---         'securepath' matches active platform-level users (platform_admin,
---         support) — e.g. licence alerts ("Partner admin; SecurePath", §10).
+--         'programme_lead' additionally matches programmes.programme_lead.
+--
+--   TOKEN VOCABULARY (canonical — emitters MUST use these; anything else
+--   resolves to role_assignments.role verbatim):
+--       role tokens     'partner_admin','partner_consultant','client_admin',
+--                       'programme_lead','workstream_lead','accountable_officer',
+--                       'executive','external_provider','assessor','read_only',
+--                       'client_contributor'
+--       platform staff  'securepath' | 'platform_admin' | 'platform_support'
+--                       — all three aliases resolve to active platform-level
+--                         users (role_assignments level='platform', roles
+--                         platform_admin/support), e.g. licence alerts
+--                         ("Partner admin; SecurePath", §10)
+--       direct address  any uuid string or scope.user_id
 --
 --   notification_preferences.kinds — {"<kind>": {...}} per-kind overrides:
 --       {"mute": true}                    → no row is created for that user
@@ -65,10 +76,33 @@
 --
 --   GUARDS (hard rule — definer bodies re-check because the definer owner
 --   bypasses RLS):
---     queue_notification / resolve_recipients — caller must be able to SEE the
---       event scope (the same disjunction as notification_events_read), or be
---       a service/definer-internal caller (auth.uid() IS NULL — W0-00
---       convention: NULL uid = migration/service write, not gated).
+--     queue_notification — EMISSION REQUIRES WRITE CAPABILITY, not just
+--       visibility (review fix): a read-only user could otherwise mint
+--       breach% events that force UNMUTABLE immediate branded mail to the
+--       AO/partner/SecurePath — an abuse path, not just a bug. Rule
+--       (notification_scope_writeable):
+--         * auth.uid() IS NULL → service/definer-internal, allowed;
+--         * scope must be VISIBLE to the caller (can't emit into invisible
+--           scopes — same disjunction as notification_events_read);
+--         * AND the caller holds a WRITE role in the scope cascade:
+--             programme/client scope → has_programme_role/has_client_role over
+--               {partner_admin,partner_consultant,client_admin,
+--                programme_lead,workstream_lead}
+--             partner scope → has_partner_role over {partner_admin,
+--               partner_consultant}
+--           ELEVATED for 'breach%'/'alert%' kinds (client-write or
+--           partner-write only — read_only/contributor/workstream_lead can
+--           NEVER emit them):
+--               {partner_admin,partner_consultant,client_admin,
+--                programme_lead,accountable_officer}
+--         * user_id-only scope (the caller's own inbox, self-addressed) needs
+--           no write role — it is the caller's own row.
+--       Engines emitting on behalf of non-write users (e.g. "any user may
+--       report a breach", §8.10) do so inside their own definer RPC by
+--       INSERTing notification_events directly — the W1-06 pattern; the
+--       claim/digest sweep resolves those lazily.
+--     resolve_recipients — caller must be able to SEE the event scope (the
+--       same disjunction), or be a service/definer-internal caller.
 --     claim / mark_* / build_digest / digest_pending_users — transport-plane
 --       only: auth.uid() must be NULL AND EXECUTE is granted to service_role
 --       alone (revoked from public/anon/authenticated). Under PostgREST an
@@ -172,6 +206,66 @@ COMMENT ON FUNCTION public.notification_scope_visible(jsonb) IS
   'W1-08 definer guard: caller can see the notification scope (same rule as '
   'notification_events_read) or is a service/definer-internal caller.';
 
+-- Emission gate (review fix): visibility is NOT enough — a read-only caller
+-- could otherwise mint breach% events that force unmutable immediate branded
+-- mail to the AO/partner/SecurePath. Emission needs a WRITE role in the
+-- scope cascade; breach%/alert% kinds need client-write or partner-write
+-- (contributor/read_only/workstream_lead can never emit them).
+CREATE FUNCTION public.notification_scope_writeable(
+    p_kind text, p_scope jsonb) RETURNS boolean
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_client  uuid;
+  v_prog    uuid;
+  v_partner uuid;
+  v_roles   text[];
+  v_uuid_re constant text :=
+    '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+BEGIN
+  IF auth.uid() IS NULL THEN RETURN true; END IF;            -- service/definer-internal
+  IF NOT public.notification_scope_visible(p_scope) THEN RETURN false; END IF;
+  -- elevated set for alert families (client-write | partner-write only)
+  v_roles := CASE
+    WHEN public.notification_is_immediate(p_kind) OR p_kind LIKE 'alert%'
+      THEN ARRAY['partner_admin','partner_consultant','client_admin',
+                 'programme_lead','accountable_officer']
+    ELSE ARRAY['partner_admin','partner_consultant','client_admin',
+               'programme_lead','workstream_lead']
+  END;
+  -- scope ids (presence + shape checked before every cast)
+  IF p_scope ? 'client_org_id' AND (p_scope->>'client_org_id') ~* v_uuid_re THEN
+    v_client := (p_scope->>'client_org_id')::uuid;
+  END IF;
+  IF p_scope ? 'programme_id' AND (p_scope->>'programme_id') ~* v_uuid_re THEN
+    v_prog := (p_scope->>'programme_id')::uuid;
+  END IF;
+  IF p_scope ? 'practice_id' AND (p_scope->>'practice_id') ~* v_uuid_re THEN
+    v_partner := (p_scope->>'practice_id')::uuid;
+  END IF;
+  IF v_prog IS NOT NULL THEN
+    SELECT client_org_id INTO v_client FROM public.programmes WHERE id = v_prog;
+  END IF;
+  IF v_client IS NOT NULL AND v_partner IS NULL THEN
+    SELECT practice_id INTO v_partner FROM public.client_orgs WHERE id = v_client;
+  END IF;
+
+  IF v_prog IS NOT NULL THEN
+    RETURN public.has_programme_role(v_prog, v_roles);
+  END IF;
+  IF v_client IS NOT NULL THEN
+    RETURN public.has_client_role(v_client, v_roles);
+  END IF;
+  IF v_partner IS NOT NULL THEN
+    RETURN public.has_partner_role(v_partner, v_roles);
+  END IF;
+  RETURN true;   -- user_id-only scope: visible check above already forces self
+END $$;
+COMMENT ON FUNCTION public.notification_scope_writeable(text, jsonb) IS
+  'W1-08 emission gate: caller holds a WRITE role in the scope cascade '
+  '(or is service/definer-internal). breach%/alert% kinds restrict to '
+  'client-write/partner-write — read_only, client_contributor and '
+  'workstream_lead can never emit them.';
+
 -- Transport-plane gate: the claim/mark/digest functions are for the mail
 -- worker (service_role PostgREST JWT, no sub) and psql ops only. Inside a
 -- user JWT (auth.uid() set) they refuse — EXECUTE grants additionally limit
@@ -250,13 +344,14 @@ BEGIN
     -- uuid tokens: direct person addresses (incl. scope.user_id)
     SELECT t.tok::uuid AS user_id FROM toks t WHERE t.tok ~* v_uuid_re
     UNION
-    -- 'securepath': platform staff (licence/platform alerts, §10)
+    -- 'securepath'|'platform_admin'|'platform_support': platform staff
+    -- (licence/platform alerts, §10 — all three are aliases)
     SELECT ra.user_id FROM toks t
       JOIN public.role_assignments ra
         ON ra.level = 'platform' AND ra.role IN ('platform_admin','support')
        AND ra.start_date <= CURRENT_DATE
        AND (ra.end_date IS NULL OR ra.end_date > CURRENT_DATE)
-     WHERE t.tok = 'securepath'
+     WHERE t.tok IN ('securepath','platform_admin','platform_support')
     UNION
     -- role tokens with a programme in scope: programme | client | partner cascade
     SELECT ra.user_id FROM toks t
@@ -373,8 +468,8 @@ BEGIN
   IF p_kind IS NULL OR btrim(p_kind) = '' THEN
     RAISE EXCEPTION 'notification kind is required';
   END IF;
-  IF NOT public.notification_scope_visible(coalesce(p_scope,'{}'::jsonb)) THEN
-    RAISE EXCEPTION 'notification scope is not visible to the caller';
+  IF NOT public.notification_scope_writeable(p_kind, coalesce(p_scope,'{}'::jsonb)) THEN
+    RAISE EXCEPTION 'notification emission requires write capability on the scope';
   END IF;
   INSERT INTO public.notification_events (kind, scope, payload, created_at)
   VALUES (p_kind, coalesce(p_scope,'{}'::jsonb),
@@ -385,9 +480,10 @@ BEGIN
 END $$;
 COMMENT ON FUNCTION public.queue_notification(text, jsonb, jsonb, timestamptz) IS
   'W1-08 canonical emitter: append a notification_events row and immediately '
-  'expand it into per-user deliveries. Caller must be able to see the scope '
-  '(or be a service/definer-internal caller — engines emit from their own '
-  'definer RPCs, which preserves the caller''s JWT context).';
+  'expand it into per-user deliveries. Caller must be able to SEE the scope '
+  'AND hold a write role in its cascade (client/partner write for breach% '
+  'and alert% kinds); service/definer-internal callers are ungated. Engines '
+  'emitting on behalf of non-write users raw-INSERT the event instead.';
 
 
 -- ---------- 5. claim_notification_batch — worker lease ----------
@@ -579,6 +675,7 @@ GRANT SELECT ON public.notification_recipients TO authenticated;
 REVOKE EXECUTE ON FUNCTION
   public.notification_is_immediate(text),
   public.notification_scope_visible(jsonb),
+  public.notification_scope_writeable(text, jsonb),
   public.notification_require_worker(),
   public.resolve_recipients(uuid, timestamptz),
   public.queue_notification(text, jsonb, jsonb, timestamptz),
@@ -589,10 +686,11 @@ REVOKE EXECUTE ON FUNCTION
   public.build_digest(uuid, timestamptz, timestamptz, uuid, int)
 FROM anon, public, authenticated;
 
--- user-plane: emit + expand (each guarded by scope visibility in the body)
+-- user-plane: emit + expand (emit additionally gated by write-capability in the body)
 GRANT EXECUTE ON FUNCTION
   public.notification_is_immediate(text),
   public.notification_scope_visible(jsonb),
+  public.notification_scope_writeable(text, jsonb),
   public.resolve_recipients(uuid, timestamptz),
   public.queue_notification(text, jsonb, jsonb, timestamptz)
 TO authenticated;
@@ -602,6 +700,7 @@ TO authenticated;
 GRANT EXECUTE ON FUNCTION
   public.notification_is_immediate(text),
   public.notification_scope_visible(jsonb),
+  public.notification_scope_writeable(text, jsonb),
   public.resolve_recipients(uuid, timestamptz),
   public.queue_notification(text, jsonb, jsonb, timestamptz),
   public.claim_notification_batch(int, int, timestamptz, uuid),
