@@ -164,8 +164,18 @@ ROLLBACK;
 -- accepted_* columns are write-protected (only a definer RPC — W1-05 — sets
 -- them), so the acceptance record is staged admin-side inside the txn; the
 -- status flip itself runs under the AO's JWT exactly like production.
+-- #87: the ref must be REAL accepted evidence linked to R-05 (no fabricated
+-- refs), so the accepted evidence row + its AO accept review are staged too.
 BEGIN;
 UPDATE activities SET status='Complete', pct_complete=100 WHERE id='d3000005-0000-0000-0000-000000000008';
+INSERT INTO evidence_items (id, programme_id, activity_id, register_item_id, file_key,
+                            uploaded_by, review_stage, outcome, evidence_ref)
+VALUES ('e1000005-0000-0000-0000-0000000000f5','dd000005-0000-0000-0000-000000000001',
+        'd3000005-0000-0000-0000-000000000008','d4000005-0000-0000-0000-000000000005',
+        'w1re/c1/breach-drill.pdf','aa000005-0000-0000-0000-000000000010',
+        'decided','closes_finding','EV-R-05-001');
+INSERT INTO evidence_reviews (evidence_item_id, stage, reviewer, decision)
+VALUES ('e1000005-0000-0000-0000-0000000000f5','accept','aa000005-0000-0000-0000-000000000008','accepted');
 UPDATE register_items SET accepted_on='2026-11-20 10:00+00', accepted_by='aa000005-0000-0000-0000-000000000008',
       accepted_evidence_refs='{EV-R-05-001}' WHERE id='d4000005-0000-0000-0000-000000000005';
 SET ROLE authenticated;
@@ -178,8 +188,17 @@ ROLLBACK;
 -- non-AO may not close even with the data preconditions met (W0-02 authz leg)
 BEGIN;
 UPDATE activities SET status='Complete', pct_complete=100 WHERE id='d3000005-0000-0000-0000-000000000008';
+-- #87: real accepted evidence, so the ONLY failing leg is the AO authz gate
+INSERT INTO evidence_items (id, programme_id, activity_id, register_item_id, file_key,
+                            uploaded_by, review_stage, outcome, evidence_ref)
+VALUES ('e1000005-0000-0000-0000-0000000000f5','dd000005-0000-0000-0000-000000000001',
+        'd3000005-0000-0000-0000-000000000008','d4000005-0000-0000-0000-000000000005',
+        'w1re/c1/breach-drill.pdf','aa000005-0000-0000-0000-000000000010',
+        'decided','closes_finding','EV-R-05-001');
+INSERT INTO evidence_reviews (evidence_item_id, stage, reviewer, decision)
+VALUES ('e1000005-0000-0000-0000-0000000000f5','accept','aa000005-0000-0000-0000-000000000008','accepted');
 UPDATE register_items SET accepted_on=now(), accepted_by='aa000005-0000-0000-0000-000000000008',
-      accepted_evidence_refs='{EV-X}' WHERE id='d4000005-0000-0000-0000-000000000005';
+      accepted_evidence_refs='{EV-R-05-001}' WHERE id='d4000005-0000-0000-0000-000000000005';
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000009","role":"authenticated"}';
 DO $$

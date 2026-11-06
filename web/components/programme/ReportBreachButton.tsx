@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import { browserClient } from '@/lib/supabase-browser';
 
@@ -8,6 +9,9 @@ import { browserClient } from '@/lib/supabase-browser';
 // record_breach (W1-04) under the caller's JWT — the RPC itself enforces
 // visibility, resolves the jurisdiction deadline and fires the immediate
 // breach_alert outbox event. W2-09 owns the full registers screen.
+// W2-09: inside /programmes/[id]/… the shell-level mount preselects that
+// programme's client (RLS read of programmes.client_org_id) and refreshes the
+// route after a report so open register lists pick the new record up.
 
 export interface BreachClient {
   id: string;
@@ -27,6 +31,27 @@ export function ReportBreachButton({
   const [occurredOn, setOccurredOn] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [result, setResult] = React.useState<{ ok: boolean; msg: string } | null>(null);
+  const router = useRouter();
+  const params = useParams<{ id?: string }>();
+  const routeProgramme = typeof params?.id === 'string' && /^[0-9a-f-]{36}$/i.test(params.id) ? params.id : null;
+
+  // preselect the current programme's client when no explicit default is given
+  React.useEffect(() => {
+    if (defaultClientId || !routeProgramme) return;
+    let live = true;
+    browserClient()
+      .from('programmes')
+      .select('client_org_id')
+      .eq('id', routeProgramme)
+      .maybeSingle()
+      .then(({ data }) => {
+        const cid = (data as { client_org_id?: string } | null)?.client_org_id;
+        if (live && cid && clients.some((c) => c.id === cid)) setClientId(cid);
+      });
+    return () => {
+      live = false;
+    };
+  }, [routeProgramme, defaultClientId, clients]);
 
   if (!clients.length) return null;
 
@@ -46,6 +71,7 @@ export function ReportBreachButton({
       setResult({ ok: true, msg: 'Breach reported — the accountable officer has been alerted.' });
       setSummary('');
       setOccurredOn('');
+      router.refresh();
     }
   }
 
