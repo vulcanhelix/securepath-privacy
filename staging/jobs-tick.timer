@@ -1,0 +1,16 @@
+# W1-09 scheduler — fire the DB runner every minute.
+# Spec §10 jobs run at local wall times (06:00 client-tz etc.), so a 1-minute
+# cadence is required. Install:
+#   cp staging/jobs-tick.{service,timer} /etc/systemd/system/
+#   cp staging/jobs-tick.sh /opt/securepath/jobs-tick.sh && chmod +x $_
+#   systemctl daemon-reload && systemctl enable --now jobs-tick.timer
+[Unit]
+Description=SecurePath scheduler tick every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=5s
+Persistent=true          # fire once on boot if a tick was missed while down
+
+[Install]
+WantedBy=timers.target

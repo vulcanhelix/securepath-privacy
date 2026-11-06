@@ -26,6 +26,12 @@ docker exec -i -e PGPASSWORD=$PW securepath-staging-db-1 \
 
 (supabase_admin, not postgres — postgres can't alter reserved roles in this image.)
 
+## Scheduler (W1-09, spec §10)
+
+- **Runner**: `SELECT public.tick(now())` — driven by **pg_cron** job `securepath-tick` every minute. pg_cron 1.6 is already in the image's `shared_preload_libraries` (verified — no compose change needed); `app/supabase/migrations/20261106000004_scheduler.sql` creates the extension and registers the cron entry itself. Ledger: `job_runs`; catalogue + `next_run_at`: `scheduled_jobs`.
+- **Fallback** (any DB where pg_cron is not preloaded): `jobs-tick.sh` + `jobs-tick.{service,timer}` in this directory — a systemd timer calling the same tick. Install steps are in the file headers.
+- Semantics: per-client/per-partner timezone due resolution, 48h catch-up window (older instants marked `skipped`), lease+idempotency per `(job_key, scope_key, period_started_at)`. Manual ops: `SELECT public.claim_job('<key>')` / `SELECT public.tick()`.
+
 ## Open items / gotchas
 
 - **Resend key missing**: RESOLVED 2026-07-29: key wired, domain verified at mail.securepathconsulting.co.za subdomain — from-address must use @mail.
