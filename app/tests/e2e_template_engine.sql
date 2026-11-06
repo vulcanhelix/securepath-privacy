@@ -5,7 +5,19 @@
 -- programmes.template_version_id FK, FR-IMP-05 import rows with reject
 -- reasons, and the shared-library / partner-private / no-assignment read
 -- gates. Self-contained fixtures (@w0te.test namespace); JWT callers
--- simulated via SET ROLE authenticated + request.jwt.claims.
+-- simulated via SET ROLE authenticated + request.jwt.claims inside the SAME
+-- transaction as the assertions — the exact pattern proven in
+-- e2e_role_assignments.sql (a claims GUC set in an aborted transaction is
+-- undone, so claims are always SET inside the block that uses them).
+-- BEGIN/ROLLBACK for read-only and denial scenarios; BEGIN/COMMIT only where
+-- the write under test must persist for later checks (then role + claims are
+-- reset immediately).
+--
+-- NOTE for local scratch runs: this file targets the staging auth schema —
+-- auth.users.confirmed_at is a GENERATED column there (insert uses
+-- email_confirmed_at) and auth.uid() reads request.jwt.claims. On a bare
+-- supabase/postgres image both differ; shim the scratch DB to match staging
+-- (add the newer auth.users columns + the coalesced auth.uid body) first.
 --
 -- Run (against the ephemeral/CI stack):
 --   psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=0 \
@@ -19,25 +31,6 @@ LANGUAGE plpgsql AS $$
 BEGIN
   IF cond THEN RAISE NOTICE 'PASS %', label;
   ELSE RAISE WARNING 'FAIL %', label; END IF;
-END $$;
-
--- Set/clear the simulated JWT for both auth.uid() variants: the older image
--- reads request.jwt.claim.sub (per-claim GUCs), newer gotrue/postgrest stacks
--- read the request.jwt.claims JSON blob. Setting both keeps this file portable.
-CREATE OR REPLACE FUNCTION pg_temp.jwt(p_sub uuid) RETURNS void
-LANGUAGE plpgsql AS $$
-BEGIN
-  PERFORM set_config('request.jwt.claims',
-        json_build_object('sub', p_sub::text, 'role', 'authenticated')::text, false);
-  PERFORM set_config('request.jwt.claim.sub', p_sub::text, false);
-  PERFORM set_config('request.jwt.claim.role', 'authenticated', false);
-END $$;
-CREATE OR REPLACE FUNCTION pg_temp.nojwt() RETURNS void
-LANGUAGE plpgsql AS $$
-BEGIN
-  PERFORM set_config('request.jwt.claims', '', false);
-  PERFORM set_config('request.jwt.claim.sub', '', false);
-  PERFORM set_config('request.jwt.claim.role', '', false);
 END $$;
 
 -- ---------- fixtures ----------
@@ -68,13 +61,19 @@ DELETE FROM auth.users WHERE email LIKE '%@w0te.test';
 DELETE FROM client_orgs WHERE practice_id IN (SELECT p.id FROM practices p WHERE p.name LIKE 'W0TE%');
 DELETE FROM practices WHERE name LIKE 'W0TE%';
 
--- NOTE: column set matches the auth.users schema on this stack (gotrue);
--- only the columns a test user actually needs are inserted.
-INSERT INTO auth.users (id, instance_id, email, aud, role,
-    confirmed_at, created_at, updated_at)
+-- auth.users column set copied verbatim from e2e_role_assignments.sql —
+-- confirmed_at is GENERATED on this stack; email_confirmed_at is the column.
+INSERT INTO auth.users (id, instance_id, email, encrypted_password, aud, role,
+    email_confirmed_at, created_at, updated_at, confirmation_token,
+    email_change, email_change_token_new, email_change_token_current,
+    recovery_token, reauthentication_token, phone_change, phone_change_token,
+    raw_app_meta_data, raw_user_meta_data)
 SELECT u.id, '00000000-0000-0000-0000-000000000000', u.email,
-    'authenticated', 'authenticated',
-    now(), now(), now()
+    crypt('x', gen_salt('bf')), 'authenticated', 'authenticated',
+    now(), now(), now(), '',
+    '', '', '',
+    '', '', '', '',
+    '{"provider":"email","providers":["email"]}', '{}'
 FROM (VALUES
   ('ee000000-0000-0000-0000-000000000001'::uuid, 'author@w0te.test'),
   ('ee000000-0000-0000-0000-000000000002'::uuid, 'padmin@w0te.test'),
@@ -127,8 +126,9 @@ INSERT INTO requirement_mappings (template_version_id, requirement_ref_a, requir
 
 -- ---------- publish path (FR-TPL-01) ----------
 -- tenant partner_admin may NOT publish
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000003');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000003","role":"authenticated"}';
 DO $$
 BEGIN
   BEGIN
@@ -138,12 +138,12 @@ BEGIN
     PERFORM pg_temp.t(true,'partner_admin publish denied: '||SQLERRM);
   END;
 END $$;
-RESET ROLE;
-SELECT pg_temp.nojwt();
+ROLLBACK;
 
 -- incomplete content can NOT publish (missing §5.1 keys)
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000001');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000001","role":"authenticated"}';
 DO $$
 BEGIN
   BEGIN
@@ -154,11 +154,17 @@ BEGIN
                       'publish of incomplete §5.1 content denied: '||SQLERRM);
   END;
 END $$;
+ROLLBACK;
 
--- content_author publishes v1 — draft → published, stamps by/at
+-- content_author publishes v1 — draft → published, stamps by/at.
+-- COMMIT: the published row must persist for the immutability checks below.
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000001","role":"authenticated"}';
 SELECT (public.publish_template_version('cc000000-0000-0000-0000-0000000000b1')).status AS v1_status;
+COMMIT;
 RESET ROLE;
-SELECT pg_temp.nojwt();
+SET request.jwt.claims = '';
 SELECT pg_temp.t(
   (SELECT status FROM programme_template_versions WHERE id='cc000000-0000-0000-0000-0000000000b1') = 'published'
   AND (SELECT published_by FROM programme_template_versions WHERE id='cc000000-0000-0000-0000-0000000000b1')
@@ -188,8 +194,9 @@ BEGIN
 END $$;
 
 -- 2) authenticated role has no UPDATE grant at all
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000001');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000001","role":"authenticated"}';
 DO $$
 BEGIN
   BEGIN
@@ -206,15 +213,16 @@ BEGIN
     PERFORM pg_temp.t(true,'authenticated has no INSERT on templates: '||SQLERRM);
   END;
 END $$;
-RESET ROLE;
-SELECT pg_temp.nojwt();
+ROLLBACK;
 
 -- ---------- published → retired ----------
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000001');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000001","role":"authenticated"}';
 SELECT (public.retire_template_version('cc000000-0000-0000-0000-0000000000b1')).status AS v1_status2;
+COMMIT;
 RESET ROLE;
-SELECT pg_temp.nojwt();
+SET request.jwt.claims = '';
 SELECT pg_temp.t(
   (SELECT status FROM programme_template_versions WHERE id='cc000000-0000-0000-0000-0000000000b1') = 'retired',
   'retire: published → retired via RPC');
@@ -253,19 +261,22 @@ SELECT pg_temp.t(
   (SELECT status FROM programme_template_versions WHERE id='cc000000-0000-0000-0000-0000000000b4') = 'retired',
   'draft → retired allowed (discard path)');
 
--- draft v2 stays editable while draft: fix content, then publish
+-- draft b2 stays editable while draft: fix content, then publish
 UPDATE programme_template_versions
   SET content = '{"phases":[],"workstreams":[],"activity_library":[],"findings_map":{},
                   "document_set":[],"kpis":[],"maintenance_set":[],"quarterly_annual_cycles":{},
                   "registers":[],"report_structure":{},"role_labels":{}}'
   WHERE id = 'cc000000-0000-0000-0000-0000000000b2';
 SELECT pg_temp.t(true,'draft content UPDATE allowed (still draft)');
+
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000001');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000001","role":"authenticated"}';
 SELECT (public.publish_template_version('cc000000-0000-0000-0000-0000000000b2')).status AS v2_status;
 SELECT (public.publish_template_version('cc000000-0000-0000-0000-0000000000b3')).status AS v3_status;
+COMMIT;
 RESET ROLE;
-SELECT pg_temp.nojwt();
+SET request.jwt.claims = '';
 SELECT pg_temp.t(
   (SELECT status FROM programme_template_versions WHERE id='cc000000-0000-0000-0000-0000000000b2') = 'published'
   AND (SELECT status FROM programme_template_versions WHERE id='cc000000-0000-0000-0000-0000000000b3') = 'published',
@@ -298,8 +309,10 @@ SELECT pg_temp.t(EXISTS (
   'maintenance_task_templates.template_version_id FK live (content row)');
 
 -- ---------- import_runs / import_rows (§13.1 FR-IMP-05) ----------
+-- COMMIT: the run must persist for the cross-partner read checks below.
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000003');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000003","role":"authenticated"}';
 INSERT INTO import_runs (partner_id, kind, file_ref, status, preview)
 VALUES ('ff000000-0000-0000-0000-00000000000a',
         'findings','storage://w0te/findings.xlsx','previewed','{"rows":3,"rejected":1}');
@@ -332,24 +345,26 @@ BEGIN
     PERFORM pg_temp.t(true,'partner_admin cannot insert run for another partner: '||SQLERRM);
   END;
 END $$;
+COMMIT;
 RESET ROLE;
-SELECT pg_temp.nojwt();
+SET request.jwt.claims = '';
 
 -- ownerB sees nothing of Alpha's imports
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000004');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000004","role":"authenticated"}';
 SELECT pg_temp.t((SELECT count(*) FROM import_runs) = 0,
   'import_runs partner-scope: Beta admin sees none of Alpha''s runs');
 SELECT pg_temp.t((SELECT count(*) FROM import_rows) = 0,
   'import_rows partner-scope: Beta admin sees none of Alpha''s rows');
-RESET ROLE;
-SELECT pg_temp.nojwt();
+ROLLBACK;
 
 -- ---------- shared-library read gates ----------
 -- ownerA (any active assignment): sees published/retired versions incl. the
 -- Alpha-private published variant; no drafts.
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000003');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000003","role":"authenticated"}';
 SELECT pg_temp.t((SELECT count(*) FROM programme_templates WHERE name LIKE 'W0TE%') = 3,
   'ownerA sees all 3 templates (2 shared + own partner variant)');
 SELECT pg_temp.t((SELECT count(*) FROM programme_template_versions v
@@ -357,40 +372,52 @@ SELECT pg_temp.t((SELECT count(*) FROM programme_template_versions v
       WHERE tp.name LIKE 'W0TE%'
         AND v.id IN ('cc000000-0000-0000-0000-0000000000b1','cc000000-0000-0000-0000-0000000000b2',
                      'cc000000-0000-0000-0000-0000000000b3','cc000000-0000-0000-0000-0000000000b4')) = 4,
-  'ownerA reads all published+retired versions (v1 retired, v2/v3 published, v4 retired)');
+  'ownerA reads all published+retired versions (b1 retired, b2/b3 published, b4 retired)');
 SELECT pg_temp.t((SELECT count(*) FROM requirement_mappings) = 1,
   'ownerA reads requirement_mappings on visible versions');
+ROLLBACK;
+
 -- ownerB: shared library but NOT the Alpha-private variant
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000004');
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000004","role":"authenticated"}';
 SELECT pg_temp.t((SELECT count(*) FROM programme_templates WHERE name LIKE 'W0TE%') = 2,
   'ownerB sees only the 2 shared templates (Alpha variant hidden)');
 SELECT pg_temp.t(NOT EXISTS (
       SELECT 1 FROM programme_template_versions
       WHERE id='cc000000-0000-0000-0000-0000000000b3'),
   'ownerB cannot read the Alpha-private published version');
+ROLLBACK;
+
 -- nobody: authenticated but zero assignments → nothing
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000005');
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000005","role":"authenticated"}';
 SELECT pg_temp.t((SELECT count(*) FROM programme_templates) = 0
     AND (SELECT count(*) FROM programme_template_versions) = 0,
   'user with no active assignment sees no template content');
--- content_author additionally sees drafts (none left after publish; create one)
-RESET ROLE;
-SELECT pg_temp.nojwt();
+ROLLBACK;
+
+-- content_author additionally sees drafts (create one to check)
 INSERT INTO programme_template_versions (template_id, number, status, content)
 VALUES ('bb000000-0000-0000-0000-0000000000a2',2,'draft','{"phases":[]}');
+BEGIN;
 SET ROLE authenticated;
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000001');
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000001","role":"authenticated"}';
 SELECT pg_temp.t(EXISTS (
       SELECT 1 FROM programme_template_versions
       WHERE template_id='bb000000-0000-0000-0000-0000000000a2' AND number=2),
   'content_author sees draft versions');
-SELECT pg_temp.jwt('ee000000-0000-0000-0000-000000000003');
+ROLLBACK;
+
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"ee000000-0000-0000-0000-000000000003","role":"authenticated"}';
 SELECT pg_temp.t(NOT EXISTS (
       SELECT 1 FROM programme_template_versions
       WHERE template_id='bb000000-0000-0000-0000-0000000000a2' AND number=2),
   'partner_admin does NOT see draft versions');
-RESET ROLE;
-SELECT pg_temp.nojwt();
+ROLLBACK;
 
 -- ---------- teardown ----------
 ALTER TABLE public.programme_template_versions DISABLE TRIGGER template_version_guard;
