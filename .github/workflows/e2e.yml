@@ -125,6 +125,15 @@ jobs:
             < app/tests/e2e_programme_lifecycle.sql 2>&1 | tee /tmp/pl_checks.log
           ! grep -q "FAIL" /tmp/pl_checks.log
 
+      - name: W1 follow-up checks (FR-WKS-03, attendees, #81/#82/#83)
+        run: |
+          # self-contained: seeds and tears down its own W1FU namespace
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_followups.sql 2>&1 | tee /tmp/fu_checks.log
+          ! grep -q "FAIL" /tmp/fu_checks.log
+          grep -q "PASS" /tmp/fu_checks.log
+
       - name: Notification fan-out checks (W1-08)
         run: |
           # same TESTFIX world as the ops-CRUD step (fixture pack is re-runnable)
