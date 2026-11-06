@@ -153,6 +153,11 @@ export default async function MaintenancePage({
     const ok = new Set((reviews ?? []).map((r) => r.evidence_item_id as string));
     accepted = evidenceAll.filter((e) => ok.has(e.id));
   }
+  // #90 checklist picker: the 000013 accepted rule also needs review_stage
+  // 'decided' (complete_checklist_item re-checks it server-side)
+  const checklistAccepted = (accepted as (AcceptedEvidence & { review_stage?: string })[])
+    .filter((e) => e.review_stage === 'decided')
+    .map((e) => ({ id: e.id, evidence_ref: e.evidence_ref, uploaded_at: e.uploaded_at }));
   const evidenceRefs = Object.fromEntries(
     evidenceAll.map((e) => [e.id, e.evidence_ref ?? null] as const)
   ) as Record<string, string | null>;
@@ -283,6 +288,7 @@ export default async function MaintenancePage({
           defaultQuarter={quarter}
           defaultYear={year}
           evidenceRefs={evidenceRefs}
+          accepted={checklistAccepted}
           base={base}
         />
       </Card>

@@ -62,7 +62,9 @@ export default async function RegisterPage({
       supabase
         .from('activities')
         .select('id, ref, text, status, workstream_id')
-        .eq('programme_id', id),
+        // #92: retired activities are out of the §9.4 leg — not listed as links
+        .eq('programme_id', id)
+        .eq('active', true),
       supabase
         .from('evidence_items')
         .select('id, activity_id, register_item_id, review_stage, outcome, evidence_ref, uploaded_at')

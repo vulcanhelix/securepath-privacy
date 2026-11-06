@@ -10,8 +10,13 @@ import { Input, Select } from '@/components/ui/forms';
 
 // W2-10 — FR-QTR-01/02 quarterly + annual checklists. Generation goes only
 // through generate_checklist (idempotent per programme/kind/period; returns
-// the row id). Items and the annual summary (the engine's frozen year pull)
-// are rendered read-only.
+// the row id). The annual summary (the engine's frozen year pull) is
+// read-only.
+// #90 — each open item can be completed, ONLY through complete_checklist_item
+// (no direct-table write exists: the client grants on checklist_instances
+// are revoked). An evidence-slot item needs accepted evidence; any other item
+// takes accepted evidence or a note. Completion is final. The RPC re-checks
+// role, tenant and the accepted-evidence rule, and its error is shown as-is.
 
 export interface ChecklistItem {
   ref?: string | null;
@@ -19,6 +24,16 @@ export interface ChecklistItem {
   evidence_required?: boolean;
   evidence_id?: string | null;
   done?: boolean;
+  note?: string | null;
+  completed_at?: string | null;
+}
+
+/** accepted (decided + AO-accepted) evidence of this programme — the picker
+    list; the RPC re-validates whatever is sent */
+export interface ChecklistEvidence {
+  id: string;
+  evidence_ref: string | null;
+  uploaded_at: string;
 }
 
 export interface ChecklistRow {
@@ -37,6 +52,7 @@ export function Checklists({
   defaultQuarter,
   defaultYear,
   evidenceRefs,
+  accepted,
   base,
 }: {
   programmeId: string;
@@ -45,6 +61,7 @@ export function Checklists({
   defaultQuarter: string;
   defaultYear: string;
   evidenceRefs: Record<string, string | null>;
+  accepted: ChecklistEvidence[];
   base: string;
 }) {
   const router = useRouter();
@@ -137,6 +154,7 @@ export function Checklists({
                           <th>Item</th>
                           <th>Evidence</th>
                           <th>Done</th>
+                          {canRun ? <th aria-label="Action" /> : null}
                         </tr>
                       </thead>
                       <tbody>
@@ -155,7 +173,32 @@ export function Checklists({
                                 <span className="muted">optional</span>
                               )}
                             </td>
-                            <td>{it.done ? <Badge tone="pass" dot>done</Badge> : <span className="muted">—</span>}</td>
+                            <td>
+                              {it.done ? (
+                                <span title={it.note ?? undefined}>
+                                  <Badge tone="pass" dot>done</Badge>
+                                  {it.completed_at ? (
+                                    <span className="muted mono" style={{ fontSize: 'var(--fs-xs)', marginLeft: 6 }}>
+                                      {String(it.completed_at).slice(0, 10)}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              ) : (
+                                <span className="muted">—</span>
+                              )}
+                            </td>
+                            {canRun ? (
+                              <td>
+                                {!it.done && it.ref ? (
+                                  <CompleteItem
+                                    checklistId={r.id}
+                                    item={it}
+                                    accepted={accepted}
+                                    onDone={() => router.refresh()}
+                                  />
+                                ) : null}
+                              </td>
+                            ) : null}
                           </tr>
                         ))}
                       </tbody>
@@ -173,6 +216,78 @@ export function Checklists({
         </div>
       )}
     </div>
+  );
+}
+
+// #90 — one item's completion form. Writes ONLY via complete_checklist_item;
+// on failure the RPC's message is shown and nothing else is attempted.
+function CompleteItem({
+  checklistId,
+  item,
+  accepted,
+  onDone,
+}: {
+  checklistId: string;
+  item: ChecklistItem;
+  accepted: ChecklistEvidence[];
+  onDone: () => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [evidenceId, setEvidenceId] = React.useState('');
+  const [note, setNote] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState<string | null>(null);
+  const slot = !!item.evidence_required;
+
+  if (!open) {
+    return (
+      <Button size="sm" variant="outline" icon="check" onClick={() => setOpen(true)}>
+        Complete
+      </Button>
+    );
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (slot && !evidenceId) return setErr('This item has an evidence slot: pick accepted evidence.');
+    if (!slot && !evidenceId && !note.trim()) return setErr('Pick accepted evidence or record a note of what was done.');
+    setBusy(true);
+    const { error } = await browserClient().rpc('complete_checklist_item', {
+      p_checklist_id: checklistId,
+      p_item_key: item.ref,
+      p_evidence_id: evidenceId || null,
+      p_note: note.trim() || null,
+    });
+    setBusy(false);
+    if (error) return setErr(error.message);
+    setOpen(false);
+    onDone();
+  }
+
+  return (
+    <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
+      <Select value={evidenceId} onChange={(e) => setEvidenceId(e.target.value)} aria-label="Accepted evidence">
+        <option value="">{slot ? 'Choose accepted evidence…' : 'No evidence (note only)'}</option>
+        {accepted.map((ev) => (
+          <option key={ev.id} value={ev.id}>
+            {ev.evidence_ref ?? ev.id.slice(0, 8)} · {ev.uploaded_at.slice(0, 10)}
+          </option>
+        ))}
+      </Select>
+      <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={slot ? 'Note (optional)' : 'Note'} aria-label="Note" />
+      {slot && !accepted.length ? (
+        <span className="muted" style={{ fontSize: 'var(--fs-xs)' }}>No accepted evidence in this programme yet.</span>
+      ) : null}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Button size="sm" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Mark done'}</Button>
+        <Button size="sm" variant="ghost" type="button" onClick={() => { setOpen(false); setErr(null); }} disabled={busy}>
+          Cancel
+        </Button>
+      </div>
+      <span className="muted" style={{ fontSize: 'var(--fs-xs)' }}>Completion is final.</span>
+      {err ? <p className="sp-breach-msg is-err" role="alert">{err}</p> : null}
+    </form>
   );
 }
 
