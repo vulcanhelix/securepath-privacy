@@ -869,8 +869,14 @@ BEGIN
     IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'securepath-tick') THEN
       PERFORM cron.unschedule('securepath-tick');
     END IF;
-    PERFORM cron.schedule('securepath-tick', '* * * * *', 'SELECT public.tick()');
-    RAISE NOTICE 'W1-09: pg_cron armed — securepath-tick runs every minute';
+    -- dormant on fixture-flagged test databases: with securepath.test_fixtures
+    -- on (CI/ephemeral stacks running the AT suites) the cron still exists but
+    -- each fire is a no-op, so real-clock ticks can never interleave rows into
+    -- clock-injected test runs. On staging/prod the flag is never set.
+    PERFORM cron.schedule('securepath-tick', '* * * * *',
+      $c$SELECT CASE WHEN coalesce(current_setting('securepath.test_fixtures', true), 'off')
+                      IN ('on','true','1') THEN NULL ELSE public.tick() END$c$);
+    RAISE NOTICE 'W1-09: pg_cron armed — securepath-tick runs every minute (dormant under securepath.test_fixtures=on)';
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'W1-09: pg_cron present but scheduling failed (%) — use '
       'staging/jobs-tick.timer.', SQLERRM;

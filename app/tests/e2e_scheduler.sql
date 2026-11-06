@@ -49,7 +49,12 @@ CREATE TEMP TABLE w1s_pre_events  AS SELECT id FROM public.notification_events;
 CREATE TEMP TABLE w1s_pre_snaps   AS SELECT id FROM public.monthly_snapshots;
 
 -- ---------- fixtures (@w1s.test / W1S% namespace) ----------
-DELETE FROM job_runs WHERE id NOT IN (SELECT id FROM w1s_pre_runs);
+-- wipe the TESTFIX-scope ledger outright: this suite owns every row scoped to
+-- the fixture clients/practices (they only exist because the fixture pack was
+-- seeded), and real-clock ticks may have pre-marked recent instants 'skipped'.
+DELETE FROM job_runs
+ WHERE scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%'
+    OR scope_key LIKE 'client:c4000000-%' OR scope_key LIKE 'partner:b4000000-%';
 DELETE FROM role_assignments WHERE user_id IN
   (SELECT id FROM users WHERE email LIKE '%@w1s.test');
 DELETE FROM users WHERE email LIKE '%@w1s.test';
@@ -100,13 +105,20 @@ SELECT pg_temp.t(
   'claim_job: no due instant in window → 0 claims (Monday job, Friday clock)');
 
 -- ---------- 3. per-client-TZ due resolution (NO UTC-midnight firing) ----------
+-- NB: claim counts are asserted on TESTFIX scope_keys only — other suites'
+-- clients/practices legitimately add scopes of their own on a shared CI db.
 -- 04:30Z = 06:30 SAST (C1,C3 due) but only 05:30 BST (C2 not due until 05:00Z)
-SELECT (public.tick('2026-10-09 04:30+00') ->> 'claimed')::int AS c1 \gset
-SELECT pg_temp.t(:c1 = 6,
-  'tick 04:30Z: 6 claims — Oct-8 catch-up ×3 + Oct-9 ZA ×2 (London not yet due)');
+SELECT public.tick('2026-10-09 04:30+00') AS t1 \gset
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs
-    WHERE job_key='daily-recalc-digest' AND period_started_at='2026-10-09 04:00+00') = 2
+    WHERE started_at='2026-10-09 04:30+00' AND status='success'
+      AND scope_key LIKE 'client:cc000005-%') = 6,
+  'tick 04:30Z: 6 TESTFIX claims — Oct-8 catch-up ×3 + Oct-9 ZA ×2 (London not yet due)');
+SELECT pg_temp.t(
+  (SELECT count(*) FROM job_runs
+    WHERE job_key='daily-recalc-digest' AND period_started_at='2026-10-09 04:00+00'
+      AND scope_key IN ('client:cc000005-0000-0000-0000-000000000001',
+                        'client:cc000005-0000-0000-0000-000000000003')) = 2
   AND NOT EXISTS (SELECT 1 FROM job_runs
     WHERE job_key='daily-recalc-digest' AND scope_key='client:cc000005-0000-0000-0000-000000000002'
       AND period_started_at='2026-10-09 04:00+00'),
@@ -133,11 +145,20 @@ SELECT pg_temp.t(EXISTS (
        AND period_started_at='2026-10-09 05:00+00' AND status='success'),
   'TZ: C2 Oct-9 fired at 05:00Z = 06:00 BST — per-client tz, not UTC');
 
--- next_run_at: earliest due instant > now across scopes (ZA leads)
+-- next_run_at: earliest due instant > now across scopes — exact value depends
+-- on the scopes present, so assert it moved forward AND prove the per-scope
+-- instant directly: C1's next daily instant after the 05:30 tick is Oct-10
+-- 04:00Z (06:00 SAST, not UTC-derived).
 SELECT pg_temp.t(
   (SELECT next_run_at FROM scheduled_jobs WHERE key='daily-recalc-digest')
+    > '2026-10-09 05:30+00',
+  'next_run_at advanced past the tick clock');
+SELECT pg_temp.t(
+  (SELECT min(i) FROM public.sched_local_instants(
+      '{"kind":"daily","time":"06:00"}'::jsonb,'Africa/Johannesburg','ZA',
+      'cc000005-0000-0000-0000-000000000001',DATE '2026-10-10',DATE '2026-10-10') i)
     = '2026-10-10 04:00:00+00',
-  'next_run_at = Oct-10 04:00Z (earliest scope, SAST 06:00) — per-client resolution');
+  'C1 next daily instant = Oct-10 04:00Z (06:00 SAST) — per-client resolution');
 
 -- ---------- 4. handler effects — §9.3 days_overdue + §9.2 RAG ----------
 SELECT pg_temp.t(
@@ -165,19 +186,25 @@ SELECT pg_temp.t(EXISTS (
   '§10: activity_due_soon emitted for A-04 (Oct-16 = Oct-9 + 5 business days)');
 
 -- ---------- 6. claim_job → running rows; complete_job semantics ----------
-SELECT count(*) AS q_claims
+SELECT count(*) AS q_running_pre FROM job_runs
+ WHERE job_key='quarterly-annual-checklists' AND scope_key LIKE 'client:cc000005-%' \gset
+SELECT count(*) AS q_ret
   FROM public.claim_job('quarterly-annual-checklists','2026-10-01 05:30+00') \gset
-SELECT pg_temp.t(:q_claims = 3,
-  'claim_job quarterly-checklists @Oct-1 05:30Z: 3 claims (1st BD of Q4, all tz due)');
+SELECT pg_temp.t(:q_ret >= 3 AND
+  (SELECT count(*) FROM job_runs WHERE job_key='quarterly-annual-checklists'
+     AND scope_key LIKE 'client:cc000005-%' AND status='running') - :q_running_pre = 3,
+  'claim_job quarterly-checklists @Oct-1 05:30Z: 3 TESTFIX claims (1st BD of Q4)');
 SELECT pg_temp.t(
   (SELECT count(*) FROM public.claim_job('quarterly-annual-checklists','2026-10-01 05:30+00')) = 0,
   'claim_job same job+period again → 0 (unique idempotency key)');
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs WHERE job_key='quarterly-annual-checklists'
+     AND scope_key LIKE 'client:cc000005-%'
      AND status='running' AND locked_until > '2026-10-01 05:30+00') = 3,
   'claimed rows are running under lease (locked_until set)');
 
-SELECT id AS q_run FROM job_runs WHERE job_key='quarterly-annual-checklists' LIMIT 1 \gset
+SELECT id AS q_run FROM job_runs WHERE job_key='quarterly-annual-checklists'
+  AND scope_key LIKE 'client:cc000005-%' LIMIT 1 \gset
 SELECT pg_temp.t(public.complete_job(:'q_run','success','{"note":"manual finish"}'),
   'complete_job: finishes a running row → true');
 SELECT pg_temp.t(
@@ -206,11 +233,15 @@ BEGIN
 END $$;
 
 -- ---------- 7. catch-up: last-BD snapshot fired ~42h late, once ----------
-SELECT (public.tick('2026-11-01 10:00+00') ->> 'claimed')::int AS c4 \gset
-SELECT pg_temp.t(:c4 = 9,
-  'tick Nov-1 10:00Z: 9 claims — daily Oct-31+Nov-1 ×3, Oct-30 snapshots ×3');
+SELECT public.tick('2026-11-01 10:00+00') AS t4 \gset
+SELECT pg_temp.t(
+  (SELECT count(*) FROM job_runs
+    WHERE started_at='2026-11-01 10:00+00' AND status='success'
+      AND scope_key LIKE 'client:cc000005-%') = 9,
+  'tick Nov-1 10:00Z: 9 TESTFIX claims — daily Oct-31+Nov-1 ×3, Oct-30 snapshots ×3');
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs WHERE job_key='monthly-last-bd-snapshot'
+     AND scope_key LIKE 'client:cc000005-%'
      AND status='success' AND period_started_at IN
        ('2026-10-30 16:00+00','2026-10-30 18:00+00')) = 3,
   'catch-up: snapshot job fired for all 3 clients inside 48h window');
@@ -247,20 +278,25 @@ SELECT pg_temp.t(EXISTS (
   'skip zone: Oct-30 04:00Z daily instant marked skipped (54h old at Nov-1 tick)');
 
 -- ---------- 9. stub dispatch + partner scope ----------
-SELECT (public.tick('2026-11-03 10:00+00') ->> 'claimed')::int AS c6 \gset
-SELECT pg_temp.t(:c6 = 15,
-  'tick Nov-3 10:00Z: 15 claims — daily Nov-2/3 ×6, monday ×3, bd1-gen ×3, usage ×3');
+SELECT public.tick('2026-11-03 10:00+00') AS t6 \gset
+SELECT pg_temp.t(
+  (SELECT count(*) FROM job_runs
+    WHERE started_at='2026-11-03 10:00+00' AND status='success'
+      AND (scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%')) = 15,
+  'tick Nov-3 10:00Z: 15 TESTFIX claims — daily Nov-2/3 ×6, monday ×3, bd1-gen ×3, usage ×3');
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs WHERE job_key='monday-agenda' AND status='success'
-     AND detail ? 'stub') = 3,
+     AND scope_key LIKE 'client:cc000005-%' AND detail ? 'stub') = 3,
   'stub dispatch: monday-agenda catch-up ×3 record detail.stub owner');
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs WHERE job_key='partner-usage-report'
-     AND scope_key LIKE 'partner:%' AND status='success') = 3,
-  'partner-scope job: one run per practice (3 practices)');
+     AND scope_key LIKE 'partner:bb000005-%' AND status='success') = 3,
+  'partner-scope job: one run per TESTFIX practice (3 practices)');
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs WHERE job_key='monthly-bd1-gen'
-     AND period_started_at='2026-11-02 04:00+00' AND status='success') = 2,
+     AND period_started_at='2026-11-02 04:00+00' AND status='success'
+     AND scope_key IN ('client:cc000005-0000-0000-0000-000000000001',
+                       'client:cc000005-0000-0000-0000-000000000003')) = 2,
   'bd1-gen: Nov-2 06:00 SAST fired for ZA clients (stub → W1-03)');
 
 -- ---------- 10. overdue events at later local dates ----------
@@ -278,7 +314,11 @@ INSERT INTO job_runs (job_key, scope_key, period_started_at, started_at,
                       locked_until, status, detail)
 VALUES ('daily-recalc-digest','client:cc000005-0000-0000-0000-000000000003',
         '2026-11-04 04:00+00','2026-11-04 04:00+00','2026-11-04 04:05+00','running',
-        '{"claimed_by":"zombie"}');
+        '{"claimed_by":"zombie"}')
+ON CONFLICT (job_key, scope_key, period_started_at) DO UPDATE
+  SET status='running', locked_until='2026-11-04 04:05+00',
+      started_at='2026-11-04 04:00+00', finished_at=NULL,
+      detail='{"claimed_by":"zombie"}'::jsonb;
 SELECT (public.tick('2026-11-04 10:00+00') ->> 'claimed')::int AS c7 \gset
 SELECT pg_temp.t(
   (SELECT count(*) FROM job_runs WHERE job_key='daily-recalc-digest'
@@ -390,6 +430,9 @@ END $$;
 
 -- ---------- teardown ----------
 DELETE FROM job_runs          WHERE id NOT IN (SELECT id FROM w1s_pre_runs);
+DELETE FROM job_runs
+ WHERE scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%'
+    OR scope_key LIKE 'client:c4000000-%' OR scope_key LIKE 'partner:b4000000-%';
 DELETE FROM notification_events WHERE id NOT IN (SELECT id FROM w1s_pre_events);
 DELETE FROM monthly_snapshots WHERE id NOT IN (SELECT id FROM w1s_pre_snaps);
 DELETE FROM role_assignments WHERE user_id IN
