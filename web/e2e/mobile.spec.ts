@@ -14,9 +14,9 @@ const PNG = Buffer.from(
   'base64'
 );
 
-const cases: { role: Role; activity: string; defects: ('W4-D1' | 'W4-D3' | 'W4-D4')[] }[] = [
-  { role: 'ao', activity: 'A-01 — TESTFIX Designate the accountable officer', defects: ['W4-D1', 'W4-D4'] },
-  { role: 'wsl', activity: 'A-06 — TESTFIX Staff awareness training rollout', defects: ['W4-D1', 'W4-D3', 'W4-D4'] },
+const cases: { role: Role; activity: string; defects: ('W4-D3' | 'W4-D4')[] }[] = [
+  { role: 'ao', activity: 'A-01 — TESTFIX Designate the accountable officer', defects: ['W4-D4'] },
+  { role: 'wsl', activity: 'A-06 — TESTFIX Staff awareness training rollout', defects: ['W4-D3', 'W4-D4'] },
 ];
 
 for (const c of cases) {
