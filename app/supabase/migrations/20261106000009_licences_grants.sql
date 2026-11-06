@@ -410,7 +410,10 @@ BEGIN
                 jsonb_build_object('trigger', v_trig.trigger,
                                    'used', v_trig.used, 'limit', v_trig.cap,
                                    'licence_id', v_lic.id,
-                                   'recipients', jsonb_build_array('partner_admin','platform_admin')));
+                                   -- 'securepath' is the W1-08 resolver's
+                                   -- platform-staff token (spec §10:
+                                   -- "Partner admin; SecurePath")
+                                   'recipients', jsonb_build_array('partner_admin','securepath')));
         v_emitted := v_emitted + 1;
       END IF;
     END LOOP;
@@ -429,7 +432,7 @@ BEGIN
                                  'ends_on', v_lic.ends_on,
                                  'days_to_end', v_lic.ends_on - CURRENT_DATE,
                                  'licence_id', v_lic.id,
-                                 'recipients', jsonb_build_array('partner_admin','platform_admin')));
+                                 'recipients', jsonb_build_array('partner_admin','securepath')));
       v_emitted := v_emitted + 1;
     END IF;
   END LOOP;
