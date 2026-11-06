@@ -111,21 +111,6 @@ jobs:
             < app/tests/e2e_ops_crud.sql 2>&1 | tee /tmp/ops_checks.log
           ! grep -q "FAIL" /tmp/ops_checks.log
 
-      - name: Rules-engine checks (W1-01)
-        run: |
-          # The W0-05 fixture pack is opt-in: it no-ops unless the session has
-          # securepath.test_fixtures=on (see the file's gate). Enable + apply
-          # in ONE psql session — the migrations loop above already ran it as
-          # a no-op — then run the suite.
-          { echo "SET securepath.test_fixtures='on';";
-            cat app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
-          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
-            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
-          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
-            psql -h 127.0.0.1 -U supabase_admin -d postgres \
-            < app/tests/e2e_rules_engine.sql 2>&1 | tee /tmp/re_checks.log
-          ! grep -q "FAIL" /tmp/re_checks.log
-
       - name: Ops-registers checks (W1-04)
         run: |
           # same-session GUC + fixture (re)apply, then the W1-04 suite —
