@@ -32,7 +32,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     aal2 = aal?.currentLevel === 'aal2';
   }
-  const shell = Boolean(user && practice && aal2);
+  // W2-00: new-model users (role_assignments only, no legacy-mappable row) get
+  // no practice via current_practice() — they still deserve the sidebar shell.
+  // role_assignments own-row read is RLS-safe; zero rows ⇒ pre-onboarding user,
+  // who keeps the centred auth column as before.
+  let programmeAccess = false;
+  if (user && !practice) {
+    const { count } = await supabase
+      .from('role_assignments')
+      .select('*', { count: 'exact', head: true });
+    programmeAccess = (count ?? 0) > 0;
+  }
+  const shell = Boolean(user && aal2 && (practice || programmeAccess));
+  const navItems = practice
+    ? [
+        { heading: 'Workspace' },
+        { label: 'Clients', href: '/dashboard', icon: 'building-2' },
+        { label: 'Assessments', href: '/assessments', icon: 'clipboard-check' },
+        { label: 'Programmes', href: '/programmes', icon: 'layout-grid' },
+        { heading: 'Practice' },
+        { label: 'Team', href: '/team', icon: 'users' },
+        { label: 'Notifications', href: '/notifications', icon: 'bell', badge: unread },
+        { label: 'Settings', href: '/settings/branding', icon: 'settings' },
+      ]
+    : [
+        { heading: 'Workspace' },
+        { label: 'Programmes', href: '/programmes', icon: 'layout-grid' },
+        { heading: 'Account' },
+        { label: 'Notifications', href: '/notifications', icon: 'bell', badge: unread },
+      ];
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -43,17 +71,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {shell ? (
           <div className="sp-shell">
             <Sidebar
-              brandName={practice!.name}
-              logoSrc={practice!.logo_url}
-              items={[
-                { heading: 'Workspace' },
-                { label: 'Clients', href: '/dashboard', icon: 'building-2' },
-                { label: 'Assessments', href: '/assessments', icon: 'clipboard-check' },
-                { heading: 'Practice' },
-                { label: 'Team', href: '/team', icon: 'users' },
-                { label: 'Notifications', href: '/notifications', icon: 'bell', badge: unread },
-                { label: 'Settings', href: '/settings/branding', icon: 'settings' },
-              ]}
+              brandName={practice?.name ?? 'SecurePath'}
+              logoSrc={practice?.logo_url ?? null}
+              items={navItems}
               footer={
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <form action="/auth/signout" method="post" style={{ margin: 0 }}>
