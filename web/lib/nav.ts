@@ -47,6 +47,11 @@ export interface NavSlot {
   visible(ctx: RoleContext, clientOrgId?: string): boolean;
 }
 
+/** NavSlot minus its predicate — the plain-data shape that crosses the RSC
+    boundary into the client ProgrammeNav (functions are not serializable;
+    passing NavSlot itself 500s every programme screen — W4-D1). */
+export type ResolvedNavSlot = Omit<NavSlot, 'visible'>;
+
 // §4.2 role bundles (client level)
 const CLIENT_READ = ['executive', 'accountable_officer', 'programme_lead', 'workstream_lead', 'assessor'];
 const CLIENT_MANAGE = ['executive', 'accountable_officer', 'programme_lead'];
@@ -127,11 +132,21 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_ALL) },
 ];
 
-/** Slots the caller may see, in catalogue order. */
+/** Slots the caller may see, in catalogue order. Returns serializable
+    ResolvedNavSlot data (no function members) so server layouts can pass the
+    result straight into the client ProgrammeNav across the RSC boundary. */
 export function visibleSlots(
   ctx: RoleContext,
   scope: NavSlot['scope'],
   clientOrgId?: string
-): NavSlot[] {
-  return NAV_SLOTS.filter((s) => s.scope === scope && s.visible(ctx, clientOrgId));
+): ResolvedNavSlot[] {
+  return NAV_SLOTS.filter((s) => s.scope === scope && s.visible(ctx, clientOrgId)).map((s) => ({
+    key: s.key,
+    label: s.label,
+    icon: s.icon,
+    scope: s.scope,
+    href: s.href,
+    w2: s.w2,
+    implemented: s.implemented,
+  }));
 }
