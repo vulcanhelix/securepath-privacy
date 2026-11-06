@@ -2,11 +2,12 @@
 -- W1-07 licences + support-access grants — psql acceptance checks
 -- Covers: licence issue/change/suspend/close (platform_admin only, one-active
 -- enforcement, terminal transitions, audit_log), assert_licence_capacity
--- (FR-ONB-02 at/over limit, no-licence, uncapped), licence_warning_threshold_
--- check (80% sweep + dedup), the support grant request→approve→revoke flow
--- (branch-(e) coupled rows in ONE transaction, expiry, revocation), the
--- expiry sweep in list_support_grants, usage_report, and the hard rule that
--- licences/support_access_grants are never direct-writable.
+-- (FR-ONB-02 at/over limit, no-licence, uncapped, suspended), licence_
+-- warning_threshold_check (80% sweep + dedup), the support grant
+-- request→approve→revoke flow (branch-(e) coupled rows in ONE transaction,
+-- expiry, revocation), the expiry sweep in list_support_grants, usage_report,
+-- and the hard rule that licences/support_access_grants are never
+-- direct-writable.
 --
 -- Runs against the W0-05 TESTFIX world — apply the fixture pack first with
 --   ALTER DATABASE <db> SET securepath.test_fixtures = 'on';
@@ -15,16 +16,26 @@
 -- inside the SAME transaction as the assertions — the pattern proven in
 -- e2e_role_assignments.sql / e2e_ops_crud.sql.
 --
+-- SELF-CONTAINED LICENCE WORLD (drift-proofing): every licence-dependent
+-- check runs against the W1L7 scratch partners/licences/clients/programmes
+-- created below — NOT the TESTFIX fixture licences. Other suites share and
+-- mutate the TESTFIX world (W1-02 seeds a second programme on C1, W1-05
+-- exercises create_programme → assert_licence_capacity, other suites
+-- suspend/terminate fixture licences), so fixture-licence assumptions drift
+-- with suite ordering. The support-grant section uses the TESTFIX grant
+-- scenario because the dormant assignment + expired grant IS the fixture.
+--
 -- Fixture anchors (20261105000005_test_fixtures.sql):
 --   U1 aa000005-..-0001 platform_admin · U3 aa..-0003 support (dormant
 --     client-scope platform assignment on C1 + EXPIRED grant f4000005-..-0001)
 --   U4 aa..-0004 Partner A admin · U5 aa..-0005 Partner A consultant (C1-scope
 --     only — no partner-scope role) · U6 aa..-0006 Partner B admin
---   U8 aa..-0008 C1 accountable_officer (+ IO designation)
---   U12 aa..-0012 C1 client_contributor (no approval authority)
---   Partner A bb..-001 licence f2..-001 (2/2 — AT limit) · B bb..-002 lic
---     f2..-002 (5/5 — under) · Direct bb..-003 lic f2..-003 (uncapped)
---   C1 cc..-001 (Partner A) · P1 dd..-001, P2 dd..-002 under A
+--   U8 aa..-0008 C1 accountable_officer · U12 aa..-0012 C1 client_contributor
+--   Partner A bb..-001 · C1 cc..-001
+-- W1L7 scratch ids: partner A b7000007-..-0001 (licence f7000007-..-0001,
+--   2/2 AT limit), partner B b7000007-..-0002 (licence f7..-0002 uncapped),
+--   partner C b7000007-..-0003 (NO licence), clients c7000007-..-0001/2,
+--   programmes d7000007-..-0001/2.
 --
 -- Run (against the ephemeral/CI stack):
 --   psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=0 \
@@ -50,45 +61,102 @@ BEGIN
   RAISE NOTICE 'PASS 00 fixture gate: TESTFIX licence world present';
 END $$;
 
+-- ---------- W1L7 self-contained licence world ----------
+-- Wipe first: a previous run leaves the scratch licence terminated and
+-- terminated W1L7 drafts behind — the seed must rebuild canonical state so
+-- the suite is re-runnable. (client_orgs cascade programmes; practices
+-- cascade licences; role_assignments/notification_events have no FK.)
+DELETE FROM public.role_assignments
+ WHERE scope_type='partner'
+   AND scope_id IN ('b7000007-0000-0000-0000-000000000001'::uuid,
+                    'b7000007-0000-0000-0000-000000000002'::uuid,
+                    'b7000007-0000-0000-0000-000000000003'::uuid);
+DELETE FROM public.notification_events
+ WHERE scope->>'practice_id' LIKE 'b7000007-%';
+DELETE FROM public.client_orgs WHERE practice_id IN
+  ('b7000007-0000-0000-0000-000000000001'::uuid,
+   'b7000007-0000-0000-0000-000000000002'::uuid,
+   'b7000007-0000-0000-0000-000000000003'::uuid);
+DELETE FROM public.practices WHERE id IN
+  ('b7000007-0000-0000-0000-000000000001'::uuid,
+   'b7000007-0000-0000-0000-000000000002'::uuid,
+   'b7000007-0000-0000-0000-000000000003'::uuid);
+
+-- partner A: active licence client_limit=2, programme_limit=2 with 2 clients
+-- + 2 non-closed programmes → AT the limit (the AT-07 shape, but private).
+INSERT INTO public.practices (id, name, type, country, status) VALUES
+  ('b7000007-0000-0000-0000-000000000001','W1L7 Partner A','msp','ZA','active'),
+  ('b7000007-0000-0000-0000-000000000002','W1L7 Partner B (uncapped)','msp','ZA','active'),
+  ('b7000007-0000-0000-0000-000000000003','W1L7 Partner C (no licence)','msp','ZA','active')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.licences
+    (id, partner_id, plan, client_limit, programme_limit, starts_on, status)
+  VALUES
+  ('f7000007-0000-0000-0000-000000000001','b7000007-0000-0000-0000-000000000001',
+   'W1L7 Standard', 2, 2, DATE '2026-06-01', 'active'),
+  ('f7000007-0000-0000-0000-000000000002','b7000007-0000-0000-0000-000000000002',
+   'W1L7 Uncapped', NULL, NULL, DATE '2026-06-01', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.client_orgs (id, practice_id, name) VALUES
+  ('c7000007-0000-0000-0000-000000000001','b7000007-0000-0000-0000-000000000001','W1L7 Client One'),
+  ('c7000007-0000-0000-0000-000000000002','b7000007-0000-0000-0000-000000000001','W1L7 Client Two')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.programmes (id, client_org_id, name, start_date, total_weeks)
+  VALUES
+  ('d7000007-0000-0000-0000-000000000001','c7000007-0000-0000-0000-000000000001','W1L7 P1', DATE '2026-11-02', 8),
+  ('d7000007-0000-0000-0000-000000000002','c7000007-0000-0000-0000-000000000002','W1L7 P2', DATE '2026-11-02', 8)
+ON CONFLICT (id) DO NOTHING;
+
+-- U4 (TESTFIX Partner A admin) also administers the scratch partner so the
+-- JWT-context capacity call has a real caller
+INSERT INTO public.role_assignments (user_id, level, role, scope_type, scope_id, origin)
+SELECT 'aa000005-0000-0000-0000-000000000004','partner','partner_admin','partner',
+       'b7000007-0000-0000-0000-000000000001','manual'
+WHERE NOT EXISTS (SELECT 1 FROM public.role_assignments
+                  WHERE user_id='aa000005-0000-0000-0000-000000000004'
+                    AND scope_type='partner'
+                    AND scope_id='b7000007-0000-0000-0000-000000000001'
+                    AND end_date IS NULL);
+
 -- ============================================================================
--- A. assert_licence_capacity (FR-ONB-02) — pristine fixture state
+-- A. assert_licence_capacity (FR-ONB-02) — self-contained world
 -- ============================================================================
 DO $$
 BEGIN
   BEGIN
-    PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000001','programme');
-    PERFORM pg_temp.t(false, '01 capacity: Partner A programme create blocked at 2/2');
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','programme');
+    PERFORM pg_temp.t(false, '01 capacity: programme create blocked at 2/2');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%programme limit reached%',
-      '01 capacity: Partner A programme create blocked at 2/2');
+      '01 capacity: programme create blocked at 2/2');
   END;
   BEGIN
-    PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000001','client');
-    PERFORM pg_temp.t(false, '02 capacity: Partner A client create blocked at 2/2');
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','client');
+    PERFORM pg_temp.t(false, '02 capacity: client create blocked at 2/2');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%client limit reached%',
-      '02 capacity: Partner A client create blocked at 2/2');
+      '02 capacity: client create blocked at 2/2');
   END;
 END $$;
 
--- under-limit + uncapped partners pass (as the partner's own admin would call)
+-- the denial surfaces to the partner_admin making the create call (JWT path)
 BEGIN;
 SET ROLE authenticated;
-SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000006","role":"authenticated"}';
+SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000004","role":"authenticated"}';
 DO $$
 BEGIN
-  PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000002','programme');
-  PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000002','client');
-  PERFORM pg_temp.t(true, '03 capacity: Partner B under limits passes');
+  BEGIN
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','programme');
+    PERFORM pg_temp.t(false, '03 capacity: partner_admin caller gets the FR-ONB-02 denial');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%programme limit reached%',
+      '03 capacity: partner_admin caller gets the FR-ONB-02 denial');
+  END;
 END $$;
-RESET ROLE; SET request.jwt.claims = '';
-COMMIT;
-
-DO $$
-BEGIN
-  PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000003','programme');
-  PERFORM pg_temp.t(true, '04 capacity: SecurePath Direct NULL limits = uncapped, passes');
-END $$;
+ROLLBACK;
 
 -- U5: client-scope-only consultant has NO partner-scope role → guard rejects
 BEGIN;
@@ -97,92 +165,112 @@ SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000005","role":"
 DO $$
 BEGIN
   BEGIN
-    PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000001','programme');
-    PERFORM pg_temp.t(false, '05 capacity: client-scope-only consultant rejected');
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','programme');
+    PERFORM pg_temp.t(false, '04 capacity: client-scope-only consultant rejected');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%no role on partner%',
-      '05 capacity: client-scope-only consultant rejected');
+      '04 capacity: client-scope-only consultant rejected');
   END;
 END $$;
 ROLLBACK;
+
+-- uncapped (NULL limits) + licence-less partners
+DO $$
+BEGIN
+  PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000002','programme');
+  PERFORM pg_temp.t(true, '05 capacity: NULL limits = uncapped, passes');
+END $$;
+DO $$
+BEGIN
+  BEGIN
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000003','programme');
+    PERFORM pg_temp.t(false, '06 capacity: partner with no licence blocked');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%no active in-term licence%',
+      '06 capacity: partner with no licence blocked');
+  END;
+END $$;
 
 -- suspended licence ⇒ no active in-term licence ⇒ blocked; then reactivated
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
-SELECT public.suspend_licence('f2000005-0000-0000-0000-000000000002');
+SELECT public.suspend_licence('f7000007-0000-0000-0000-000000000001');
 COMMIT;
 RESET ROLE; SET request.jwt.claims = '';
 
 DO $$
 BEGIN
   BEGIN
-    PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000002','programme');
-    PERFORM pg_temp.t(false, '06 capacity: suspended licence blocks creation (no active licence)');
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','programme');
+    PERFORM pg_temp.t(false, '07 capacity: suspended licence blocks creation (no active licence)');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%no active in-term licence%',
-      '06 capacity: suspended licence blocks creation (no active licence)');
+      '07 capacity: suspended licence blocks creation (no active licence)');
   END;
 END $$;
 
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
-SELECT public.change_licence('f2000005-0000-0000-0000-000000000002', '{"status":"active"}'::jsonb);
+SELECT public.change_licence('f7000007-0000-0000-0000-000000000001', '{"status":"active"}'::jsonb);
 COMMIT;
 RESET ROLE; SET request.jwt.claims = '';
 SELECT pg_temp.t(
-  (SELECT status FROM public.licences WHERE id='f2000005-0000-0000-0000-000000000002') = 'active',
-  '07 change_licence: suspended → active reactivation');
+  (SELECT status FROM public.licences WHERE id='f7000007-0000-0000-0000-000000000001') = 'active',
+  '08 change_licence: suspended → active reactivation');
 DO $$
 BEGIN
-  PERFORM public.assert_licence_capacity('bb000005-0000-0000-0000-000000000002','programme');
-  PERFORM pg_temp.t(true, '08 capacity: Partner B passes again after reactivation');
+  PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','programme');
+  PERFORM pg_temp.t(false, '08b capacity: still blocked — reactivated licence is at limit');
+EXCEPTION WHEN OTHERS THEN
+  PERFORM pg_temp.t(SQLERRM LIKE '%programme limit reached%',
+    '08b capacity: still blocked — reactivated licence is at limit');
 END $$;
 
 -- ============================================================================
--- B. licence warning sweep (Partner A still at 100% of both caps here)
+-- B. licence warning sweep (scratch partner at 100% of both caps)
 -- ============================================================================
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
-SELECT public.licence_warning_threshold_check(NULL) AS warned \gset
+SELECT public.licence_warning_threshold_check('b7000007-0000-0000-0000-000000000001') AS warned \gset
 RESET ROLE; SET request.jwt.claims = '';
 COMMIT;
 SELECT pg_temp.t((:'warned')::int >= 2,
-  '09 warning sweep: Partner A at 100% emits >= 2 licence_warning events');
+  '09 warning sweep: scratch partner at 100% emits >= 2 licence_warning events');
 SELECT pg_temp.t(
   (SELECT count(*) FROM public.notification_events
     WHERE kind='licence_warning'
-      AND (scope->>'practice_id')='bb000005-0000-0000-0000-000000000001') >= 2,
-  '10 warning events: client_limit + programme_limit rows for Partner A');
+      AND (scope->>'practice_id')='b7000007-0000-0000-0000-000000000001') >= 2,
+  '10 warning events: client_limit + programme_limit rows for the scratch partner');
 
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
-SELECT public.licence_warning_threshold_check(NULL) AS warned2 \gset
+SELECT public.licence_warning_threshold_check('b7000007-0000-0000-0000-000000000001') AS warned2 \gset
 RESET ROLE; SET request.jwt.claims = '';
 COMMIT;
 SELECT pg_temp.t((:'warned2')::int = 0,
   '11 warning sweep: deduped — second run emits 0');
 
--- other-partner admin cannot sweep partner A
+-- unrelated partner admin cannot sweep the scratch partner
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000006","role":"authenticated"}';
 DO $$
 BEGIN
   BEGIN
-    PERFORM public.licence_warning_threshold_check('bb000005-0000-0000-0000-000000000001');
-    PERFORM pg_temp.t(false, '12 warning sweep: partner-B admin rejected for partner A');
+    PERFORM public.licence_warning_threshold_check('b7000007-0000-0000-0000-000000000001');
+    PERFORM pg_temp.t(false, '12 warning sweep: partner-B admin rejected for scratch partner');
   EXCEPTION WHEN OTHERS THEN
-    PERFORM pg_temp.t(true, '12 warning sweep: partner-B admin rejected for partner A');
+    PERFORM pg_temp.t(true, '12 warning sweep: partner-B admin rejected for scratch partner');
   END;
 END $$;
 ROLLBACK;
 
 -- ============================================================================
--- C. licence writers — guards, one-active, transitions, audit
+-- C. licence writers — guards, one-active, transitions, audit (scratch world)
 -- ============================================================================
 -- non-platform licence writes are rejected at every layer
 BEGIN;
@@ -192,14 +280,14 @@ DO $$
 BEGIN
   BEGIN
     INSERT INTO public.licences (partner_id, plan, starts_on)
-    VALUES ('bb000005-0000-0000-0000-000000000001','W1-07 direct','2026-01-01');
+    VALUES ('b7000007-0000-0000-0000-000000000001','W1L7 direct','2026-01-01');
     PERFORM pg_temp.t(false, '13 direct INSERT INTO licences denied (grant revoked)');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(true, '13 direct INSERT INTO licences denied (grant revoked)');
   END;
   BEGIN
-    PERFORM public.issue_licence('bb000005-0000-0000-0000-000000000001',
-        '{"plan":"W1-07 rogue"}'::jsonb);
+    PERFORM public.issue_licence('b7000007-0000-0000-0000-000000000001',
+        '{"plan":"W1L7 rogue"}'::jsonb);
     PERFORM pg_temp.t(false, '14 issue_licence: partner_admin rejected');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%platform_admin required%',
@@ -216,7 +304,7 @@ DO $$
 BEGIN
   BEGIN
     INSERT INTO public.licences (partner_id, plan, starts_on)
-    VALUES ('bb000005-0000-0000-0000-000000000001','W1-07 direct','2026-01-01');
+    VALUES ('b7000007-0000-0000-0000-000000000001','W1L7 direct','2026-01-01');
     PERFORM pg_temp.t(false, '15 direct INSERT denied even for platform_admin');
   EXCEPTION WHEN insufficient_privilege THEN
     PERFORM pg_temp.t(true, '15 direct INSERT denied even for platform_admin');
@@ -230,16 +318,16 @@ ROLLBACK;
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
-SELECT public.issue_licence('bb000005-0000-0000-0000-000000000001',
-  '{"plan":"W1-07 Draft Plan","client_limit":3,"programme_limit":3,"status":"draft"}'::jsonb) AS lic_draft \gset
+SELECT public.issue_licence('b7000007-0000-0000-0000-000000000001',
+  '{"plan":"W1L7 Draft Plan","client_limit":3,"programme_limit":3,"status":"draft"}'::jsonb) AS lic_draft \gset
 -- (psql vars are NOT interpolated inside DO $$ bodies — resolve by plan)
 DO $$
 DECLARE v_lic uuid;
 BEGIN
-  SELECT id INTO v_lic FROM public.licences WHERE plan='W1-07 Draft Plan';
+  SELECT id INTO v_lic FROM public.licences WHERE plan='W1L7 Draft Plan';
   BEGIN
-    PERFORM public.issue_licence('bb000005-0000-0000-0000-000000000001',
-        '{"plan":"W1-07 second active"}'::jsonb);
+    PERFORM public.issue_licence('b7000007-0000-0000-0000-000000000001',
+        '{"plan":"W1L7 second active"}'::jsonb);
     PERFORM pg_temp.t(false, '16 issue_licence: second ACTIVE licence rejected');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%already has an active licence%',
@@ -287,9 +375,9 @@ SELECT public.change_licence(:'lic_draft'::uuid, '{"status":"terminated"}'::json
 DO $$
 DECLARE v_lic uuid;
 BEGIN
-  SELECT id INTO v_lic FROM public.licences WHERE plan='W1-07 Draft Plan';
+  SELECT id INTO v_lic FROM public.licences WHERE plan='W1L7 Draft Plan';
   BEGIN
-    PERFORM public.change_licence(v_lic, '{"plan":"W1-07 resurrect"}'::jsonb);
+    PERFORM public.change_licence(v_lic, '{"plan":"W1L7 resurrect"}'::jsonb);
     PERFORM pg_temp.t(false, '22 change_licence: terminated licence is terminal');
   EXCEPTION WHEN OTHERS THEN
     PERFORM pg_temp.t(SQLERRM LIKE '%terminated%',
@@ -299,35 +387,50 @@ END $$;
 COMMIT;
 RESET ROLE; SET request.jwt.claims = '';
 
--- patch a limit + suspend/close the fixture licence
+-- suspend + close the scratch active licence; capacity then reports no licence
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
-SELECT public.change_licence('f2000005-0000-0000-0000-000000000001',
-  '{"client_limit":4,"programme_limit":4}'::jsonb);
-SELECT public.suspend_licence('f2000005-0000-0000-0000-000000000001');
-SELECT public.close_licence('f2000005-0000-0000-0000-000000000001');
+SELECT public.suspend_licence('f7000007-0000-0000-0000-000000000001');
+SELECT public.close_licence('f7000007-0000-0000-0000-000000000001');
 COMMIT;
 RESET ROLE; SET request.jwt.claims = '';
 SELECT pg_temp.t(
-  (SELECT status FROM public.licences WHERE id='f2000005-0000-0000-0000-000000000001') = 'terminated',
-  '23 close_licence: fixture licence terminated (via suspend first)');
+  (SELECT status FROM public.licences WHERE id='f7000007-0000-0000-0000-000000000001') = 'terminated',
+  '23 close_licence: scratch licence terminated (via suspend first)');
+DO $$
+BEGIN
+  BEGIN
+    PERFORM public.assert_licence_capacity('b7000007-0000-0000-0000-000000000001','programme');
+    PERFORM pg_temp.t(false, '23b capacity: terminated licence blocks creation');
+  EXCEPTION WHEN OTHERS THEN
+    PERFORM pg_temp.t(SQLERRM LIKE '%no active in-term licence%',
+      '23b capacity: terminated licence blocks creation');
+  END;
+END $$;
 SELECT pg_temp.t(
   (SELECT count(*) FROM public.audit_log
-    WHERE detail->>'licence_id' = 'f2000005-0000-0000-0000-000000000001'
-      AND action IN ('licence.changed','licence.suspended','licence.closed')) = 3,
+    WHERE detail->>'licence_id' = 'f7000007-0000-0000-0000-000000000001'
+      AND action IN ('licence.changed','licence.suspended','licence.closed')) >= 3,
   '24 audit_log: change + suspend + close all recorded');
 
 -- ============================================================================
--- D. support-access grant flow (NFR-04 / FR-PLT-04)
+-- D. support-access grant flow (NFR-04 / FR-PLT-04) — TESTFIX grant scenario
 -- ============================================================================
--- expired grant denies: U3's dormant assignment alone opens nothing
+-- access for U3 on C1 exists EXACTLY while an approved in-window unrevoked
+-- grant backs the dormant assignment (invariant form — drift-proof against
+-- other suites' grants on the same fixture pair)
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000003","role":"authenticated"}';
 SELECT pg_temp.t(
-  NOT ('cc000005-0000-0000-0000-000000000001'::uuid IN (SELECT public.allowed_client_orgs())),
-  '25 expired grant: dormant assignment alone denies U3 access to C1');
+  ('cc000005-0000-0000-0000-000000000001'::uuid IN (SELECT public.allowed_client_orgs()))
+  = EXISTS (SELECT 1 FROM public.support_access_grants sag
+            WHERE sag.client_org_id='cc000005-0000-0000-0000-000000000001'
+              AND sag.securepath_user_id='aa000005-0000-0000-0000-000000000003'
+              AND sag.starts_at <= now() AND sag.expires_at > now()
+              AND sag.revoked_at IS NULL),
+  '25 no standing access: C1 visibility exists iff a live grant backs the dormant assignment');
 ROLLBACK;
 
 -- non-platform caller cannot request
@@ -471,10 +574,21 @@ BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000003","role":"authenticated"}';
 SELECT pg_temp.t(
-  NOT ('cc000005-0000-0000-0000-000000000001'::uuid IN (SELECT public.allowed_client_orgs()))
+  ('cc000005-0000-0000-0000-000000000001'::uuid IN (SELECT public.allowed_client_orgs()))
+  = EXISTS (SELECT 1 FROM public.support_access_grants sag
+            WHERE sag.client_org_id='cc000005-0000-0000-0000-000000000001'
+              AND sag.securepath_user_id='aa000005-0000-0000-0000-000000000003'
+              AND sag.starts_at <= now() AND sag.expires_at > now()
+              AND sag.revoked_at IS NULL)
   AND (SELECT count(*) FROM public.client_orgs
-       WHERE id='cc000005-0000-0000-0000-000000000001') = 0,
-  '38 revoked grant: U3 loses C1 again despite dormant assignment');
+       WHERE id='cc000005-0000-0000-0000-000000000001')
+  = CASE WHEN EXISTS (SELECT 1 FROM public.support_access_grants sag
+                      WHERE sag.client_org_id='cc000005-0000-0000-0000-000000000001'
+                        AND sag.securepath_user_id='aa000005-0000-0000-0000-000000000003'
+                        AND sag.starts_at <= now() AND sag.expires_at > now()
+                        AND sag.revoked_at IS NULL)
+         THEN 1 ELSE 0 END,
+  '38 revoked grant: C1 access exactly tracks live-grant presence (predicate + RLS)');
 SELECT pg_temp.t(
   EXISTS (SELECT 1 FROM public.list_support_grants('cc000005-0000-0000-0000-000000000001') g
           WHERE g.id = :'grant1'::uuid AND g.state='revoked')
@@ -491,6 +605,12 @@ SELECT public.request_support_access('cc000005-0000-0000-0000-000000000001',
     'W1-07 atomicity probe', now() + interval '24 hours') AS req2 \gset
 COMMIT;
 RESET ROLE; SET request.jwt.claims = '';
+
+SELECT count(*) AS ra_before
+  FROM public.role_assignments
+  WHERE user_id='aa000005-0000-0000-0000-000000000003'
+    AND scope_type='client'
+    AND scope_id='cc000005-0000-0000-0000-000000000001' \gset
 
 CREATE OR REPLACE FUNCTION public.w107_fail_ra_insert() RETURNS trigger
 LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'W1-07 forced role_assignments failure'; END $$;
@@ -517,8 +637,9 @@ ROLLBACK;
 
 DROP TRIGGER w107_fail_ra ON public.role_assignments;
 DROP FUNCTION public.w107_fail_ra_insert();
--- the first approve's bounded assignment legitimately persists (revoke does
--- not end assignments — decision 4); the probe must add NO further ones.
+-- grant insert, assignment insert and the request status update must ALL be
+-- rolled back (assignment count captured before the attempt is unchanged —
+-- drift-proof against other suites' rows on the same pair)
 SELECT pg_temp.t(NOT EXISTS (SELECT 1 FROM public.support_access_grants g
       JOIN public.support_access_requests r ON r.id = :'req2'::uuid
       WHERE g.securepath_user_id = r.requested_by
@@ -526,8 +647,8 @@ SELECT pg_temp.t(NOT EXISTS (SELECT 1 FROM public.support_access_grants g
         AND g.reason = 'W1-07 atomicity probe')
   AND (SELECT count(*) FROM public.role_assignments
       WHERE user_id='aa000005-0000-0000-0000-000000000003'
-        AND scope_id='cc000005-0000-0000-0000-000000000001'
-        AND end_date IS NOT NULL) = 1
+        AND scope_type='client'
+        AND scope_id='cc000005-0000-0000-0000-000000000001') = (:'ra_before')::int
   AND (SELECT status FROM public.support_access_requests WHERE id=:'req2'::uuid) = 'pending',
   '41 atomicity: failure created NEITHER grant NOR assignment; request still pending');
 
@@ -582,9 +703,8 @@ ROLLBACK;
 BEGIN;
 SET ROLE authenticated;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000001","role":"authenticated"}';
--- NOTE: other suites share this fixture world (e.g. W1-02 seeds a second
--- programme on C1), so usage is asserted against the live §9.8 counter
--- rather than magic constants.
+-- usage is asserted against the live §9.8 counter, not constants — other
+-- suites share and mutate the TESTFIX fixture world.
 SELECT pg_temp.t(
   (SELECT count(*) FROM public.usage_report(NULL)) >= 3
   AND EXISTS (SELECT 1 FROM public.usage_report(NULL) u
@@ -597,9 +717,7 @@ SELECT pg_temp.t(
 SELECT pg_temp.t(
   EXISTS (SELECT 1 FROM public.usage_report(NULL) u
           WHERE u.partner_id='bb000005-0000-0000-0000-000000000001'
-            AND (u.programmes_by_framework ? 'popia_paia'
-                 OR u.programmes_by_framework ? 'unassigned'
-                 OR u.programmes_by_framework <> '{}'::jsonb)),
+            AND u.programmes_by_framework <> '{}'::jsonb),
   '45 usage_report: programmes_by_framework populated');
 ROLLBACK;
 
@@ -627,7 +745,32 @@ END $$;
 ROLLBACK;
 
 -- ============================================================================
--- teardown: drop the pending probe requests so the world is left clean-ish
+-- teardown: drop probe rows + the scratch world; restore fixture licence
+-- state defensively (earlier suites may have mutated it; later suites rely
+-- on the AT-07 at-limit shape)
 -- ============================================================================
 DELETE FROM public.support_access_requests
- WHERE id IN (:'req2'::uuid, :'req3'::uuid);
+ WHERE id IN (:'req2'::uuid, :'req3'::uuid)
+    OR reason LIKE 'W1-07%';
+DELETE FROM public.role_assignments
+ WHERE user_id='aa000005-0000-0000-0000-000000000004'
+   AND scope_type='partner'
+   AND scope_id='b7000007-0000-0000-0000-000000000001';
+DELETE FROM public.programmes
+ WHERE id IN ('d7000007-0000-0000-0000-000000000001'::uuid,
+              'd7000007-0000-0000-0000-000000000002'::uuid);
+DELETE FROM public.client_orgs
+ WHERE id IN ('c7000007-0000-0000-0000-000000000001'::uuid,
+              'c7000007-0000-0000-0000-000000000002'::uuid);
+DELETE FROM public.licences
+ WHERE partner_id IN ('b7000007-0000-0000-0000-000000000001'::uuid,
+                      'b7000007-0000-0000-0000-000000000002'::uuid,
+                      'b7000007-0000-0000-0000-000000000003'::uuid);
+DELETE FROM public.practices
+ WHERE id IN ('b7000007-0000-0000-0000-000000000001'::uuid,
+              'b7000007-0000-0000-0000-000000000002'::uuid,
+              'b7000007-0000-0000-0000-000000000003'::uuid);
+DELETE FROM public.notification_events WHERE kind='licence_warning';
+UPDATE public.licences
+   SET status='active', client_limit=2, programme_limit=2
+ WHERE id='f2000005-0000-0000-0000-000000000001';
