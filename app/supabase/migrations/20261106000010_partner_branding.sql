@@ -30,7 +30,7 @@ BEGIN
       'email_sender_name', p.email_sender_name,
       'attribution_display',
         COALESCE((SELECT l.attribution_display FROM public.licences l
-                   WHERE l.practice_id = p.id AND l.status = 'active'
+                   WHERE l.partner_id = p.id AND l.status = 'active'
                    LIMIT 1), true)
     ) INTO v_row
   FROM public.practices p WHERE p.id = v_practice;
