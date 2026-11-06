@@ -59,6 +59,13 @@ INSERT INTO client_orgs (id, practice_id, name) VALUES
   ('cc000000-0000-0000-0000-00000000000b', 'bb000000-0000-0000-0000-00000000000a', 'W0RA A2'),
   ('cc000000-0000-0000-0000-00000000000c', 'bb000000-0000-0000-0000-00000000000b', 'W0RA B1');
 
+-- programmes: one per client, so allowed_programmes() (W0-02: real programme ids)
+-- mirrors the visible-client union in these fixtures
+INSERT INTO programmes (client_org_id, name, start_date, total_weeks) VALUES
+  ('cc000000-0000-0000-0000-00000000000a', 'W0RA P-A1', DATE '2026-11-02', 10),
+  ('cc000000-0000-0000-0000-00000000000b', 'W0RA P-A2', DATE '2026-11-02', 10),
+  ('cc000000-0000-0000-0000-00000000000c', 'W0RA P-B1', DATE '2026-11-02', 10);
+
 -- owner: partner_admin over Alpha (branch a: all Alpha clients)
 -- ownerB: partner_admin over Beta
 -- multi: partner_consultant Alpha (partner scope) + client-scope consultant on A1
@@ -104,7 +111,7 @@ SELECT pg_temp.t(current_role_name() = 'practice_consultant'
     AND current_practice() = 'bb000000-0000-0000-0000-00000000000a',
     'multi-role user: deprecated shims map to partner scope');
 SELECT pg_temp.t((SELECT count(*) FROM allowed_programmes()) = 3,
-    'multi-role user: allowed_programmes stub returns client-scope union');
+    'multi-role user: allowed_programmes returns programmes of visible clients (W0-02)');
 ROLLBACK;
 
 -- ---------- partner admin: own partner only ----------
