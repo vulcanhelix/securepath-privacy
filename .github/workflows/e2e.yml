@@ -112,6 +112,20 @@ jobs:
             < app/tests/e2e_rules_engine.sql 2>&1 | tee /tmp/re_checks.log
           ! grep -q "FAIL" /tmp/re_checks.log
 
+      - name: Ops-registers checks (W1-04)
+        run: |
+          # same-session GUC + fixture (re)apply, then the W1-04 suite —
+          # mirrors the W1-01 step (the ops registers need the rules engine
+          # already applied, which the migrations loop guarantees).
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_ops_registers.sql 2>&1 | tee /tmp/or_checks.log
+          ! grep -q "FAIL" /tmp/or_checks.log
+
       - name: Build web
         working-directory: web
         env:
