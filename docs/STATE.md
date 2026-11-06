@@ -49,3 +49,10 @@ not new-schema shape).
 - No browser/Playwright test harness in repo — UI acceptances are API/manual until W4-00.
 - `notifications` is practice-broadcast (no per-user rows) — rebuild, don't extend.
 - `monthly_reports` lacks snapshot/signatures/workflow — `programme_reports` replaces it.
+
+## In-flight / last update (2026-11-06)
+- MERGED+green: W0-00 (#9), W0-01 (#10), W0-02 (#11), W0-03 (#12), W0-05 (#14). W0 wave complete except W0-04 (parked on William's pipeline-vs-programme answer).
+- Orchestrator fix on main: `20261106000000_designation_probe_fix.sql` — is_ao_or_alternate now probes the real designation enum (named_alternate/deputy_information_officer/dpo).
+- IN-FLIGHT W1: W1-01 rules engine (fa748f82), W1-02 evidence chain (be38770e), W1-06 KPI/RAID/log RPCs (98539848), W1-09 scheduler (9be01535) — branches claude/w1-*, worktrees .claude/worktrees/w1-*.
+- Next on merge: W1-03 cadence gen (needs W1-01), W1-04 registers, W1-05 lifecycle, W1-07 licences, W1-08 notifications.
+
