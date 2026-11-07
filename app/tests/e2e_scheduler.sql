@@ -55,6 +55,15 @@ CREATE TEMP TABLE w1s_pre_snaps   AS SELECT id FROM public.monthly_snapshots;
 DELETE FROM job_runs
  WHERE scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%'
     OR scope_key LIKE 'client:c4000000-%' OR scope_key LIKE 'partner:b4000000-%';
+-- same for the §10 outbox: TESTFIX-scope rows a real-clock tick emitted before
+-- this suite suspended the cron would dedupe away the suite's own emissions
+-- and skew the per-kind counts below — they regenerate on the ticks.
+DELETE FROM notification_events
+ WHERE scope->>'client_org_id' LIKE 'cc000005-%'
+    OR scope->>'practice_id'   LIKE 'bb000005-%'
+    OR scope->>'programme_id'  LIKE 'dd000005-%'
+    OR scope->>'client_org_id' LIKE 'c4000000-%'
+    OR scope->>'practice_id'   LIKE 'b4000000-%';
 DELETE FROM role_assignments WHERE user_id IN
   (SELECT id FROM users WHERE email LIKE '%@w1s.test');
 DELETE FROM users WHERE email LIKE '%@w1s.test';
@@ -137,8 +146,16 @@ SELECT pg_temp.t(:c2 = 0 AND (SELECT count(*) FROM job_runs) = :runs_pre_double,
 
 -- 05:30Z = 06:30 BST → London's Oct-9 instant now due
 SELECT (public.tick('2026-10-09 05:30+00') ->> 'claimed')::int AS c3 \gset
-SELECT pg_temp.t(:c3 = 1,
-  'tick 05:30Z: exactly 1 claim — C2 Oct-9 now due at 06:30 BST');
+-- 'claimed' is GLOBAL: other suites' leftover scopes (any client whose Oct-9
+-- local 06:00 also fell due since the 04:30Z tick — e.g. Europe/London)
+-- legitimately inflate it on a shared CI db. Assert the TESTFIX part the same
+-- way the neighbouring checks do: exactly one new TESTFIX row this tick, and
+-- the global count at least covering it.
+SELECT pg_temp.t(:c3 >= 1 AND
+  (SELECT count(*) FROM job_runs
+    WHERE started_at='2026-10-09 05:30+00' AND status='success'
+      AND (scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%')) = 1,
+  'tick 05:30Z: exactly 1 TESTFIX claim — C2 Oct-9 now due at 06:30 BST');
 SELECT pg_temp.t(EXISTS (
     SELECT 1 FROM job_runs
      WHERE job_key='daily-recalc-digest' AND scope_key='client:cc000005-0000-0000-0000-000000000002'
@@ -357,12 +374,14 @@ UPDATE scheduled_jobs SET enabled=false WHERE key='monday-agenda';
 SELECT (public.tick('2026-11-16 07:00+00') ->> 'claimed')::int AS c9 \gset
 SELECT pg_temp.t(NOT EXISTS (
     SELECT 1 FROM job_runs WHERE job_key='monday-agenda'
+      AND (scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%')
       AND period_started_at='2026-11-16 04:00+00'),
   'disabled job: no Monday run while enabled=false');
 UPDATE scheduled_jobs SET enabled=true WHERE key='monday-agenda';
 SELECT (public.tick('2026-11-16 07:00+00') ->> 'claimed')::int AS c10 \gset
 SELECT pg_temp.t(EXISTS (
     SELECT 1 FROM job_runs WHERE job_key='monday-agenda'
+      AND (scope_key LIKE 'client:cc000005-%' OR scope_key LIKE 'partner:bb000005-%')
       AND period_started_at='2026-11-16 04:00+00' AND status='success'),
   're-enabled job: Monday instant fires on next tick (catch-up within window)');
 
@@ -446,13 +465,17 @@ DELETE FROM client_orgs WHERE name LIKE 'W1S%';
 DELETE FROM practices WHERE name LIKE 'W1S%';
 -- days_overdue/rag recalcs are left in place: correct engine outputs, idempotent.
 
--- re-arm the real-clock tick exactly as the migration left it
+-- re-arm the real-clock tick exactly as the migration left it — including the
+-- securepath.test_fixtures dormancy gate (a bare 'SELECT public.tick()' would
+-- keep mutating TESTFIX state after this suite on flag-set test databases)
 DO $$
 BEGIN
   IF to_regnamespace('cron') IS NOT NULL
      AND to_regclass('w1s_cron_was_armed') IS NOT NULL
      AND NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname='securepath-tick') THEN
-    PERFORM cron.schedule('securepath-tick','* * * * *','SELECT public.tick()');
+    PERFORM cron.schedule('securepath-tick','* * * * *',
+      $c$SELECT CASE WHEN coalesce(current_setting('securepath.test_fixtures', true), 'off')
+                     IN ('on','true','1') THEN NULL ELSE public.tick() END$c$);
   END IF;
 END $$;
 DROP TABLE IF EXISTS w1s_cron_was_armed;
