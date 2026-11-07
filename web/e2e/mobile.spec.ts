@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { P1, RUN, stateFile, knownDefect, type Role } from './fixtures';
+import { P1, RUN, stateFile, type Role } from './fixtures';
 
 // W4-00 — spec screen 08 (evidence capture) on a 390 px phone viewport
 // (project "mobile-390" in playwright.config.ts). The uploader takes a "photo"
@@ -14,14 +14,13 @@ const PNG = Buffer.from(
   'base64'
 );
 
-const cases: { role: Role; activity: string; defects: ('W4-D1' | 'W4-D3' | 'W4-D4')[] }[] = [
-  { role: 'ao', activity: 'A-01 — TESTFIX Designate the accountable officer', defects: ['W4-D1', 'W4-D4'] },
-  { role: 'wsl', activity: 'A-06 — TESTFIX Staff awareness training rollout', defects: ['W4-D1', 'W4-D3', 'W4-D4'] },
+const cases: { role: Role; activity: string }[] = [
+  { role: 'ao', activity: 'A-01 — TESTFIX Designate the accountable officer' },
+  { role: 'wsl', activity: 'A-06 — TESTFIX Staff awareness training rollout' },
 ];
 
 for (const c of cases) {
   test(`screen 08 at 390px as ${c.role}: fits the phone, camera upload persists`, async ({ browser }) => {
-    for (const d of c.defects) knownDefect(test, d);
     const ctx = await browser.newContext({
       storageState: stateFile(c.role),
       viewport: { width: 390, height: 844 },

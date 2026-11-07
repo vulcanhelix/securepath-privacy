@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { P1, P1_NAME, P3, EV_DECIDED, stateFile, knownDefect } from './fixtures';
+import { P1, P1_NAME, P3, EV_DECIDED, stateFile } from './fixtures';
 
 // W4-00 — one smoke per merged programme screen. Each loads as a user who can
 // see it and asserts TESTFIX content actually rendered (not just a 200), and
@@ -16,7 +16,6 @@ test.describe('programme screens — Partner A consultant assigned to C1', () =>
   test.use({ storageState: stateFile('consultant') });
 
   test('screen 01 dashboard renders the programme, register and workstreams', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto(`/programmes/${P1}`);
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText(P1_NAME);
@@ -28,7 +27,6 @@ test.describe('programme screens — Partner A consultant assigned to C1', () =>
   });
 
   test('screen 02 schedule renders the activity rows', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto(`/programmes/${P1}/schedule`);
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('Activity schedule');
@@ -38,7 +36,6 @@ test.describe('programme screens — Partner A consultant assigned to C1', () =>
   });
 
   test('screen 03 evidence renders the verify queue and the library', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto(`/programmes/${P1}/evidence`);
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('Evidence');
@@ -51,7 +48,6 @@ test.describe('programme screens — Partner A consultant assigned to C1', () =>
   });
 
   test('evidence detail renders the decided item and its review history', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto(`/programmes/${P1}/evidence/${EV_DECIDED}`);
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('EV-R-04-001');
@@ -60,7 +56,6 @@ test.describe('programme screens — Partner A consultant assigned to C1', () =>
   });
 
   test('screen KPIs renders the KPI table against target', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto(`/programmes/${P1}/kpis`);
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('KPIs');
@@ -71,7 +66,6 @@ test.describe('programme screens — Partner A consultant assigned to C1', () =>
   });
 
   test('screen RAID renders items and the decision log', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto(`/programmes/${P1}/raid`);
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('RAID & decisions');
@@ -104,7 +98,6 @@ test.describe('client roles open their programme', () => {
   });
 
   test('programme lead opens the P1 dashboard', async ({ browser }) => {
-    knownDefect(test, 'W4-D2');
     const ctx = await browser.newContext({ storageState: stateFile('pl') });
     const page = await ctx.newPage();
     const res = await page.goto(`/programmes/${P1}`);
@@ -114,7 +107,6 @@ test.describe('client roles open their programme', () => {
   });
 
   test('workstream lead opens P1 evidence (screen 08 user, spec B.13)', async ({ browser }) => {
-    knownDefect(test, 'W4-D3');
     const ctx = await browser.newContext({ storageState: stateFile('wsl') });
     const page = await ctx.newPage();
     const res = await page.goto(`/programmes/${P1}/evidence`);
@@ -128,7 +120,6 @@ test.describe('partner console (screen 10) — Partner A admin', () => {
   test.use({ storageState: stateFile('partnerA') });
 
   test('portfolio lists only Partner A clients, licence at cap, attention list', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto('/programmes');
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('Programmes');
@@ -165,7 +156,6 @@ test.describe('cross-partner isolation — Partner B admin', () => {
   });
 
   test('P1 screens answer a clean 404', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     for (const path of paths) {
       const res = await page.goto(`/programmes/${P1}${path}`);
       expect(res?.status(), `GET /programmes/P1${path}`).toBe(404);
@@ -173,7 +163,6 @@ test.describe('cross-partner isolation — Partner B admin', () => {
   });
 
   test('console shows own partner clients only — Partner A invisible', async ({ page }) => {
-    knownDefect(test, 'W4-D1');
     const res = await page.goto('/programmes');
     expect(res?.status()).toBe(200);
     await expect(page.locator(`a[href="/programmes/${P3}"]`)).toBeVisible();
