@@ -162,6 +162,12 @@ export async function brandContext(
  * branding + licence flag + the caller's role context. Returns null when the
  * programme does not exist or is not visible to the caller (programmes_read
  * is T1/T2 — allowed_client_orgs() ∪ allowed_programmes()).
+ *
+ * The programme + client pair comes from the programme_context() RPC
+ * (20261106000012): programme/workstream-scope callers can read the
+ * programmes row but not client_orgs, so an invoker join would 404 them —
+ * the definer RPC returns just this slice, guarded by allowed_programmes().
+ * Falls back to direct table reads where the migration isn't applied yet.
  */
 export async function programmeContext(
   programmeId: string,
@@ -171,30 +177,45 @@ export async function programmeContext(
   const role = await getRoleContext(supabase);
   if (!role) return null;
 
-  const { data: prog } = await supabase
-    .from('programmes')
-    .select(
-      'id, name, status, phase, start_date, total_weeks, programme_rag, programme_lead, client_org_id'
-    )
-    .eq('id', programmeId)
-    .maybeSingle();
-  if (!prog) return null;
+  type Packed = { programme: Record<string, unknown>; client: Record<string, unknown> };
+  let prog: Record<string, unknown> | null;
+  let client: Record<string, unknown> | null;
 
-  const { data: clientFull } = await supabase
-    .from('client_orgs')
-    .select(CLIENT_COLS)
-    .eq('id', prog.client_org_id)
-    .maybeSingle();
-  const client: Record<string, unknown> | null =
-    clientFull ??
-    (
-      await supabase
-        .from('client_orgs')
-        .select(CLIENT_COLS_LEGACY)
-        .eq('id', prog.client_org_id)
-        .maybeSingle()
-    ).data;
-  if (!client) return null;
+  const { data: packed, error: rpcErr } = await supabase.rpc('programme_context', {
+    p_programme: programmeId,
+  });
+  if (rpcErr) {
+    // RPC not deployed yet — legacy path (fails closed for scoped callers)
+    const { data: progRow } = await supabase
+      .from('programmes')
+      .select(
+        'id, name, status, phase, start_date, total_weeks, programme_rag, programme_lead, client_org_id'
+      )
+      .eq('id', programmeId)
+      .maybeSingle();
+    if (!progRow) return null;
+    prog = progRow as Record<string, unknown>;
+    const { data: clientFull } = await supabase
+      .from('client_orgs')
+      .select(CLIENT_COLS)
+      .eq('id', progRow.client_org_id)
+      .maybeSingle();
+    client =
+      clientFull ??
+      (
+        await supabase
+          .from('client_orgs')
+          .select(CLIENT_COLS_LEGACY)
+          .eq('id', progRow.client_org_id)
+          .maybeSingle()
+      ).data;
+  } else {
+    // RPC ran: NULL = programme absent or not visible to the caller
+    if (!packed) return null;
+    prog = (packed as Packed).programme;
+    client = (packed as Packed).client;
+  }
+  if (!prog || !client) return null;
 
   const partnerId =
     (client.practice_id as string) ??
@@ -203,7 +224,7 @@ export async function programmeContext(
 
   return {
     role,
-    programme: prog as ProgrammeSummary,
+    programme: prog as unknown as ProgrammeSummary,
     client: client as ProgrammeContext['client'],
     brand,
     showAttribution,

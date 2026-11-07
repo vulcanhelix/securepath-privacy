@@ -61,13 +61,15 @@ not new-schema shape).
 - Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
 - Non-project ask to Bruce: send William his BIO for the services offering.
 
-## In-flight / last update (2026-11-06d)
-- MERGED: #78 W0-04, #75 W2-05, #76 W2-06, #77 W2-11, #80 W2-07, #84 notes, #85 W1 follow-ups (000012), #86 W2-16, #88 W2-09, #89 W2-10, #91 register integrity (000013), #93 W2-14 platform admin (000015), #94 W2-08 report builder (000014), #97 W4-00 Playwright harness, #98 W2-12 docs/training/designations (000017), #96 retired guards + checklist RPC (000016). Board ~34/51.
-- IN GATE: #101 redirect of approved W4-D fixes to main (000018 scoped_programme_context; was wrongly merged into claude/w4-00); its CI now reloads PostgREST schema cache post-migrations (PGRST202 flake fix). #100 W4-01 support-access E2E — Devin APPROVE, green; reconcile its duplicated nav.ts against main after #101 lands.
-- BUILDING: none at this instant — next: remaining W2 screens (exec view, partner onboarding/branding), W3 imports/outputs, W4 NFRs + AT-01..22.
-- Migration numbers taken through 000019 (W4-01 support_access). Next free: 000020.
-- Devin review session: a81e22c41da44e05b7b640c546d54de9 (use ~/.claude/skills/devin-chat/scripts/devin.py). Every PR gates on CI green + Devin APPROVE.
-- Hourly update cadence for Bruce requested — keep a sleep-3600 watcher armed; re-arm each time it fires.
+## In-flight / last update (2026-11-07a)
+- MERGED through #100 + #101 (W4-D fixes incl. keepalive-off Caddy upstream fix + PostgREST NOTIFY reload). Board ~38/51.
+- OPEN PR #107 int/wave2 = integration of four APPROVED PRs (#102 suspension 000021, #104 PDF output, #105 console, #106 exec/my-actions 000022). Each approved + green solo; #107's combined CI run must go green, then merge — individual PRs auto-close.
+- #103 (data regions 000020) in Devin re-check at 3d5938c: region lock inverted to 17 first-order client_org_id tables with documented exclusions; merge AFTER #101 landed (done) — safe now, merge after APPROVE.
+- BUILDING (5): #95 snapshot consolidation (000023, agent ada9c647), W3-01 imports (000024, 9d3113da), W4-03 malware scan (000025, c4072a30), W4-06 field audit (000026, 166c9cd6), W3-04 exports (000027, d009a9df). Next free migration: 000028.
+- HOURLY TICK: real mechanism = background subagent sleeping ~55min; completion wakes orchestrator to post update + re-arm. Nohup scripts do NOT wake (learned).
+- Root-caused flake: Caddy keepalive race → synthesized empty-502 → rpcErr → fallback → scoped-role 404. Fixed in ci/Caddyfile + live /etc/caddy/Caddyfile (keepalive off, loopback upstreams only).
+- Devin session a81e22c41da44e05b7b640c546d54de9; verdicts sometimes land on PRs without session echo — check gh pr view comments if session silent.
+- Branch protection: no auto-merge; heads must be up-to-date — every main commit stales open PRs; use integration branches for multi-PR waves.
 
 ## Lessons (do not repeat)
 - CI: a suite step that only checks `! grep FAIL` passes on an empty log. My conflict-resolution script once dropped the cadence suite and emptied the notifications step while CI stayed green. Now `app/tests/check_ci_workflow.py` runs first in CI and enforces one suite per step plus FAIL and PASS assertions. Resolve e2e.yml conflicts by hand-merging step bodies, then run the checker.
