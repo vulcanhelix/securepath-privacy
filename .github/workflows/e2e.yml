@@ -351,6 +351,18 @@ jobs:
           ! grep -q "FAIL" /tmp/dt_checks.log
           grep -q "PASS" /tmp/dt_checks.log
 
+      - name: Suspension-enforcement checks (W4-08, FR-PLT-06)
+        run: |
+          # self-contained (own W408 namespace, never touches TESTFIX): a
+          # suspended partner's users are denied on every predicate and every
+          # policy surface while client users keep working; un-suspend
+          # restores; close stays blocked; audit + notification per change.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_suspension.sql 2>&1 | tee /tmp/sus_checks.log
+          ! grep -q "FAIL" /tmp/sus_checks.log
+          grep -q "PASS" /tmp/sus_checks.log
+
       - name: Logs on failure
         if: failure()
         run: |
