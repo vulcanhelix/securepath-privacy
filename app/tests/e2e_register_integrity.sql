@@ -44,6 +44,17 @@ BEGIN
   ELSE RAISE WARNING 'FAIL %', label; END IF;
 END $$;
 
+-- W4-03: verify/accept now refuse items whose scan_status <> 'clean'.
+-- This suite is about register integrity, not the scan gate — simulate the
+-- scanner resolving uploads to 'clean' (e2e_malware_scan covers refusal).
+CREATE OR REPLACE FUNCTION pg_temp.scan_clean(p_id uuid) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE public.evidence_items SET scan_status = 'clean' WHERE id = p_id;
+  UPDATE public.malware_scan_queue SET state = 'done', finished_at = now()
+   WHERE subject_id = p_id AND state <> 'done';
+END $$;
+
 -- ---------- wipe any earlier run ----------
 ALTER TABLE public.evidence_items DISABLE TRIGGER evidence_immutable;
 DELETE FROM notification_events WHERE scope->>'programme_id' IN
@@ -146,6 +157,8 @@ DO $$ BEGIN
       '91e70000-0000-0000-0000-000000000002','w1ri/r2.pdf',NULL,'W1RI e1',NULL,NULL)::text);
   INSERT INTO w1ri VALUES ('e2', public.upload_evidence('f1e70000-0000-0000-0000-000000000001',
       '91e70000-0000-0000-0000-000000000001','w1ri/r1.pdf',NULL,'W1RI e2',NULL,NULL)::text);
+  PERFORM pg_temp.scan_clean((SELECT v FROM w1ri WHERE k='e1')::uuid);
+  PERFORM pg_temp.scan_clean((SELECT v FROM w1ri WHERE k='e2')::uuid);
 END $$;
 SET request.jwt.claims = '{"sub":"a1e70000-0000-0000-0000-000000000001","role":"authenticated"}';
 DO $$ BEGIN
@@ -153,6 +166,7 @@ DO $$ BEGIN
   PERFORM public.verify_evidence((SELECT v FROM w1ri WHERE k='e2')::uuid, 'approved');
   INSERT INTO w1ri VALUES ('e3', public.upload_evidence('f1e70000-0000-0000-0000-000000000005',
       '91e70000-0000-0000-0000-000000000005','w1ri/q1.pdf',NULL,'W1RI e3',NULL,NULL)::text);
+  PERFORM pg_temp.scan_clean((SELECT v FROM w1ri WHERE k='e3')::uuid);
 END $$;
 SET request.jwt.claims = '{"sub":"a1e70000-0000-0000-0000-000000000004","role":"authenticated"}';
 DO $$ BEGIN

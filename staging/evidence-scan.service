@@ -1,0 +1,15 @@
+# W4-03 malware scanner — one-shot service driven by evidence-scan.timer.
+# Claims pending malware_scan_queue rows, streams objects to clamd INSTREAM,
+# resolves via resolve_malware_scan. Install:
+#   cp staging/evidence-scan.py /opt/securepath/evidence-scan.py && chmod +x $_
+#   cp staging/evidence-scan.{service,timer} /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now evidence-scan.timer
+[Unit]
+Description=SecurePath malware scan worker (clamd INSTREAM)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=SCAN_ENV_FILE=/root/securepath-privacy/staging/.env
+ExecStart=/usr/bin/python3 /opt/securepath/evidence-scan.py
