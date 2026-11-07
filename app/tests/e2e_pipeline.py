@@ -131,7 +131,9 @@ def new_practice(prefix):
 
 def owner_with_client(prefix, client_name='Client'):
     o = new_practice(prefix)
-    rpc('create_practice', {'p_name': f'{prefix} {RUN}'}, o['tok'])
+    # W2-02/W4-05: home region set at practice create; create_client_org
+    # defaults the client's data_region from it (unresolved region fails closed)
+    rpc('create_practice', {'p_name': f'{prefix} {RUN}', 'p_home_region': 'ZA'}, o['tok'])
     o['client_org_id'] = rpc('create_client_org', {'p_name': client_name}, o['tok'])
     return o
 

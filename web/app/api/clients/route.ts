@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
   if (!b.name?.trim()) return NextResponse.json({ error: 'name required' }, { status: 400 });
 
   // RPC runs under the caller's JWT: RLS + owner check enforced in Postgres.
+  // W2-02: region/jurisdiction pass through to the extended RPC — an omitted
+  // region resolves to the partner's home region (fail closed if neither).
   const { data: clientId, error } = await supabase.rpc('create_client_org', {
     p_name: b.name.trim(),
     p_registration_no: b.registration_no || null,
@@ -33,6 +35,8 @@ export async function POST(req: NextRequest) {
     p_contact_name: b.contact_name || null,
     p_contact_email: b.contact_email || null,
     p_org_scale: b.org_scale === 'sme' ? 'sme' : 'large',
+    p_data_region: b.data_region || null,
+    p_jurisdiction: b.jurisdiction || null,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
