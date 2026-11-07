@@ -2,10 +2,12 @@
 -- W4-05 data-region plumbing — psql acceptance checks for
 -- 20261106000020_data_regions.sql (NFR-11, issue #52):
 --   data_regions registry (ZA→af-south-1, UK→eu-west-2) · FK'd region
---   columns · INSERT/UPDATE guard (immutable once programme data exists) ·
---   create_client_org +p_data_region / create_practice +p_home_region /
---   platform partner RPCs registry-validated · partner_branding /
---   programme_context / platform_list_clients surface the region LABEL.
+--   columns · INSERT/UPDATE guard (immutable once ANY client_org_id-keyed
+--   work-product row exists — incl. pre-programme client-scope registers,
+--   probed per-table in §3b) · create_client_org +p_data_region /
+--   create_practice +p_home_region / platform partner RPCs registry-
+--   validated · partner_branding / programme_context / platform_list_
+--   clients surface the region LABEL.
 --
 -- Self-contained (e2e_platform_admin.sql style): builds its own @w405.test
 -- users + 'W405%' partners; never touches the TESTFIX world. JWT callers
@@ -31,12 +33,29 @@ BEGIN
   ELSE RAISE WARNING 'FAIL %', label; END IF;
 END $$;
 
+-- attempt a region flip on p_client; returns true iff the guard refused it
+-- with the "locked" error (any other outcome = not locked = failure).
+-- Flips to whichever region the client is NOT on, so every §3b probe
+-- attempts a genuine change even if an earlier probe's flip went through.
+CREATE OR REPLACE FUNCTION pg_temp.w405_flip_locked(p_client uuid) RETURNS boolean
+LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE public.client_orgs
+     SET data_region = CASE WHEN data_region = 'UK' THEN 'ZA' ELSE 'UK' END
+   WHERE id = p_client;
+  RETURN false;                          -- flip went through → not locked
+EXCEPTION WHEN OTHERS THEN
+  RETURN SQLERRM LIKE '%locked%';
+END $$;
+
 -- ---------- wipe own namespace (re-runnable) ----------
 CREATE OR REPLACE FUNCTION pg_temp.w405_wipe() RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
   DELETE FROM public.invites   WHERE practice_id IN (SELECT id FROM public.practices WHERE name LIKE 'W405%');
   DELETE FROM public.programmes WHERE client_org_id IN (SELECT id FROM public.client_orgs WHERE practice_id IN (SELECT id FROM public.practices WHERE name LIKE 'W405%'));
+  -- every §3b probe table is ON DELETE CASCADE from client_orgs; the pack is not
+  DELETE FROM public.content_packs WHERE practice_id IN (SELECT id FROM public.practices WHERE name LIKE 'W405%');
   DELETE FROM public.role_assignments WHERE user_id IN (SELECT id FROM public.users WHERE email LIKE '%@w405.test');
   DELETE FROM public.client_orgs WHERE practice_id IN (SELECT id FROM public.practices WHERE name LIKE 'W405%');
   DELETE FROM public.practices  WHERE name LIKE 'W405%';
@@ -73,12 +92,17 @@ INSERT INTO public.practices (id, name, type, country, data_region_default) VALU
   ('b4050000-0000-0000-0000-000000000002', 'W405 Beta',  'msp', 'UK', NULL);
 -- A1: shell client (no programme data — region still correctable).
 -- A2: client WITH a programme (region locked).
+-- A3: shell client §3b fills with pre-programme client-scope work product.
 INSERT INTO public.client_orgs (id, practice_id, name, data_region) VALUES
   ('c4050000-0000-0000-0000-000000000001', 'b4050000-0000-0000-0000-000000000001', 'W405 Client A1', 'ZA'),
-  ('c4050000-0000-0000-0000-000000000002', 'b4050000-0000-0000-0000-000000000001', 'W405 Client A2', 'UK');
+  ('c4050000-0000-0000-0000-000000000002', 'b4050000-0000-0000-0000-000000000001', 'W405 Client A2', 'UK'),
+  ('c4050000-0000-0000-0000-000000000003', 'b4050000-0000-0000-0000-000000000001', 'W405 Client A3', 'ZA');
 INSERT INTO public.programmes (id, client_org_id, name, start_date, total_weeks) VALUES
   ('d4050000-0000-0000-0000-000000000001', 'c4050000-0000-0000-0000-000000000002',
    'W405 Programme', DATE '2026-11-02', 10);   -- Monday, per programmes CHECK
+-- practice-scoped pack: awareness_cohorts' pinned-pack FK (§3b probe)
+INSERT INTO public.content_packs (practice_id, framework_key, version, label)
+  VALUES ('b4050000-0000-0000-0000-000000000001', 'popia', 405, 'W405 pack');
 
 INSERT INTO public.role_assignments (user_id, level, role, scope_type, scope_id) VALUES
   ('a4050000-0000-0000-0000-000000000001','platform','platform_admin','partner',NULL),
@@ -219,6 +243,131 @@ BEGIN
   PERFORM pg_temp.t(ok AND
     (SELECT data_region FROM public.client_orgs WHERE id = 'c4050000-0000-0000-0000-000000000002') = 'UK',
     '16 supabase_admin cannot flag-flip the region either');
+END $$;
+ROLLBACK;
+
+-- ---------- 3b. pre-programme client-scope work locks the flip ----------
+-- Review fix: client-scope work product can exist BEFORE any programme —
+-- every first-order client_org_id table in the guard is probed in
+-- isolation: seed one row on shell client A3, attempt the flip, clear.
+-- (document_links is not probed alone — its NOT NULL document_id forces a
+-- documents row, which already locks; descendant tables lock via parents.)
+-- Runs as supabase_admin: probe rows go in directly and the guard binds
+-- admins exactly like tenants (check 16).
+BEGIN;
+DO $$
+DECLARE a3 uuid := 'c4050000-0000-0000-0000-000000000003';
+        u1 uuid := 'a4050000-0000-0000-0000-000000000001';
+        pk  uuid;
+BEGIN
+  SELECT id INTO pk FROM public.content_packs
+    WHERE practice_id = 'b4050000-0000-0000-0000-000000000001' AND version = 405;
+  PERFORM pg_temp.t(pk IS NOT NULL, '16a W405 content pack seeded for the cohort probe');
+
+  -- the literal review scenario: ONLY designations + training + controlled
+  -- docs + support rows on the client, zero programmes — flip refused
+  INSERT INTO public.designations (client_org_id, role, person, date_designated)
+    VALUES (a3, 'information_officer', u1, CURRENT_DATE);
+  INSERT INTO public.training_records (client_org_id, person) VALUES (a3, 'W405 staffer');
+  INSERT INTO public.controlled_documents (client_org_id, reference, title, version)
+    VALUES (a3, 'W405-DOC-1', 'W405 controlled doc', '1');
+  INSERT INTO public.support_access_grants (client_org_id, securepath_user_id, reason, approved_by, expires_at)
+    VALUES (a3, u1, 'W405 support', u1, now() + interval '1 day');
+  INSERT INTO public.support_access_requests (client_org_id, requested_by, reason, expires_at)
+    VALUES (a3, u1, 'W405 request', now() + interval '1 day');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3),
+    '16b designations+training+docs+grants only (no programmes): flip refused');
+  DELETE FROM public.support_access_requests WHERE client_org_id = a3;
+  DELETE FROM public.support_access_grants   WHERE client_org_id = a3;
+  DELETE FROM public.controlled_documents    WHERE client_org_id = a3;
+  DELETE FROM public.training_records        WHERE client_org_id = a3;
+  DELETE FROM public.designations            WHERE client_org_id = a3;
+
+  -- …then every first-order client-scope table alone (programmes is
+  -- already proven by client A2 at check 14; document_links is noted
+  -- above as un-isolable).
+  INSERT INTO public.assessment_sessions (client_org_id, title)
+    VALUES (a3, 'W405 session');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16c a lone assessment session locks the flip');
+  DELETE FROM public.assessment_sessions WHERE client_org_id = a3;
+
+  INSERT INTO public.documents (client_org_id, original_filename, mime, size, sha256, storage_path)
+    VALUES (a3, 'w405.pdf', 'application/pdf', 10,
+            repeat('a', 64), 'w405/probe-doc');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16d a lone document locks the flip');
+  DELETE FROM public.documents WHERE client_org_id = a3;
+
+  INSERT INTO public.tasks (client_org_id, theme, title, priority)
+    VALUES (a3, 'W405', 'W405 task', 'low');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16e a lone task locks the flip');
+  DELETE FROM public.tasks WHERE client_org_id = a3;
+
+  INSERT INTO public.policies (client_org_id, title)
+    VALUES (a3, 'W405 policy');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16f a lone policy locks the flip');
+  DELETE FROM public.policies WHERE client_org_id = a3;
+
+  INSERT INTO public.manuals (client_org_id, title)
+    VALUES (a3, 'W405 manual');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16g a lone manual locks the flip');
+  DELETE FROM public.manuals WHERE client_org_id = a3;
+
+  INSERT INTO public.monthly_reports (client_org_id, period, title)
+    VALUES (a3, '2026-11', 'W405 report');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16h a lone monthly report locks the flip');
+  DELETE FROM public.monthly_reports WHERE client_org_id = a3;
+
+  INSERT INTO public.designations (client_org_id, role, person, date_designated)
+    VALUES (a3, 'dpo', u1, CURRENT_DATE);
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16i a lone designation locks the flip');
+  DELETE FROM public.designations WHERE client_org_id = a3;
+
+  INSERT INTO public.training_records (client_org_id, person) VALUES (a3, 'W405 staffer');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16j a lone training record locks the flip');
+  DELETE FROM public.training_records WHERE client_org_id = a3;
+
+  INSERT INTO public.controlled_documents (client_org_id, reference, title, version)
+    VALUES (a3, 'W405-DOC-2', 'W405 controlled doc', '1');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16k a lone controlled document locks the flip');
+  DELETE FROM public.controlled_documents WHERE client_org_id = a3;
+
+  INSERT INTO public.support_access_grants (client_org_id, securepath_user_id, reason, approved_by, expires_at)
+    VALUES (a3, u1, 'W405 support', u1, now() + interval '1 day');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16l a lone support grant locks the flip');
+  DELETE FROM public.support_access_grants WHERE client_org_id = a3;
+
+  INSERT INTO public.support_access_requests (client_org_id, requested_by, reason, expires_at)
+    VALUES (a3, u1, 'W405 request', now() + interval '1 day');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16m a lone support-access request locks the flip');
+  DELETE FROM public.support_access_requests WHERE client_org_id = a3;
+
+  INSERT INTO public.external_providers (client_org_id, name) VALUES (a3, 'W405 provider');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16n a lone external provider locks the flip');
+  DELETE FROM public.external_providers WHERE client_org_id = a3;
+
+  INSERT INTO public.operational_records (client_org_id, type, reported_by)
+    VALUES (a3, 'dsr', u1);
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16o a lone operational record locks the flip');
+  DELETE FROM public.operational_records WHERE client_org_id = a3;
+
+  IF pk IS NOT NULL THEN
+    INSERT INTO public.awareness_cohorts (client_org_id, framework_key, content_pack_id, department)
+      VALUES (a3, 'popia', pk, 'W405 dept');
+    PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16p a lone awareness cohort locks the flip');
+    DELETE FROM public.awareness_cohorts WHERE client_org_id = a3;
+  ELSE
+    PERFORM pg_temp.t(false, '16p a lone awareness cohort locks the flip');
+  END IF;
+
+  INSERT INTO public.assessment_reports (client_org_id, framework_key, title)
+    VALUES (a3, 'popia', 'W405 report');
+  PERFORM pg_temp.t(pg_temp.w405_flip_locked(a3), '16q a lone session-less assessment report locks the flip');
+  DELETE FROM public.assessment_reports WHERE client_org_id = a3;
+
+  -- nothing left: A3 is a shell again → the flip is allowed once more
+  UPDATE public.client_orgs SET data_region = 'UK' WHERE id = a3;
+  PERFORM pg_temp.t((SELECT data_region FROM public.client_orgs WHERE id = a3) = 'UK',
+    '16r with every work-product row cleared the shell flips again');
 END $$;
 ROLLBACK;
 

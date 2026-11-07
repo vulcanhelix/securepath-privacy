@@ -24,14 +24,22 @@
 --   (b) immutability — BEFORE INSERT OR UPDATE trigger on client_orgs.
 --       INSERT: any non-NULL region must be an active registry code.
 --       UPDATE: a region change is allowed only while the client is a
---       shell — once ANY programme data exists (programmes, or the legacy
---       client-scope work products: assessment_sessions, documents, tasks,
---       policies, manuals, monthly_reports) the change is rejected for
---       EVERYONE including supabase_admin: a region change at that point
---       is a data migration between deploys, not a flag flip. `tracks`
---       deliberately does NOT lock — create_client_org writes two tracks
---       with every client shell, so counting them would lock the region
---       at birth.
+--       shell — once ANY tenant work-product row exists the change is
+--       rejected for EVERYONE including supabase_admin: a region change
+--       at that point is a data migration between deploys, not a flag
+--       flip. The guard enumerates EVERY first-order client_org_id-keyed
+--       work-product table (see the function body): programmes, the
+--       client-scope pipeline artifacts (assessment_sessions/reports,
+--       documents(+links), tasks, policies, manuals, monthly_reports,
+--       awareness_cohorts) AND the client-scope registers that fill up
+--       before any programme can exist (designations, external_providers,
+--       operational_records, training_records, controlled_documents,
+--       support_access_requests/grants). Client-shell scaffolding
+--       deliberately does NOT lock — tracks + billing_events are written
+--       inside create_client_org itself, and memberships/invites/
+--       consultant_assignments/role_assignments are onboarding+access
+--       rows a shell recreation re-issues; counting any of them would
+--       lock the region at birth.
 --
 --   (c) creation paths — create_client_org gains p_data_region (optional,
 --       defaults to the practice's home region = practices.data_region_
@@ -115,7 +123,7 @@ ALTER TABLE public.jurisdiction_packs
 COMMENT ON COLUMN public.client_orgs.data_region IS
   'W4-05 NFR-11: residency code from data_regions (ZA=af-south-1, UK=eu-west-2 '
   'in R1). Set at creation via create_client_org; correctable only while the '
-  'client is a shell — locked by trigger once programme data exists.';
+  'client is a shell — locked by trigger once any tenant data exists.';
 
 -- ---------- 3. region guard — validates on INSERT, locks on UPDATE ----------
 CREATE OR REPLACE FUNCTION public.trg_client_org_data_region() RETURNS trigger
@@ -134,16 +142,60 @@ BEGIN
   IF TG_OP = 'UPDATE' AND NEW.data_region IS DISTINCT FROM OLD.data_region THEN
     -- Locked once real work exists. A region move at that point is a data
     -- migration between deploys (export → provision → import), never a
-    -- column flip. `tracks` excluded — two are born with every client.
-    IF EXISTS (SELECT 1 FROM public.programmes          x WHERE x.client_org_id = OLD.id)
-       OR EXISTS (SELECT 1 FROM public.assessment_sessions x WHERE x.client_org_id = OLD.id)
-       OR EXISTS (SELECT 1 FROM public.documents        x WHERE x.client_org_id = OLD.id)
-       OR EXISTS (SELECT 1 FROM public.tasks            x WHERE x.client_org_id = OLD.id)
-       OR EXISTS (SELECT 1 FROM public.policies         x WHERE x.client_org_id = OLD.id)
-       OR EXISTS (SELECT 1 FROM public.manuals          x WHERE x.client_org_id = OLD.id)
-       OR EXISTS (SELECT 1 FROM public.monthly_reports  x WHERE x.client_org_id = OLD.id)
+    -- column flip.
+    --
+    -- The list below is the COMPLETE inventory of first-order tenant
+    -- tables — every live table with a client_org_id column holding client
+    -- work product (verified against the migrations 20260723→20261106).
+    -- It covers programme data, the client-scope pipeline artifacts AND
+    -- the client-scope registers that exist before any programme can run
+    -- — a client with only designations / training / controlled docs /
+    -- support rows must be just as locked as one with programmes.
+    --
+    -- Descendant rows are covered through NOT NULL parent FKs and are
+    -- deliberately not re-listed: phases→…→programmes, assessment_
+    -- responses/scores→assessment_sessions, awareness_respondents/
+    -- responses→awareness_cohorts, controlled_document_activities→
+    -- controlled_documents, checklist_item_completions→checklist_
+    -- instances→programmes, monthly_snapshots/programme_reports/
+    -- register_items/evidence_*/raid_items/decisions/maintenance_task_*/
+    -- weekly_logs/kpis→programmes, stage_transitions→tracks (below).
+    --
+    -- Deliberately EXCLUDED — client-shell scaffolding, not work product:
+    --   tracks              two rows written inside create_client_org
+    --   billing_events      'instance.created' written in the same call
+    --   memberships         client_admin membership lands on invite
+    --   invites             accept — onboarding access, re-issued with
+    --   consultant_assignments  a recreated shell; locking them would
+    --   role_assignments    make the region uncorrectable in the normal
+    --                       onboarding flow (client-scope role_assignments
+    --                       are polymorphic scope_id rows anyway)
+    --   notification_events ops outbox — client scope is a jsonb claim
+    --                       (scope->>'client_org_id'), not a column
+    --   assessments         retired legacy table — 20260807000004 drops it
+    --                       when empty; referencing a possibly-absent
+    --                       table would break every client write on
+    --                       fresh DBs (its successor assessment_sessions
+    --                       IS listed).
+    IF EXISTS (SELECT 1 FROM public.programmes              x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.assessment_sessions  x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.assessment_reports   x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.awareness_cohorts    x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.documents            x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.document_links       x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.tasks                x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.policies             x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.manuals              x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.monthly_reports      x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.designations         x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.external_providers   x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.operational_records  x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.training_records     x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.controlled_documents x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.support_access_requests x WHERE x.client_org_id = OLD.id)
+       OR EXISTS (SELECT 1 FROM public.support_access_grants   x WHERE x.client_org_id = OLD.id)
     THEN
-      RAISE EXCEPTION 'client_orgs.data_region for client % is locked — programme data exists; a region change is a data migration, not a flag flip',
+      RAISE EXCEPTION 'client_orgs.data_region for client % is locked — tenant data exists; a region change is a data migration, not a flag flip',
         OLD.id;
     END IF;
   END IF;
@@ -152,7 +204,9 @@ END $$;
 COMMENT ON FUNCTION public.trg_client_org_data_region() IS
   'W4-05 NFR-11: client_orgs region guard — INSERT/UPDATE must name an '
   'active data_regions code; UPDATE may not change data_region once the '
-  'client holds any programme data.';
+  'client holds any tenant work-product row (every first-order '
+  'client_org_id-keyed table is enumerated in the body; shell scaffolding '
+  '- tracks/billing/memberships/invites/assignments - does not lock).';
 
 DROP TRIGGER IF EXISTS client_org_data_region_guard ON public.client_orgs;
 CREATE TRIGGER client_org_data_region_guard
