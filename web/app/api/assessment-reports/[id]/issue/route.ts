@@ -30,15 +30,26 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const [{ data: report }, { data: practice }] = await Promise.all([
-    supabase.from('assessment_reports')
-      .select('client_org_id, framework_key, version, payload, overrides, approval_status')
-      .eq('id', id).maybeSingle(),
-    supabase.from('practices').select('name, accent_hex, logo_url').maybeSingle(),
-  ]);
+  const { data: report } = await supabase.from('assessment_reports')
+    .select('client_org_id, framework_key, version, payload, overrides, approval_status')
+    .eq('id', id).maybeSingle();
   if (!report) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (report.approval_status !== 'approved')
     return NextResponse.json({ error: 'only an approved report can be issued' }, { status: 409 });
+
+  // W2-15: the issued artifact carries the OWNING client's partner brand —
+  // partner_branding(client) is scope-guarded and sees new-model roles the
+  // practices_read shim cannot (jsonb keys match the old select's columns).
+  const { data: rpcBrand } = await supabase.rpc('partner_branding', {
+    p_client_org: report.client_org_id,
+  });
+  let practice = rpcBrand as
+    { name: string; accent_hex: string | null; logo_url: string | null } | null;
+  if (!practice) {
+    const { data: legacy } = await supabase.from('practices')
+      .select('name, accent_hex, logo_url').maybeSingle();
+    practice = legacy;
+  }
 
   let overrides: ReportOverrides;
   try {
