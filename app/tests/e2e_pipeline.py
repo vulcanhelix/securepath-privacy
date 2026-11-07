@@ -231,6 +231,13 @@ def test_pipeline():
     st, up = api('POST', '/api/documents', cookie, body, ct)
     check('Stage 2: upload ok', st == 200 and isinstance(up, dict) and up.get('id'), up)
     check('Stage 2: slot auto-proposed from filename', up.get('proposed'))
+    # W4-03: the upload is enqueued for the clamd sidecar; confirm requires
+    # scan_status='clean'. No scanner runs in CI — resolve it via the
+    # service-role RPC exactly as the worker would (service JWT has no sub).
+    rs = rpc('resolve_malware_scan', {'p_subject_type': 'document', 'p_subject_id': up['id'],
+                                      'p_verdict': 'clean'}, SERVICE)
+    check('Stage 2: service-side scan resolve marks clean',
+          isinstance(rs, dict) and rs.get('verdict') == 'clean', rs)
     slot = rest('document_checklists?framework_key=eq.popia&slot_key=eq.paia_manual&select=id', tok)[0]['id']
     rpc('set_document_link', {'p_document_id': up['id'], 'p_checklist_id': slot,
                               'p_status': 'confirmed', 'p_confidence': None}, tok)
