@@ -151,3 +151,18 @@ not new-schema shape).
   agreement, SSO decision (#49 deferred), W5 tooling (#57/#58 his side),
   pen test + backup/restore before first real client.
 - Next free migration: 000036 if W4-09 takes 000035.
+
+## In-flight / last update (2026-11-07k — ALL engineering merged)
+- MERGED #121 W4-09 signed links at 75adafd — presigned GET (60s) + PUT
+  (300s, checksum-enforced, store-verified) for documents/evidence; scan
+  quarantine 403; key = client_org/sha256; byte-parity proven.
+- STATE: no engineering PRs remain open (only ancient #1/#2 unrelated).
+  Every planned v0.2 work item + NFR gap items through W4-09 are on main.
+- STAGING OPS TODO: signed URLs need S3_BROWSER_ENDPOINT + browser-
+  reachable MinIO route (Caddy→minio) — MinIO is loopback-only today.
+  Also note: migrations up to 000034 not yet applied to staging; apply
+  with supabase_admin + NOTIFY pgrst reload after.
+- WILLIAM-SIDE (the actual launch blockers now): POPIA programme template
+  content, first-client tracker (W3-02 #43), SA production provider +
+  s21 operator agreement, SSO decision (#49), W5 tooling (#57/#58),
+  pen test + backup/restore before first real client.
