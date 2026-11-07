@@ -1,10 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
-import { P1, P1_NAME, P3, EV_DECIDED, stateFile, knownDefect } from './fixtures';
+import { P1, P1_NAME, P3, EV_DECIDED, stateFile } from './fixtures';
 
 // W4-00 — one smoke per merged programme screen. Each loads as a user who can
 // see it and asserts TESTFIX content actually rendered (not just a 200), and
-// that no error banner is showing. See KNOWN_DEFECTS in fixtures.ts for the
-// tests currently expected to fail.
+// that no error banner is showing.
 
 const pageTitle = (page: Page) => page.locator('h1.sp-pagehd-title');
 const card = (page: Page, title: string) =>
@@ -97,7 +96,6 @@ test.describe('client roles open their programme', () => {
   });
 
   test('programme lead opens the P1 dashboard', async ({ browser }) => {
-    knownDefect(test, 'W4-D2');
     const ctx = await browser.newContext({ storageState: stateFile('pl') });
     const page = await ctx.newPage();
     const res = await page.goto(`/programmes/${P1}`);
@@ -107,7 +105,6 @@ test.describe('client roles open their programme', () => {
   });
 
   test('workstream lead opens P1 evidence (screen 08 user, spec B.13)', async ({ browser }) => {
-    knownDefect(test, 'W4-D3');
     const ctx = await browser.newContext({ storageState: stateFile('wsl') });
     const page = await ctx.newPage();
     const res = await page.goto(`/programmes/${P1}/evidence`);
