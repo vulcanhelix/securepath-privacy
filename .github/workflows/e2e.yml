@@ -139,6 +139,20 @@ jobs:
           ! grep -q "FAIL" /tmp/pl_checks.log
           grep -q "PASS" /tmp/pl_checks.log
 
+      - name: Support-access checks (W4-01)
+        run: |
+          # same-session GUC + fixture (re)apply so the suite sees a clean
+          # TESTFIX world regardless of what earlier steps mutated
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql; } | \
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -q -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_support_access.sql 2>&1 | tee /tmp/sa_checks.log
+          ! grep -q "FAIL" /tmp/sa_checks.log
+          grep -q "PASS" /tmp/sa_checks.log
+
       - name: W1 follow-up checks (FR-WKS-03, attendees, #81/#82/#83)
         run: |
           # self-contained: seeds and tears down its own W1FU namespace

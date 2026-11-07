@@ -29,7 +29,7 @@ export type NavKey =
   | 'platform' | 'templates' | 'support' // platform level
   | 'dashboard' | 'schedule' | 'register' | 'evidence' | 'sessions' | 'reports'
   | 'registers' | 'maintenance' | 'kpis' | 'raid' | 'documents' | 'training'
-  | 'designations' | 'executive' | 'actions'; // programme level
+  | 'designations' | 'access' | 'executive' | 'actions'; // programme level
 
 export interface NavSlot {
   key: NavKey;
@@ -126,6 +126,9 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'designations', label: 'Designations', icon: 'id-card', scope: 'programme', href: '/designations',
     w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
+  // W4-01 — FR-PLT-04/NFR-04 client-visible support-access ledger + decision
+  { key: 'access', label: 'Support access', icon: 'key-round', scope: 'programme', href: '/access',
+    w2: 'W4-01', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'executive', label: 'Executive view', icon: 'presentation', scope: 'programme', href: '/executive',
     w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
   { key: 'actions', label: 'My actions', icon: 'check-square', scope: 'programme', href: '/actions',
