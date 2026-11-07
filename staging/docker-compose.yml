@@ -104,6 +104,11 @@ services:
   # can take several minutes) — start_period covers that.
   clamd:
     image: docker.io/clamav/clamav:stable
+    # Profile-gated: `docker compose up` (incl. CI) skips it — enable on staging
+    # with `docker compose --profile scanner up -d`. Its ~300MB pull + signature
+    # DB load exceeded CI's --wait timeout once already.
+    profiles:
+      - scanner
     restart: unless-stopped
     ports:
       - "127.0.0.1:3310:3310"
