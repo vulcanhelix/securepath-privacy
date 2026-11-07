@@ -59,8 +59,10 @@ test('partner admin: licence tile shows usage vs cap; invite creates a pending r
   await expect(page.locator('h1.sp-pagehd-title')).toHaveText('Licence & usage');
   // suite-order dependent: onboarding.spec raised the caps to 10 and added a
   // client, so assert the rendered usage/cap pair, not the fixture 2/2.
+  // (the card's label and value are adjacent elements — textContent joins
+  // them without whitespace, e.g. "Clients3 / 10")
   await expect(page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Current usage' }) }))
-    .toContainText(/Clients \d+ \/ \d+/);
+    .toContainText(/Clients\s*\d+\s*\/\s*\d+/);
 
   // the W1-07 warning only fires near/at cap — pin both caps to current
   // usage (3/3 ⇒ 100%, same service-role housekeeping class as the
