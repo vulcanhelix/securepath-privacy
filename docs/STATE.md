@@ -61,22 +61,15 @@ not new-schema shape).
 - Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
 - Non-project ask to Bruce: send William his BIO for the services offering.
 
-## In-flight / last update (2026-11-07d)
-- MERGED #107 int/wave2 = TEN PRs at once: #102 suspension(000021), #103 regions(000020), #104 PDF print route, #105 partner console, #106 exec view+my-actions(000022), #108 field-level audit(000026), #109 exports(000027), #110 snapshot consolidation(000023), #111 malware scan(000025 — clamd profile-gated), #112 import framework(000024). Main: tsc clean, 26 suites / 0 problems, audit-coverage 0 problems. Board ~46/51.
-- BUILDING (2): W2-02 onboarding wizard (6f85a118), W2-03 branding settings (b54eab9f).
-- #113 W2-17 (000028) APPROVED — watcher c39cfa39 armed on head 4263b91 → MERGE ON GREEN. HARD RULE: no commits to main until #113 lands — every STATE.md push stales the PR and has burned 4 reruns already. Update STATE on the PR branch or hold it.
-- #114 W2-03 branding (000029) BLOCKED by Devin — FIXED 4868da1: UPDATE fully revoked from authenticated on practices + practices_update policy DROPPED (default-deny). Re-check sent to Devin.
-- NEW INVESTIGATION NEEDED: agent reports 4 PRE-EXISTING date-sensitive FAILs — e2e_rules_engine x3 (RAG business-day window, licence counting) + e2e_scheduler x1 (Nov-3 tick claim count), reproduce on pre-change code too. If they surface in CI they need a real fix, not a rerun.
-- #115 W2-02 onboarding — fix agent d59504ca rebasing onto merged 000020 + renumber 000030.
-- Next free migration: 000032.
-- BUILDING: nothing else this instant — next: W2-15, W4-04, W4-07, W4-02, W4-09.
-- Next free migration: 000031 (000028=#113 merged, 000029=#114, 000030=#115).
-- Next free migration: 000030.
-- QUEUE next wave after those: W2-15 brand consumption, W4-04 client exit, W4-07 AT suite, W4-02?, W4-09 evidence storage signed links. W3-02 still blocked on William's tracker; W5 = William's tooling.
-- Next free migration: 000028.
-- WAKE PATTERN (works): every wait = a background subagent that polls/reports (completion notifies me). Hourly tick = sleep-3300 subagent, re-arm each completion. nohup scripts do NOT wake.
-- Devin session a81e22c41da44e05b7b640c546d54de9; verdicts land on PRs — check comments if session silent. Gate = CI green + Devin APPROVE + Claude diff-check.
-- Treadmill: branch protection requires up-to-date heads; each main commit stales open PRs → fold approved heads into ONE integration branch (int/wave2 pattern) and merge once.
+## In-flight / last update (2026-11-07e)
+- MERGED: ~46/51 — everything through #112 (ten-PR integration) + earlier waves. Board: https://github.com/vulcanhelix/securepath-privacy/milestone/1
+- #113 W2-17 team+licence (000028): APPROVED; watcher 850c2917 armed on head 6f3a3c0 → MERGE ON GREEN, close. HARD RULE still: no main commits until it lands.
+- IN REVIEW: #114 W2-03 branding (000029 + 000031 practices UPDATE-revoke fix) re-check sent; #115 W2-02 onboarding wizard (000030 rebased onto merged 000020, 14-param create_client_org) sent for first review.
+- BUILDING: none this instant — next wave: W2-15 brand consumption, W4-04 client exit, W4-07 AT suite, W4-02?, W4-09 storage signed links. W3-02 blocked on William's tracker; W5 = William's tooling.
+- OPEN INVESTIGATION: 4 pre-existing date-sensitive FAILs in e2e_rules_engine(3) + e2e_scheduler(1) — real issue, needs an agent (not a rerun).
+- Next free migration: 000032 (000028=#113, 000029=#114 branding, 000030=#115, 000031=#114's write-close fix).
+- Devin review session: a81e22c41da44e05b7b640c546d54de9 via ~/.claude/skills/devin-chat/scripts/devin.py; gate = CI green + Devin APPROVE.
+- Wakes: watcher subagents poll runs and report (real). Hourly tick = sleep-3300 subagent, re-arm each completion. Treadmill: up-to-date-heads protection stales PRs on every main commit → fold approved heads into int/waveN branches and merge once.
 ## Lessons (do not repeat)
 - CI: a suite step that only checks `! grep FAIL` passes on an empty log. My conflict-resolution script once dropped the cadence suite and emptied the notifications step while CI stayed green. Now `app/tests/check_ci_workflow.py` runs first in CI and enforces one suite per step plus FAIL and PASS assertions. Resolve e2e.yml conflicts by hand-merging step bodies, then run the checker.
 - UI screens: writes ONLY through RPCs. No direct-table fallback when an RPC is missing, because it skips RPC-side validation (caught on #75). Put this rule in every screen prompt.
