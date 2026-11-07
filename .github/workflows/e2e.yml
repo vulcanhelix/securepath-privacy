@@ -381,6 +381,17 @@ jobs:
             < app/tests/e2e_suspension.sql 2>&1 | tee /tmp/sus_checks.log
           ! grep -q "FAIL" /tmp/sus_checks.log
           grep -q "PASS" /tmp/sus_checks.log
+      - name: Data-region checks (W4-05, NFR-11)
+        run: |
+          # self-contained (own W405 namespace, never touches TESTFIX): the
+          # data_regions registry, region on create / home-region default,
+          # fail-closed on unknown regions, trigger lock once programme data
+          # exists, region labels on the read surface, foreign-tenant denies.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_data_regions.sql 2>&1 | tee /tmp/dr_checks.log
+          ! grep -q "FAIL" /tmp/dr_checks.log
+          grep -q "PASS" /tmp/dr_checks.log
 
       - name: Logs on failure
         if: failure()
