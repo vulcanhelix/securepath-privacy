@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { uploadDocumentDirect } from '@/lib/direct-upload';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/forms';
@@ -54,20 +55,19 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
     }
     setBusy(true); setMsg({});
     for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('client_org_id', clientOrgId);
-      fd.append('framework', framework);
-      if (trackId) fd.append('track_id', trackId);
-      if (uploadSlot) {
-        // uploading into a filled slot replaces its current file: immutable history, new version
-        const prev = currentDocForSlot(uploadSlot);
-        if (prev) fd.append('supersedes', prev);
+      // W4-09 (NFR-02): presign → PUT bytes straight to the client-scoped store
+      // prefix → register. Uploading into a filled slot replaces its current
+      // file: immutable history, new version.
+      const prev = uploadSlot ? currentDocForSlot(uploadSlot) : null;
+      let id: string | undefined;
+      try {
+        ({ id } = await uploadDocumentDirect(file, {
+          clientOrgId, trackId, framework, supersedes: prev ?? undefined,
+        }));
+      } catch (err) {
+        setMsg({ err: `${file.name}: ${(err as Error).message}` }); setBusy(false); return;
       }
-      const r = await fetch('/api/documents', { method: 'POST', body: fd });
-      if (!r.ok) { setMsg({ err: `${file.name}: ${(await r.json()).error ?? 'upload failed'}` }); setBusy(false); return; }
       if (uploadSlot) {
-        const { id } = await r.json();
         const { error } = await browserClient().rpc('set_document_link', {
           p_document_id: id, p_checklist_id: uploadSlot, p_status: 'confirmed', p_confidence: null,
         });
@@ -92,17 +92,16 @@ export default function Intake({ clientOrgId, trackId, framework, checklist, doc
     e.target.value = '';
     if (!file || !target) return;
     setBusy(true); setMsg({});
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('client_org_id', clientOrgId);
-    fd.append('framework', framework);
-    if (trackId) fd.append('track_id', trackId);
-    fd.append('supersedes', target.id);
-    const r = await fetch('/api/documents', { method: 'POST', body: fd });
-    if (!r.ok) { setMsg({ err: `${file.name}: ${(await r.json()).error ?? 'upload failed'}` }); setBusy(false); return; }
+    let id: string | undefined;
+    try {
+      ({ id } = await uploadDocumentDirect(file, {
+        clientOrgId, trackId, framework, supersedes: target.id,
+      }));
+    } catch (err) {
+      setMsg({ err: `${file.name}: ${(err as Error).message}` }); setBusy(false); return;
+    }
     const slot = confirmedSlot(target.id);
     if (slot) {
-      const { id } = await r.json();
       const { error } = await browserClient().rpc('set_document_link', {
         p_document_id: id, p_checklist_id: slot, p_status: 'confirmed', p_confidence: null,
       });

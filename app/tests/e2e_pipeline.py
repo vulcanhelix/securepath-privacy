@@ -112,6 +112,32 @@ def api(method, path, cookie, body=None, content_type='application/json'):
         headers['Content-Type'] = content_type
     return _req(method, path, data, headers)
 
+# W4-09 — presigned URLs point at the object store (absolute URLs, not BASE)
+def req_abs(method, url, body=None, headers=None):
+    r = urllib.request.Request(url, data=body, method=method)
+    for k, v in (headers or {}).items():
+        r.add_header(k, v)
+    try:
+        with urllib.request.urlopen(r) as x:
+            return x.status, x.read(), dict(x.headers)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read(), dict(e.headers)
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+_no_redir = urllib.request.build_opener(_NoRedirect)
+
+def get_no_redirect(path, cookie):
+    """GET an /api route without following redirects → (status, headers)."""
+    r = urllib.request.Request(BASE + path)
+    r.add_header('Cookie', cookie)
+    try:
+        with _no_redir.open(r) as x:
+            return x.status, dict(x.headers)
+    except urllib.error.HTTPError as e:
+        return e.code, dict(e.headers)
+
 def multipart(fields, filename, filecontent, mime='application/pdf'):
     b = '----sp' + uuid.uuid4().hex
     parts = []
@@ -164,6 +190,15 @@ def test_guards():
           err(rpc('create_track', {'p_client_org_id': cid, 'p_track_kind': 'privacy'}, ANON)))
     check('attacker cannot read victim assessment (RLS)',
           rest(f'assessment_sessions?id=eq.{aid}&select=id', at) == [])
+    # W4-09: a presigned PUT can only ever be minted inside a prefix the caller
+    # may touch — RLS fails closed before any signed capability exists.
+    st, d = api('POST', '/api/documents/presign', attacker['cookie'],
+                {'client_org_id': cid, 'mime': 'application/pdf', 'size': 16,
+                 'sha256': hashlib.sha256(b'forged').hexdigest()})
+    check('attacker cannot presign into victim prefix', st == 403, f'status {st} {d}')
+    # ...and the download route never signs for them either (RLS 404)
+    st, _ = get_no_redirect(f'/api/documents/{uuid.uuid4()}', attacker['cookie'])
+    check('download of a nonexistent/foreign doc is not signed', st == 404, f'status {st}')
 
 
 # ======================================================================
@@ -225,12 +260,53 @@ def test_pipeline():
     check('Gate 1: transition log reads 0->1 then 1->2',
           [(t['from_stage'], t['to_stage']) for t in (trans or [])] == [(0, 1), (1, 2)], trans)
 
-    # Stage 2 — upload a well-named doc (auto-proposed), then confirm it
-    body, ct = multipart({'client_org_id': cid, 'track_id': tid, 'framework': 'popia'},
-                         'PAIA Manual.pdf', b'%PDF paia manual')
-    st, up = api('POST', '/api/documents', cookie, body, ct)
-    check('Stage 2: upload ok', st == 200 and isinstance(up, dict) and up.get('id'), up)
+    # Stage 2 — W4-09 presigned direct upload (NFR-02): SHA-256 → presign →
+    # PUT bytes straight to the store → register the row via JSON.
+    payload = b'%PDF paia manual ' + RUN.encode()
+    sha = hashlib.sha256(payload).hexdigest()
+    st, ps = api('POST', '/api/documents/presign', cookie,
+                 {'client_org_id': cid, 'mime': 'application/pdf',
+                  'size': len(payload), 'sha256': sha})
+    check('Stage 2: presign mints a tenant-scoped PUT url',
+          st == 200 and ps.get('key') == f'{cid}/{sha}' and 'X-Amz-Signature' in ps.get('url', ''), ps)
+    # the signed PUT pins the checksum — foreign bytes are refused by the store
+    st_bad, _, _ = req_abs('PUT', ps['url'], b'tampered-not-the-hash', ps['headers'])
+    check('Stage 2: store rejects bytes that do not match the signed sha256',
+          st_bad >= 400, f'status {st_bad}')
+    st_put, _, _ = req_abs('PUT', ps['url'], payload, ps['headers'])
+    check('Stage 2: direct PUT to object storage ok', st_put in (200, 204), f'status {st_put}')
+    st, up = api('POST', '/api/documents', cookie,
+                 {'client_org_id': cid, 'filename': 'PAIA Manual.pdf', 'mime': 'application/pdf',
+                  'sha256': sha, 'storage_path': ps['key'], 'track_id': tid, 'framework': 'popia'})
+    check('Stage 2: upload registered ok', st == 200 and isinstance(up, dict) and up.get('id'), up)
     check('Stage 2: slot auto-proposed from filename', up.get('proposed'))
+    # NFR-02 download path: permission check → 302 → short-lived signed URL,
+    # bytes flow straight from the store. Signed URL serves the same bytes.
+    st, hdrs = get_no_redirect(f'/api/documents/{up["id"]}', cookie)
+    loc = hdrs.get('Location') or hdrs.get('location') or ''
+    check('Stage 2: download 302s to a signed store URL',
+          st == 302 and 'X-Amz-Signature' in loc, f'status {st}')
+    st_dl, body_dl, h_dl = req_abs('GET', loc)
+    dispo = h_dl.get('Content-Disposition') or h_dl.get('content-disposition') or ''
+    check('Stage 2: signed URL serves the same bytes',
+          st_dl == 200 and body_dl == payload, f'status {st_dl}')
+    check('Stage 2: signed response carries attachment disposition',
+          'attachment' in dispo, dispo)
+    # W4-03 — the signed path cannot bypass the malware gate: a quarantined
+    # object is never signed (second doc, resolved infected as the worker would)
+    payload2 = b'%PDF eicar-ish ' + RUN.encode()
+    sha2 = hashlib.sha256(payload2).hexdigest()
+    st, ps2 = api('POST', '/api/documents/presign', cookie,
+                  {'client_org_id': cid, 'mime': 'application/pdf', 'size': len(payload2), 'sha256': sha2})
+    req_abs('PUT', ps2['url'], payload2, ps2['headers'])
+    st, up2 = api('POST', '/api/documents', cookie,
+                  {'client_org_id': cid, 'filename': 'evil.pdf', 'mime': 'application/pdf',
+                   'sha256': sha2, 'storage_path': ps2['key'], 'track_id': tid,
+                   'framework': 'popia', 'classify': False})
+    rpc('resolve_malware_scan', {'p_subject_type': 'document', 'p_subject_id': up2['id'],
+                                 'p_verdict': 'infected'}, SERVICE)
+    st, _ = get_no_redirect(f'/api/documents/{up2["id"]}', cookie)
+    check('Stage 2: quarantined document is never signed (403)', st == 403, f'status {st}')
     # W4-03: the upload is enqueued for the clamd sidecar; confirm requires
     # scan_status='clean'. No scanner runs in CI — resolve it via the
     # service-role RPC exactly as the worker would (service JWT has no sub).
