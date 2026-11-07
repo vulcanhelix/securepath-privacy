@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { P1, RUN, stateFile, knownDefect } from './fixtures';
+import { P1, RUN, stateFile } from './fixtures';
 
 // W4-00 — write round-trips through the UI. Every write is followed by a fresh
 // page load (new server render from the DB) before asserting it persisted.
 
 test('KPIs: consultant records a monthly actual and it persists', async ({ browser }) => {
-  knownDefect(test, 'W4-D1');
   const ctx = await browser.newContext({ storageState: stateFile('consultant') });
   const page = await ctx.newPage();
   const kpi = 'TESTFIX Requests actioned within period';
@@ -35,7 +34,6 @@ test('KPIs: consultant records a monthly actual and it persists', async ({ brows
 });
 
 test('Evidence: AO records a link, consultant verifies it, the named alternate accepts it', async ({ browser }) => {
-  knownDefect(test, 'W4-D1');
   const note = `W4-00 link evidence ${RUN}`;
 
   // 1. the accountable officer leads A-01, so may upload against it
