@@ -1,0 +1,37 @@
+-- 20261106000031_branding_write_close.sql — W2-03 review follow-up.
+-- Closes the direct-write path on public.practices.
+--
+-- 20260723000002 granted authenticated full-row SELECT,INSERT,UPDATE,DELETE on
+-- practices in one blanket grant over six tables. Until 20261106000029 the
+-- only branding write WAS that direct UPDATE under the practices_update
+-- policy — un-audited, and able to touch EVERY column (subdomain, status,
+-- type, email_sender_domain, report_template_refs, …), not just the seven
+-- FR-BRN-01 fields update_practice_branding allowlists. The RPC is now the
+-- audited write path, so the direct path closes — the repo convention: when a
+-- definer becomes the write path, the table grant goes (checklist_instances
+-- #90, evidence_items).
+--
+-- Full REVOKE, not a column-level grant on the seven branding fields:
+--   * No legitimate caller writes practices directly. Web code only SELECTs
+--     (every .from('practices') call site is a read); create_practice,
+--     platform_update_partner, platform_set_partner_status and
+--     update_practice_branding are SECURITY DEFINER — they run as the
+--     function owner and never touch the authenticated grant.
+--   * A column grant on the seven branding fields would still let a
+--     practice_owner / partner_admin skip the RPC's validation and audit_log
+--     row — the whole point of the RPC is that it is THE audited path.
+--
+-- RLS: practices_update is dropped, not merely left unreachable. With the
+-- grant revoked the policy can never fire, but dropping it keeps the close
+-- robust against a future blanket re-grant: no UPDATE policy means RLS
+-- default-deny. Tightening its USING clause was not an option worth keeping —
+-- current_practice()/current_role_name() resolve through the memberships
+-- compat view, which maps partner_admin → practice_owner, so the old policy
+-- passed for legacy owners AND new-model partner_admins alike; there is no
+-- narrower "right" version of a policy whose only purpose was the direct
+-- write that no longer exists. practices_read stays (the SELECT path is
+-- still needed); the INSERT/DELETE grants are untouched — practices has no
+-- INSERT or DELETE policy, so they were already unreachable.
+
+REVOKE UPDATE ON public.practices FROM authenticated;
+DROP POLICY practices_update ON public.practices;

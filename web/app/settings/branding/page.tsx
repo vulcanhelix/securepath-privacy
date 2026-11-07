@@ -1,86 +1,84 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { browserClient } from '@/lib/supabase-browser';
+import { redirect } from 'next/navigation';
+import { serverClient } from '@/lib/supabase';
+import { getRoleContext } from '@/lib/role-context';
+import { brandContext } from '@/lib/programme-context';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Field, Input } from '@/components/ui/forms';
 import { Alert } from '@/components/ui/Alert';
+import { BrandingForm, type BrandValues } from './BrandingForm';
 
-const SWATCHES = ['#2b2644', '#1a5c46', '#1e3a5f', '#6f3149', '#3d3d3d', '#85681a'];
+export const dynamic = 'force-dynamic';
 
-export default function Branding() {
-  const router = useRouter();
-  const supabase = browserClient();
-  const [f, setF] = useState({ name: '', logo_url: '', accent_hex: '' });
-  const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
-  const [busy, setBusy] = useState(false);
+// W2-03 — white-label branding (spec §7.4 screen 12). Rewired from the legacy
+// direct-table write to the update_practice_branding RPC (20261106000028):
+// partner_admin only, audited, allowlisted. The partner's brand controls the
+// workspace shell, the programme shell, branded email and the report print
+// layout — the report "template" is the brand applied to the HTML layout
+// (product decision, not a stored file).
+//
+// Server half: resolve the caller's partner + current brand; the form is a
+// client component so the FR-BRN-06 preview updates live before saving.
 
-  useEffect(() => {
-    supabase.from('practices').select('name, logo_url, accent_hex').maybeSingle().then(({ data }) => {
-      if (data) setF({ name: data.name ?? '', logo_url: data.logo_url ?? '', accent_hex: data.accent_hex ?? '' });
-    });
-  }, []);
+const BRAND_COLS =
+  'id, name, logo_url, accent_hex, primary_hex, sign_in_text, support_contact, email_sender_name';
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true); setMsg({});
-    if (f.accent_hex && !/^#[0-9a-fA-F]{6}$/.test(f.accent_hex)) {
-      setBusy(false); setMsg({ err: 'Accent must be a hex color like #2b2644' }); return;
-    }
-    const { error } = await supabase.from('practices').update({
-      name: f.name, logo_url: f.logo_url || null, accent_hex: f.accent_hex || null,
-    }).eq('id', (await supabase.from('practices').select('id').single()).data?.id);
-    setBusy(false);
-    if (error) { setMsg({ err: error.message }); return; }
-    setMsg({ ok: 'Saved. Branding applies across your workspace and client-facing pages.' });
-    router.refresh();
+export default async function BrandingPage() {
+  const supabase = await serverClient();
+  const role = await getRoleContext(supabase);
+  if (!role) redirect('/login');
+
+  const { partnerId, showAttribution } = await brandContext(supabase, role);
+  if (!partnerId) {
+    return (
+      <>
+        <PageHeader title="Branding" meta="White-label settings for your partner workspace." />
+        <Card style={{ maxWidth: 'var(--form-max)' }}>
+          <Alert tone="info">
+            Branding is a partner-level setting — your account has no partner scope, so there is
+            nothing to edit here.
+          </Alert>
+        </Card>
+      </>
+    );
   }
 
-  return (
-    <>
-      <PageHeader
-        title="Practice branding"
-        meta="Whitelabel your workspace: your name, logo and accent color are what your team and clients see."
-      />
-      <Card style={{ maxWidth: 'var(--form-max)' }}>
-        <form onSubmit={submit}>
-          <Field label="Display name">
-            <Input required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-          </Field>
-          <Field label="Logo URL">
-            <Input value={f.logo_url} onChange={(e) => setF({ ...f, logo_url: e.target.value })} placeholder="https://…/logo.png" />
-          </Field>
-          <Field label="Accent color" hint="Status colours (pass/warn/fail) and action buttons never change — only the accent does.">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              {SWATCHES.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  aria-label={`Accent ${hex}`}
-                  onClick={() => setF({ ...f, accent_hex: hex })}
-                  style={{
-                    margin: 0, padding: 0, width: 28, height: 28, borderRadius: '50%', background: hex,
-                    border: f.accent_hex === hex ? '2px solid var(--text)' : '2px solid transparent',
-                    outlineOffset: 2, cursor: 'pointer',
-                  }}
-                />
-              ))}
-              <Input
-                value={f.accent_hex}
-                onChange={(e) => setF({ ...f, accent_hex: e.target.value })}
-                placeholder="#2b2644"
-                className="mono"
-                style={{ width: 120 }}
-              />
-            </div>
-          </Field>
-          <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save branding'}</Button>
-        </form>
-        {msg.err && <Alert tone="err">{msg.err}</Alert>}
-        {msg.ok && <Alert tone="ok">{msg.ok}</Alert>}
-      </Card>
-    </>
-  );
+  const isAdmin = role.hasScopedRole('partner', ['partner_admin'], partnerId);
+  if (!isAdmin) {
+    // checked before the practices read on purpose: practices_read resolves
+    // via the deprecated current_practice() shim, which returns NULL for
+    // client-scope partner_consultants — they get the same notice either way.
+    return (
+      <>
+        <PageHeader title="Branding" meta="White-label settings for your partner workspace." />
+        <Card style={{ maxWidth: 'var(--form-max)' }}>
+          <Alert tone="info">
+            Only a partner admin can edit branding. Branding is set once for the whole partner
+            workspace — ask a partner admin to change it.
+          </Alert>
+        </Card>
+      </>
+    );
+  }
+  const { data: p } = await supabase.from('practices').select(BRAND_COLS).eq('id', partnerId).maybeSingle();
+  if (!p) {
+    return (
+      <>
+        <PageHeader title="Branding" meta="White-label settings for your partner workspace." />
+        <Card style={{ maxWidth: 'var(--form-max)' }}>
+          <Alert tone="err">Could not load your partner record. Try again in a moment.</Alert>
+        </Card>
+      </>
+    );
+  }
+
+  const initial: BrandValues = {
+    name: (p.name as string) ?? '',
+    logo_url: (p.logo_url as string) ?? '',
+    accent_hex: (p.accent_hex as string) ?? '',
+    primary_hex: (p.primary_hex as string) ?? '',
+    sign_in_text: (p.sign_in_text as string) ?? '',
+    support_contact: (p.support_contact as string) ?? '',
+    email_sender_name: (p.email_sender_name as string) ?? '',
+  };
+  return <BrandingForm partnerId={partnerId} initial={initial} showAttribution={showAttribution} />;
 }
