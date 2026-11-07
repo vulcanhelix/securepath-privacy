@@ -78,3 +78,38 @@ not new-schema shape).
 - `gh issue view` is broken on this repo (Projects-classic GraphQL). Use `gh api repos/vulcanhelix/securepath-privacy/issues/N`.
 - Check issue numbers against titles before writing a prompt (I once gave W2-11 #35 instead of #36).
 
+
+## In-flight / last update (2026-11-07f — post-restart recovery)
+- RESTART: user restarted Devin; subagent fleet died. Recovered from this file +
+  live gh/Devin state. Watcher/tick subagents re-armed same session.
+- MERGED #114 W2-03 branding settings at cc8b09f (Devin APPROVE incl. the
+  000031 practices UPDATE-revoke fix — direct branding writes now impossible).
+- #115 W2-02 onboarding: Devin APPROVE; first CI red was suite-order coupling,
+  not app code — lifecycle suite publishes TESTFIX v1.1 (immutable → wizard
+  offers 2 versions) and the onboarded client bumps licence tiles to n/2.
+  Specs fixed at f0fb736 (select v1 by id; tile asserts `n / 2`); CI armed.
+- STATE.md REGRESSION FOUND: merging branches that carry an old STATE.md
+  reverted main's copy (main showed the 2026-11-05 version). Fix landed via
+  THIS branch — refreshed handover rides in with #115. Rule: feature branches
+  must merge origin/main's STATE.md before push, or drop their STATE.md edit.
+- Board: ~48/51 after #114; #115 → ~49/51. Remaining queued: W2-15 brand
+  consumption, W4-04 client exit (000032), W4-07 AT suite (000033), then the
+  OPEN date-sensitive suite FAILs (rules_engine x3, scheduler x1).
+- Next free migration: 000032.
+
+## In-flight / last update (2026-11-07g — wave-3 integration)
+- RESTART-RECOVERY COMPLETE: fleet rebuilt after Devin restart; all work resumed.
+- #115 suite-order fixes: onboarding.spec bumps Partner A licence caps to 10 +
+  creates a 3rd client early in the browser run — every later spec sees 3/10
+  not 2/2, and the lifecycle suite's published v1.1 means the wizard offers 2
+  template versions. Three spec fixes (deterministic template id, usage/cap
+  regexes, cap-pin for the W1-07 warning leg) + a PARTNER_A local-const fix.
+- #116 middleware bug found by its own CI: req.nextUrl behind Caddy carries
+  the internal upstream host → deep links lost the partner host. Fixed by
+  reading Host/x-forwarded-proto headers directly (c737460).
+- #118 writes.spec accept-leg timeout was a flake — rerun green.
+- #117 trigger-suspension completeness verified by Devin independently.
+- PR #119 int/wave3 = all four heads; merges on green → ~52/51 done.
+- REMAINING: date-sensitive FAIL diagnosis (agent out); W3-02 blocked on
+  William's tracker; W4-09 storage signed links queued; W5 = William's tools.
+- Next free migration: 000035.

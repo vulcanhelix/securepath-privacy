@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
 import { BASE_URL } from '@/lib/base-url';
-import { sendMail } from '@/lib/mail';
+import { envelope, esc, sendBrandedMail } from '@/lib/branded-mail';
 
 // W2-14 — create a partner (FR-PLT-01). The write is ONLY the
 // platform_create_partner RPC under the caller's JWT (its body checks
@@ -33,14 +33,17 @@ export async function POST(req: NextRequest) {
   const r = data as { partner_id: string; invite_token: string | null };
   let mail_error: string | undefined;
   if (r.invite_token && opt(b.admin_email)) {
-    const name = String(b.name).trim().replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const name = String(b.name).trim();
     const link = `${BASE_URL}/invite/${r.invite_token}`;
     try {
-      await sendMail(
+      // platform-sent mail → the platform's own SecurePath envelope (brand null)
+      await sendBrandedMail(
         opt(b.admin_email)!,
         `You've been invited to administer ${name}`,
-        `<p>SecurePath has set up <strong>${name}</strong> and invited you as its partner admin.</p>
-         <p><a href="${link}">Accept your invite</a> (valid 7 days)</p>`
+        envelope(null,
+          `<p>SecurePath has set up <strong>${esc(name)}</strong> and invited you as its partner admin.</p>
+           <p><a href="${esc(link)}">Accept your invite</a> (valid 7 days)</p>`),
+        'SecurePath',
       );
     } catch (e) {
       mail_error = e instanceof Error ? e.message : String(e);

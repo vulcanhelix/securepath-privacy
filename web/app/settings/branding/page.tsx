@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import { getRoleContext } from '@/lib/role-context';
 import { brandContext } from '@/lib/programme-context';
+import { BASE_URL } from '@/lib/base-url';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
 // client component so the FR-BRN-06 preview updates live before saving.
 
 const BRAND_COLS =
-  'id, name, logo_url, accent_hex, primary_hex, sign_in_text, support_contact, email_sender_name';
+  'id, name, logo_url, accent_hex, primary_hex, sign_in_text, support_contact, email_sender_name, subdomain';
 
 export default async function BrandingPage() {
   const supabase = await serverClient();
@@ -80,5 +81,28 @@ export default async function BrandingPage() {
     support_contact: (p.support_contact as string) ?? '',
     email_sender_name: (p.email_sender_name as string) ?? '',
   };
-  return <BrandingForm partnerId={partnerId} initial={initial} showAttribution={showAttribution} />;
+  // FR-BRN-02: the subdomain is the sign-in surface's lookup key (W2-15) —
+  // show it read-only here; setting it is SecurePath's platform flow, and a
+  // custom domain is a manual-approval item (plan §6), not self-serve in R1.
+  const u = new URL(BASE_URL);
+  const platformHost = u.hostname;
+  const subdomain = (p.subdomain as string) ?? null;
+  // dev/CI the platform host is a loopback IP — the resolvable partner host
+  // there is <sub>.localhost (same rule lib/brand-host.ts matches on).
+  const subHost =
+    platformHost === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(platformHost)
+      ? 'localhost'
+      : platformHost;
+  const signInUrl = subdomain
+    ? `${u.protocol}//${subdomain}.${subHost}${u.port ? `:${u.port}` : ''}`
+    : null;
+  return (
+    <BrandingForm
+      partnerId={partnerId}
+      initial={initial}
+      showAttribution={showAttribution}
+      signInUrl={signInUrl}
+      platformHost={platformHost}
+    />
+  );
 }

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
-import { BASE_URL } from '@/lib/base-url';
-import { sendMail } from '@/lib/mail';
+import { getRoleContext } from '@/lib/role-context';
+import { callerBrand, envelope, esc, partnerBaseUrl, sendBrandedMail, senderName } from '@/lib/branded-mail';
 
 export async function POST(req: NextRequest) {
   const supabase = await serverClient();
@@ -16,13 +16,26 @@ export async function POST(req: NextRequest) {
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  const { data: practice } = await supabase.from('practices').select('name').maybeSingle();
-  const link = `${BASE_URL}/invite/${token}`;
-  await sendMail(
+  // FR-ONB-04 + FR-BRN-03: the invite goes out under the partner's own brand —
+  // same envelope the notification fan-out uses (W2-15). partner_brand()
+  // resolves for new-model partner admins the legacy practices read cannot.
+  const role = await getRoleContext(supabase);
+  let brand = await callerBrand(supabase, role?.partnerIds[0]);
+  if (!brand) {
+    const { data: practice } = await supabase.from('practices')
+      .select('name, logo_url, accent_hex, primary_hex, email_sender_name, support_contact, subdomain')
+      .maybeSingle();
+    brand = practice;
+  }
+  const name = brand?.name ?? 'a compliance workspace';
+  const link = `${partnerBaseUrl(brand)}/invite/${token}`;
+  await sendBrandedMail(
     b.email,
-    `You've been invited to ${practice?.name ?? 'a compliance workspace'}`,
-    `<p>You've been invited to join <strong>${practice?.name ?? 'a practice'}</strong> as ${b.role.replace('_', ' ')}.</p>
-     <p><a href="${link}">Accept your invite</a> (valid 7 days)</p>`
+    `You've been invited to ${name}`,
+    envelope(brand,
+      `<p>You've been invited to join <strong>${esc(name)}</strong> as ${esc(b.role.replace('_', ' '))}.</p>
+       <p><a href="${esc(link)}">Accept your invite</a> (valid 7 days)</p>`),
+    senderName(brand),
   );
   return NextResponse.json({ ok: true });
 }
