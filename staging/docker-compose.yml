@@ -96,6 +96,26 @@ services:
       interval: 10s
       retries: 5
 
+  # W4-03 — ClamAV sidecar: scans every uploaded object before the evidence/
+  # document it backs can become ACCEPTABLE (scan_status gate, migration
+  # 20261106000025). Loopback only. Driven by staging/evidence-scan.py
+  # (systemd timer) which streams objects from the S3 store via INSTREAM.
+  # First boot downloads the signature DB via freshclam (~hundreds of MB,
+  # can take several minutes) — start_period covers that.
+  clamd:
+    image: docker.io/clamav/clamav:stable
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3310:3310"
+    volumes:
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/3310' || exit 1"]
+      interval: 30s
+      retries: 10
+      start_period: 300s
+
 volumes:
   db-data:
   minio-data:
+  clamav-db:

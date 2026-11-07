@@ -225,6 +225,17 @@ jobs:
           ! grep -q "FAIL" /tmp/ec_checks.log
           grep -q "PASS" /tmp/ec_checks.log
 
+      - name: Malware-scan gate checks (W4-03)
+        run: |
+          # status-gate only — no clamd in CI; statuses simulated in the suite
+          { echo "SET securepath.test_fixtures='on';";
+            cat app/supabase/migrations/20261105000005_test_fixtures.sql \
+                app/tests/e2e_malware_scan.sql; } \
+          | docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+              psql -h 127.0.0.1 -U supabase_admin -d postgres 2>&1 | tee /tmp/ms_checks.log
+          ! grep -q "FAIL" /tmp/ms_checks.log
+          grep -q "PASS" /tmp/ms_checks.log
+
       - name: Report-builder checks (W2-08)
         run: |
           # self-contained: seeds and tears down its own W208 namespace

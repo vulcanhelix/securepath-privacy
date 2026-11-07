@@ -50,3 +50,13 @@ docker exec -i -e PGPASSWORD=$PW securepath-staging-db-1 \
 - **Prod / any host cutover**: point the `S3_*` env at the target store — for prod, AWS S3 **af-south-1** (unset `S3_ENDPOINT`, set `S3_REGION=af-south-1`, real bucket + keys, `S3_FORCE_PATH_STYLE` unset/false). **No code change.** Same app runs against MinIO, AWS S3, or any S3-compatible store.
 - Bucket create is lazy (`ensureBucket` in storage.ts) — at prod the bucket is pre-provisioned so HeadBucket succeeds and no create is attempted.
 - Downloads stream through the server (not presigned URLs) so they work identically whether the store is loopback MinIO or public S3, and always pass the access check first.
+
+## Malware scan (W4-03)
+
+Every uploaded **object** (`evidence_items.file_key`, `documents.storage_path`) is enqueued at intake and must scan **clean** before it can become acceptable: `verify_evidence`/`accept_evidence`/`offer_evidence_to_programme`/`accept_evidence_offer` and `set_document_link(confirmed)` all refuse `scan_status <> 'clean'` (`pending`, `infected`, `error` — pending-forever never silently becomes acceptable). `infected` = quarantine state: acceptance refused + `malware_quarantined` notification to uploader + partner_admin + `malware_scan.resolved` audit row. Link-only evidence rows are `clean` at intake (nothing to scan).
+
+- **Sidecar**: `clamd` service in `docker-compose.yml` (`clamav/clamav:stable`, loopback :3310, signature DB persisted in the `clamav-db` volume; first boot = slow freshclam download).
+- **Worker**: `evidence-scan.py` + `evidence-scan.{service,timer}` (every-minute systemd timer, jobs-tick pattern, flock single-flight). Claims via `claim_malware_scans`, fetches bytes with `minio/mc` on the compose network (`docker pull minio/mc:latest` once), streams to clamd `INSTREAM`, resolves via `resolve_malware_scan`. Install steps in the file headers.
+- **Ops-only queue**: `malware_scan_queue` — RLS on, no policies (app-invisible); claim/resolve RPCs are service-role only (`auth.uid() IS NULL` guard).
+- **CI**: no clamd in CI — `app/tests/e2e_malware_scan.sql` exercises the STATUS GATE only (statuses simulated); the worker is staging-ops.
+- Prod (af-south-1): same compose sidecar + timer; the worker only talks the S3 API + clamd TCP, so it ports unchanged.
