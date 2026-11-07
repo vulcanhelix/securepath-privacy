@@ -96,3 +96,20 @@ not new-schema shape).
   consumption, W4-04 client exit (000032), W4-07 AT suite (000033), then the
   OPEN date-sensitive suite FAILs (rules_engine x3, scheduler x1).
 - Next free migration: 000032.
+
+## In-flight / last update (2026-11-07g — wave-3 integration)
+- RESTART-RECOVERY COMPLETE: fleet rebuilt after Devin restart; all work resumed.
+- #115 suite-order fixes: onboarding.spec bumps Partner A licence caps to 10 +
+  creates a 3rd client early in the browser run — every later spec sees 3/10
+  not 2/2, and the lifecycle suite's published v1.1 means the wizard offers 2
+  template versions. Three spec fixes (deterministic template id, usage/cap
+  regexes, cap-pin for the W1-07 warning leg) + a PARTNER_A local-const fix.
+- #116 middleware bug found by its own CI: req.nextUrl behind Caddy carries
+  the internal upstream host → deep links lost the partner host. Fixed by
+  reading Host/x-forwarded-proto headers directly (c737460).
+- #118 writes.spec accept-leg timeout was a flake — rerun green.
+- #117 trigger-suspension completeness verified by Devin independently.
+- PR #119 int/wave3 = all four heads; merges on green → ~52/51 done.
+- REMAINING: date-sensitive FAIL diagnosis (agent out); W3-02 blocked on
+  William's tracker; W4-09 storage signed links queued; W5 = William's tools.
+- Next free migration: 000035.
