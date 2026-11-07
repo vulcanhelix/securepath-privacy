@@ -61,18 +61,14 @@ not new-schema shape).
 - Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
 - Non-project ask to Bruce: send William his BIO for the services offering.
 
-## In-flight / last update (2026-11-07b)
-- MERGED: #100 support-access E2E, #101 W4-D fixes + Caddy keepalive-off cure (also applied to live /etc/caddy/Caddyfile — backup kept). ~38/51.
-- #107 int/wave2 (integration of #102/104/105/106 — all APPROVED): combined CI caught REAL cross-PR interaction — #102's 000021 recreated allowed_programmes pre-000018 body dropping the workstream UNION branch (wsl 404) — FIXED in commit 320d7cb on the branch + strict-mode .first() fixes in smoke.spec. RERUN IN FLIGHT; merge on green. NOTE: any migration recreating a shared function must be diffed vs its CURRENT main body (new Lessons entry below).
-- #103 (data regions 000020): APPROVED at re-check; branch updated to main (cec0291), CI rerunning → merge on green.
-- IN REVIEW (all sent to Devin): #108 W4-06 field audit (000026), #109 W3-04 exports (000027), #110 #95 snapshot consolidation (000023), #111 W4-03 malware scan (000025).
-- BUILDING: W3-01 imports (000024, agent 9d3113da). Next free migration: 000028.
-- MERGE SEQUENCE: #103's head folded INTO #107 int/wave2 (now = #102+103+104+105+106, five approved PRs, pushed 9136ba5, CI armed via /tmp/watch_runs.sh). Merge #107 when green — all five PRs auto-close. #105 solo FAILURE is stale/superseded — ignore.
-- APPROVED awaiting merge after #107: #111 malware scan, #112 import framework. STILL AWAITING DEVIN: #108 field audit, #109 exports, #110 snapshot consolidation — check PR comments for verdicts.
-- NOTE: pushing docs/STATE.md to main stales every open PR (branch protection 'up to date') — batch STATE updates, prefer committing STATE only on integration branches during merge waves.
-- Hourly tick = background subagent sleep ~55min (real wake via completion notification).
-- Devin session a81e22c41da44e05b7b640c546d54de9; check PR comments directly when session log is silent.
-
+## In-flight / last update (2026-11-07c)
+- MERGED: everything through #101 + #96..#100. #107 int/wave2 (=#102 suspension+000021, #103 regions+000020, #104 PDF, #105 console, #106 exec 000022) — all approved, combined CI green once; updated to main at 61d60f6, rerun in flight → MERGE ON GREEN, five PRs auto-close.
+- APPROVED, awaiting wave-3 integration: #108 field audit (000026), #109 exports (000027), #110 snapshot consolidation (000023), #111 malware scan (000025 — FIXED its own CI break: clamd sidecar now profile-gated [scanner] so compose up skips it; head 0764871), #112 import framework (000024).
+- PLAN: after #107 lands, build int/wave3 = main + those five heads → one CI → merge. Verify each head merged main recently (they're green but may need main-refresh first).
+- BUILDING: nothing right now — next wave after wave-3: W2-02 onboarding wizard, W2-03 branding settings, W2-15 brand consumption, W2-17 partner team/licence, W4-04 client exit, W4-07 AT suite, W4-02?, #95-closed-by-#110. W3-02 still blocked on William's tracker.
+- Next free migration: 000028.
+- HOURLY TICK: background subagent `sleep 3300` — re-arm on each completion (agent just fired at this update; re-arming now).
+- Gotchas: STATE.md pushes stale open PRs (branch-protection up-to-date); Devin verdicts may land on PRs not in session log — check gh pr view comments.
 ## Lessons (do not repeat)
 - CI: a suite step that only checks `! grep FAIL` passes on an empty log. My conflict-resolution script once dropped the cadence suite and emptied the notifications step while CI stayed green. Now `app/tests/check_ci_workflow.py` runs first in CI and enforces one suite per step plus FAIL and PASS assertions. Resolve e2e.yml conflicts by hand-merging step bodies, then run the checker.
 - UI screens: writes ONLY through RPCs. No direct-table fallback when an RPC is missing, because it skips RPC-side validation (caught on #75). Put this rule in every screen prompt.
