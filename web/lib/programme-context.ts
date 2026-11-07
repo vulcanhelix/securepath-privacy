@@ -5,17 +5,14 @@ import { getRoleContext, type RoleContext } from './role-context';
 // ---------------------------------------------------------------------------
 // W2-00 — programme + branding context for the programme world (FR-BRN).
 //
-// RLS GAP (flagged for the orchestrator): practices_read still resolves
-// through the DEPRECATED current_practice() shim, which returns NULL for
-// pure new-role users (executive, programme_lead, workstream_lead,
-// external_provider, assessor, platform_*, client-scope partner_consultant).
-// For those callers the `practices` row is unreadable — brand falls back to
-// SecurePath defaults (brand == null). licences_read is partner_admin /
-// platform_admin only, so for most callers the attribution flag is
-// unreadable too — showAttribution therefore defaults TRUE unless a readable
-// active licence explicitly sets it false (the flag's column default is
-// also true; only SecurePath may unset it). A definer-side
-// partner_branding(client_org)/licence_flag RPC would close this gap.
+// W2-15: the RLS gap this header used to flag is closed — partner_brand()
+// (20261106000034) is a SECURITY DEFINER that returns the branding slice to
+// any caller who legitimately sees the partner (partner-scope roles, any
+// allowed client/programme under it, platform roles). fetchBrand prefers it;
+// the direct practices/licences reads below remain only as the
+// migration-not-applied fallback, where the old behaviour holds: brand falls
+// back to SecurePath defaults and showAttribution defaults TRUE unless a
+// readable active licence says otherwise.
 // ---------------------------------------------------------------------------
 
 export interface BrandInfo {
@@ -26,6 +23,8 @@ export interface BrandInfo {
   primaryHex: string | null;
   supportContact: string | null;
   signInText: string | null;
+  emailSenderName: string | null;
+  subdomain: string | null;
   type: 'msp' | 'reseller' | 'securepath_direct' | null;
 }
 
@@ -63,7 +62,7 @@ export interface ProgrammeContext extends BrandContext {
 }
 
 const PRACTICE_COLS =
-  'id, name, logo_url, accent_hex, primary_hex, support_contact, sign_in_text, type';
+  'id, name, logo_url, accent_hex, primary_hex, support_contact, sign_in_text, subdomain, type';
 // pre-W0-01 column set — retried if the environment's DB lacks the new columns
 const PRACTICE_COLS_LEGACY = 'id, name, logo_url, accent_hex';
 const CLIENT_COLS = 'id, name, practice_id, jurisdiction, legal_name, trading_name';
@@ -96,6 +95,17 @@ async function resolvePartnerId(
       .maybeSingle();
     if (data?.practice_id) return data.practice_id as string;
   }
+  // W2-15: programme/workstream-scope callers can't read client_orgs at all
+  // (allowed_client_orgs is client-scope) — the programme_context definer
+  // hands back client.practice_id under the allowed_programmes() guard.
+  if (role?.programmeIds.length) {
+    const { data: packed } = await supabase.rpc('programme_context', {
+      p_programme: role.programmeIds[0],
+    });
+    const practice = (packed as { client?: { practice_id?: string } } | null)?.client
+      ?.practice_id;
+    if (practice) return practice;
+  }
   // last resort: any visible client at all (programme-scope-only callers)
   const { data: anyClient } = await supabase
     .from('client_orgs')
@@ -105,11 +115,55 @@ async function resolvePartnerId(
   return (anyClient?.practice_id as string) ?? null;
 }
 
+interface PartnerBrandRow {
+  practice_id: string;
+  name: string;
+  type: BrandInfo['type'];
+  logo_url: string | null;
+  accent_hex: string | null;
+  primary_hex: string | null;
+  subdomain: string | null;
+  sign_in_text: string | null;
+  support_contact: string | null;
+  email_sender_name: string | null;
+  attribution_display: boolean | null;
+}
+
+const toBrandInfo = (p: PartnerBrandRow): BrandInfo => ({
+  partnerId: p.practice_id,
+  name: p.name,
+  logoUrl: p.logo_url,
+  accentHex: p.accent_hex,
+  primaryHex: p.primary_hex,
+  supportContact: p.support_contact,
+  signInText: p.sign_in_text,
+  emailSenderName: p.email_sender_name,
+  subdomain: p.subdomain,
+  type: p.type,
+});
+
 async function fetchBrand(
   supabase: SupabaseClient,
   partnerId: string | null
 ): Promise<{ brand: BrandInfo | null; showAttribution: boolean }> {
   if (!partnerId) return { brand: null, showAttribution: true };
+
+  // W2-15 primary path — the scope-guarded definer; works for every role the
+  // legacy practices_read shim cannot see. NULL = not visible to this caller
+  // (same fail-closed as the rest of the programme world); error = migration
+  // not applied, drop to the legacy reads below.
+  const { data: rpcBrand, error: rpcErr } = await supabase.rpc('partner_brand', {
+    p_partner: partnerId,
+  });
+  if (!rpcErr) {
+    const p = rpcBrand as PartnerBrandRow | null;
+    return {
+      brand: p ? toBrandInfo(p) : null,
+      // FR-BRN-05: the licence flag rides the definer's slice, default true.
+      showAttribution: p?.attribution_display !== false,
+    };
+  }
+
   const [{ data: pFull }, { data: lic }] = await Promise.all([
     supabase.from('practices').select(PRACTICE_COLS).eq('id', partnerId).maybeSingle(),
     supabase
@@ -138,6 +192,8 @@ async function fetchBrand(
         primaryHex: (p.primary_hex as string) ?? null,
         supportContact: (p.support_contact as string) ?? null,
         signInText: (p.sign_in_text as string) ?? null,
+        emailSenderName: null, // not in the legacy column set — RPC path only
+        subdomain: (p.subdomain as string) ?? null,
         type: (p.type as BrandInfo['type']) ?? null,
       }
     : null;

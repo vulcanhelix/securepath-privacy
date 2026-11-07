@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { BASE_URL } from '@/lib/base-url';
+import { brandAwareOrigin } from '@/lib/brand-host';
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req });
@@ -21,9 +22,19 @@ export async function middleware(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const path = req.nextUrl.pathname;
+  // W2-15 FR-BRN-02: a request on <partner>.<domain> keeps its origin through
+  // redirects, so an unauthenticated deep link lands on the partner-branded
+  // sign-in — every other host still takes the canonical BASE_URL (the
+  // Caddy localhost:3200 redirect rule). Read Host/x-forwarded-proto from the
+  // request headers: req.nextUrl behind the proxy can carry the internal
+  // upstream host (the same class of bug as the Caddy BASE_URL redirects —
+  // server components read headers().get('host') and see the real host).
+  const reqHost = req.headers.get('host') ?? req.nextUrl.host;
+  const proto = req.headers.get('x-forwarded-proto') ?? req.nextUrl.protocol.replace(/:$/, '');
+  const origin = brandAwareOrigin(reqHost, `${proto}://${reqHost}`);
   const publicPath = ['/login', '/signup', '/auth', '/invite', '/forgot', '/mail-templates'].some(p => path.startsWith(p));
   if (!user && !publicPath && path !== '/') {
-    return NextResponse.redirect(new URL('/login', BASE_URL));
+    return NextResponse.redirect(new URL('/login', origin));
   }
 
   // Compulsory TOTP 2FA: aal1 session with a verified factor -> verify; without -> enroll.
@@ -33,7 +44,7 @@ export async function middleware(req: NextRequest) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.currentLevel !== 'aal2') {
       const dest = aal.nextLevel === 'aal2' ? '/mfa' : '/mfa/enroll';
-      return NextResponse.redirect(new URL(dest, BASE_URL));
+      return NextResponse.redirect(new URL(dest, origin));
     }
   }
   return res;

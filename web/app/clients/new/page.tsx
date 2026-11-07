@@ -1,78 +1,92 @@
-'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { serverClient } from '@/lib/supabase';
+import { getRoleContext } from '@/lib/role-context';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Field, Input, Select, Checkbox } from '@/components/ui/forms';
 import { Alert } from '@/components/ui/Alert';
+import { Wizard, type WizardData } from './Wizard';
 
-export default function NewClient() {
-  const router = useRouter();
-  const [f, setF] = useState({ name: '', registration_no: '', industry: '', contact_name: '', contact_email: '', org_scale: 'sme', invite_admin: false });
-  const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setF({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value });
+export const dynamic = 'force-dynamic';
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true); setErr('');
-    const r = await fetch('/api/clients', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f),
-    });
-    setBusy(false);
-    if (!r.ok) { setErr((await r.json()).error ?? 'failed'); return; }
-    router.push('/dashboard');
-    router.refresh();
+// W2-02 — client onboarding wizard (spec §7.3 screen 11, FR-ONB-01..04).
+// Server side loads the registries the steps offer (jurisdiction packs, data
+// regions, published template versions, partner team for designation picks)
+// under the caller's JWT — every read is RLS-filtered. All WRITES happen in
+// /api/clients/onboard through the system RPCs; nothing is validated twice.
+
+export default async function NewClientPage() {
+  const supabase = await serverClient();
+  const ctx = await getRoleContext(supabase);
+  if (!ctx) redirect('/login');
+  if (!ctx.hasRole('partner', 'partner_admin', 'partner_consultant')) {
+    return (
+      <>
+        <PageHeader title="Onboard a client" back="Programmes" backHref="/programmes" />
+        <Alert tone="err">
+          Client onboarding needs a partner admin or partner consultant role.
+        </Alert>
+      </>
+    );
   }
+
+  const [jurRes, regRes, verRes, tplRes, praRes, raRes] = await Promise.all([
+    supabase.from('jurisdiction_packs').select('code, timezone, regulator_name, default_data_region').order('code'),
+    supabase.from('data_regions').select('code, label, deployment_region').eq('active', true).order('code'),
+    supabase.from('programme_template_versions')
+      .select('id, template_id, number, release_notes, published_at')
+      .eq('status', 'published'),
+    supabase.from('programme_templates').select('id, framework, edition, jurisdiction, name'),
+    supabase.from('practices').select('name, data_region_default, country').maybeSingle(),
+    supabase.from('role_assignments').select('user_id, role, scope_type').eq('level', 'partner'),
+  ]);
+
+  // designation candidates: the partner's own users (minus the caller — the
+  // RPC rejects self-appointment anyway). Eligibility for a specific
+  // designation is the jurisdiction pack's rule; appoint_designation is the
+  // only arbiter — the wizard offers people, it does not pre-judge.
+  const ids = [...new Set((raRes.data ?? []).map((r) => r.user_id as string))]
+    .filter((id) => id !== ctx.userId);
+  const { data: users } = ids.length
+    ? await supabase.from('users').select('id, email, full_name').in('id', ids)
+    : { data: [] as { id: string; email: string; full_name: string | null }[] };
+
+  const data: WizardData = {
+    callerId: ctx.userId,
+    practiceName: (praRes.data?.name as string) ?? null,
+    homeRegion: (praRes.data?.data_region_default as string) ?? null,
+    practiceCountry: (praRes.data?.country as string) ?? null,
+    jurisdictions: (jurRes.data ?? []) as WizardData['jurisdictions'],
+    regions: (regRes.data ?? []) as WizardData['regions'],
+    regionsAvailable: !regRes.error,
+    templates: ((tplRes.data ?? []) as {
+      id: string; framework: string; edition: string | null;
+      jurisdiction: string | null; name: string;
+    }[]).map((t) => ({
+      ...t,
+      versions: ((verRes.data ?? []) as {
+        id: string; template_id: string; number: number;
+        release_notes: string | null; published_at: string;
+      }[]).filter((v) => v.template_id === t.id),
+    })).filter((t) => t.versions.length > 0),
+    people: ((users ?? []) as { id: string; email: string; full_name: string | null }[])
+      .map((u) => ({ id: u.id, name: u.full_name?.trim() || u.email.split('@')[0], email: u.email }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  };
 
   return (
     <>
       <PageHeader
         title="Onboard a client"
-        back="Clients"
-        backHref="/dashboard"
+        back="Programmes"
+        backHref="/programmes"
         meta={<>Creating a client instance is a <strong>billable event</strong> on your account.</>}
       />
-      <Card style={{ maxWidth: 'var(--form-max)' }}>
-        <form onSubmit={submit}>
-          <Field label="Company name" required>
-            <Input required value={f.name} onChange={set('name')} />
-          </Field>
-          <Field label="Company registration no.">
-            <Input value={f.registration_no} onChange={set('registration_no')} />
-          </Field>
-          <Field label="Industry">
-            <Input value={f.industry} onChange={set('industry')} placeholder="e.g. Healthcare" />
-          </Field>
-          <Field
-            label="Organisation scale"
-            required
-            hint="Determines which Section 4 security questions apply. Advisor judgement — SME edition in the 2026 POPIA pack is ≤10 users."
-          >
-            <Select required value={f.org_scale} onChange={set('org_scale')}>
-              <option value="sme">SME (source pack: ≤10 users)</option>
-              <option value="large">Large corporation</option>
-            </Select>
-          </Field>
-          <Field label="Primary contact name">
-            <Input value={f.contact_name} onChange={set('contact_name')} />
-          </Field>
-          <Field label="Primary contact email">
-            <Input type="email" value={f.contact_email} onChange={set('contact_email')} />
-          </Field>
-          <div style={{ margin: '4px 0 20px' }}>
-            <Checkbox
-              label="Invite the contact as client admin (they get an email invite)"
-              checked={f.invite_admin}
-              onChange={set('invite_admin')}
-            />
-          </div>
-          <Button type="submit" disabled={busy} cta>{busy ? 'Creating…' : 'Create client instance'}</Button>
-        </form>
-        {err && <Alert tone="err">{err}</Alert>}
-      </Card>
+      {regRes.error ? (
+        <Alert tone="err">
+          The data-region registry is unavailable ({regRes.error.message}) — client creation
+          will fail until migration 000020 is applied.
+        </Alert>
+      ) : null}
+      <Wizard data={data} />
     </>
   );
 }

@@ -57,7 +57,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .select('org_name, auditor_name, audit_date, audit_ref, org_scale')
       .eq('id', report.session_id).maybeSingle(),
     supabase.from('content_packs').select('metadata').eq('id', report.content_pack_id).maybeSingle(),
-    supabase.from('practices').select('name').maybeSingle(),
+    // W2-15: partner brand via the scope-guarded definer (same jsonb keys as
+    // the old select) — the legacy practices read is retried after if NULL.
+    // Errors are swallowed (branding is cosmetic) so a missing function never
+    // trips the dbErr gate below.
+    supabase.rpc('partner_branding', { p_client_org: id }).then(
+      (r) => ({ data: r.data, error: null }),
+      () => ({ data: null, error: null }),
+    ),
     supabase.from('tracks').select('baseline_pct, baseline_rating, baseline_at')
       .eq('client_org_id', id).eq('track_kind', trackKind).maybeSingle(),
     supabase.from('assessment_responses')
@@ -76,10 +83,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const dbErr = results.map(r => r.error).find(Boolean);
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
   const [
-    { data: session }, { data: pack }, { data: practice }, { data: track },
+    { data: session }, { data: pack }, { data: rpcPractice }, { data: track },
     { data: responses }, { data: issuedDocs }, { data: uploads },
     { data: checklist }, { data: links }, { data: tasks },
   ] = results;
+
+  let practice = rpcPractice as { name: string } | null;
+  if (!practice) {
+    const { data: legacy } = await supabase.from('practices').select('name').maybeSingle();
+    practice = legacy;
+  }
 
   const spec = resolveSpec(pack?.metadata ?? null);
 

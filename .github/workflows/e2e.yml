@@ -473,6 +473,33 @@ jobs:
           ! grep -q "FAIL" /tmp/if_checks.log
           grep -q "PASS" /tmp/if_checks.log
 
+      - name: Client-exit checks (W4-04, NFR-14/AT-20)
+        run: |
+          # self-contained (own W4EX namespace, never touches TESTFIX): the
+          # request → export → timed deletion → certificate lifecycle, the
+          # retention-due gate, the authoriser rule, tombstone + retained set,
+          # certificate immutability and cross-tenant refusal. Wipes + tears
+          # down its namespace — re-runnable.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_client_exit.sql 2>&1 | tee /tmp/cx_checks.log
+          ! grep -q "FAIL" /tmp/cx_checks.log
+          grep -q "PASS" /tmp/cx_checks.log
+      - name: Acceptance suite — spec §14 AT-01..AT-22 (e2e_acceptance.sql)
+        run: |
+          # W4-07 — the deliberate acceptance suite: every spec §14 scenario
+          # (AT-01..AT-22) exercised against the TESTFIX world — cross-partner
+          # isolation, grants, licences, template lifecycle, jurisdiction due
+          # dates, RAG bands, evidence chain, maintenance gates, report
+          # immutability, breach flow, export leg, append-only audit and the
+          # anonymized awareness report. Header carries the AT→coverage map.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_acceptance.sql 2>&1 | tee /tmp/at_checks.log
+          ! grep -q "FAIL" /tmp/at_checks.log
+          grep -q "PASS" /tmp/at_checks.log
+
+
       - name: Logs on failure
         if: failure()
         run: |

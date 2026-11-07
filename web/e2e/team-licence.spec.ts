@@ -14,6 +14,7 @@ import { RUN, stateFile } from './fixtures';
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:8080';
 const SERVICE = process.env.E2E_SERVICE_KEY ?? '';
+const PARTNER_A = 'bb000005-0000-0000-0000-000000000001';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -24,10 +25,15 @@ test('partner admin: licence tile shows usage vs cap; invite creates a pending r
   await page.goto('/team');
   await expect(page.locator('h1.sp-pagehd-title')).toHaveText('Team & licence');
 
-  // FR-LIC-01 tile — Partner A's TESTFIX Standard is fully used (AT-07)
+  // FR-LIC-01 tile — Partner A's TESTFIX Standard shows usage vs cap. The
+  // exact numbers depend on suite order: onboarding.spec bumps the caps to
+  // 10 and adds a client earlier in the run, so assert the rendered
+  // usage/cap pair, not the fixture values (at-cap enforcement itself is
+  // proven server-side by e2e_licences_grants.sql's capacity checks, AT-07).
   const licence = page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Licence' }) }).first();
   await expect(licence).toContainText('TESTFIX Standard');
-  await expect(licence).toContainText('2 / 2');
+  await expect(licence).toContainText(/Clients: \d+ \/ \d+/);
+  await expect(licence).toContainText(/Programmes: \d+ \/ \d+/);
   await expect(page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Team seats' }) })).toContainText('/ 5');
 
   // admin sees the whole roster incl. the client-scoped consultant
@@ -52,8 +58,22 @@ test('partner admin: licence tile shows usage vs cap; invite creates a pending r
   // FR-LIC-01 detail page — usage vs cap + the W1-07 warning surface
   await page.goto('/licences');
   await expect(page.locator('h1.sp-pagehd-title')).toHaveText('Licence & usage');
+  // suite-order dependent: onboarding.spec raised the caps to 10 and added a
+  // client, so assert the rendered usage/cap pair, not the fixture 2/2.
+  // (the card's label and value are adjacent elements — textContent joins
+  // them without whitespace, e.g. "Clients3 / 10")
   await expect(page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Current usage' }) }))
-    .toContainText('2 / 2');
+    .toContainText(/Clients\s*\d+\s*\/\s*\d+/);
+
+  // the W1-07 warning only fires near/at cap — pin both caps to current
+  // usage (3/3 ⇒ 100%, same service-role housekeeping class as the
+  // onboarding bump) so the threshold sweep has something to emit
+  const pin = await request.fetch(`${BASE}/rest/v1/licences?partner_id=eq.${PARTNER_A}`, {
+    method: 'PATCH',
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' },
+    data: { client_limit: 3, programme_limit: 3 },
+  });
+  expect(pin.ok(), `licence pin: ${pin.status()} ${await pin.text()}`).toBeTruthy();
 
   // emit the W1-07 warning through the service path (the sweep RPC), then the
   // partner-facing warnings card shows it
@@ -66,6 +86,13 @@ test('partner admin: licence tile shows usage vs cap; invite creates a pending r
   await expect(
     page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Licence warnings' }) }),
   ).toContainText('limit near');
+
+  // restore the raised caps for later specs
+  await request.fetch(`${BASE}/rest/v1/licences?partner_id=eq.${PARTNER_A}`, {
+    method: 'PATCH',
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' },
+    data: { client_limit: 10, programme_limit: 10 },
+  });
 
   await ctx.close();
 });

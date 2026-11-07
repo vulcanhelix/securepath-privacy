@@ -216,9 +216,12 @@ function ReportPreview({ v, accent, showAttribution }: { v: BrandValues; accent:
 // ---------------------------------------------------------------------------
 
 export function BrandingForm({
-  partnerId, initial, showAttribution,
+  partnerId, initial, showAttribution, signInUrl, platformHost,
 }: {
   partnerId: string; initial: BrandValues; showAttribution: boolean;
+  /** FR-BRN-02 — the partner's branded sign-in origin, null when unset */
+  signInUrl: string | null;
+  platformHost: string;
 }) {
   const router = useRouter();
   const supabase = browserClient();
@@ -302,6 +305,17 @@ export function BrandingForm({
             </Field>
             <Field label="Email sender name" hint="The From name on platform emails. Blank falls back to your display name.">
               <Input value={f.email_sender_name} onChange={(e) => setF({ ...f, email_sender_name: e.target.value })} placeholder={f.name || 'Your brand'} />
+            </Field>
+            <Field
+              label="Sign-in URL"
+              hint="Your branded sign-in surface — share it with your clients. Set by SecurePath (a subdomain on the platform domain); a custom domain is a manual-approval request for a later release."
+            >
+              <Input
+                value={signInUrl ?? `Not set — ask SecurePath for a ${platformHost} subdomain`}
+                readOnly
+                data-testid="signin-url"
+                className="mono"
+              />
             </Field>
             <Button type="submit" disabled={busy || !dirty}>
               {busy ? 'Saving…' : dirty ? 'Save branding' : 'Saved'}
