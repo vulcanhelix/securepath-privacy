@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { RUN, stateFile } from './fixtures';
+import { PARTNER_A, RUN, stateFile } from './fixtures';
 
 // W2-17 — partner team + licence usage (spec §7.5 FR-LIC-01, §7.6
 // FR-TEAM-01/02): the admin's /team screen invites through the W2-14
@@ -57,8 +57,20 @@ test('partner admin: licence tile shows usage vs cap; invite creates a pending r
   // FR-LIC-01 detail page — usage vs cap + the W1-07 warning surface
   await page.goto('/licences');
   await expect(page.locator('h1.sp-pagehd-title')).toHaveText('Licence & usage');
+  // suite-order dependent: onboarding.spec raised the caps to 10 and added a
+  // client, so assert the rendered usage/cap pair, not the fixture 2/2.
   await expect(page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Current usage' }) }))
-    .toContainText('2 / 2');
+    .toContainText(/Clients \d+ \/ \d+/);
+
+  // the W1-07 warning only fires near/at cap — pin both caps to current
+  // usage (3/3 ⇒ 100%, same service-role housekeeping class as the
+  // onboarding bump) so the threshold sweep has something to emit
+  const pin = await request.fetch(`${BASE}/rest/v1/licences?partner_id=eq.${PARTNER_A}`, {
+    method: 'PATCH',
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' },
+    data: { client_limit: 3, programme_limit: 3 },
+  });
+  expect(pin.ok(), `licence pin: ${pin.status()} ${await pin.text()}`).toBeTruthy();
 
   // emit the W1-07 warning through the service path (the sweep RPC), then the
   // partner-facing warnings card shows it
@@ -71,6 +83,13 @@ test('partner admin: licence tile shows usage vs cap; invite creates a pending r
   await expect(
     page.locator('section.sp-card', { has: page.locator('h2', { hasText: 'Licence warnings' }) }),
   ).toContainText('limit near');
+
+  // restore the raised caps for later specs
+  await request.fetch(`${BASE}/rest/v1/licences?partner_id=eq.${PARTNER_A}`, {
+    method: 'PATCH',
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' },
+    data: { client_limit: 10, programme_limit: 10 },
+  });
 
   await ctx.close();
 });
