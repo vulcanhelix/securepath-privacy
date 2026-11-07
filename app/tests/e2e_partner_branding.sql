@@ -1,6 +1,7 @@
 -- ============================================================================
 -- W2-03 partner branding — psql acceptance checks for
--- 20261106000028_partner_branding_update.sql (update_practice_branding).
+-- 20261106000029_partner_branding_update.sql (update_practice_branding) and
+-- 20261106000031_branding_write_close.sql (direct-write path closed).
 --
 -- Self-contained (e2e_platform_admin.sql style): builds its own @w203.test
 -- users + 'W203%' partners; never touches the TESTFIX world. JWT callers
@@ -76,6 +77,15 @@ CREATE OR REPLACE FUNCTION pg_temp.w203_write(p_partner uuid, p_payload jsonb)
 RETURNS text LANGUAGE plpgsql AS $$
 BEGIN
   PERFORM public.update_practice_branding(p_partner, p_payload);
+  RETURN 'OK';
+EXCEPTION WHEN OTHERS THEN RETURN SQLERRM;
+END $$;
+
+-- probe: run a raw SQL write (direct table UPDATE, no RPC) as the current JWT
+CREATE OR REPLACE FUNCTION pg_temp.w203_direct(p_sql text)
+RETURNS text LANGUAGE plpgsql AS $$
+BEGIN
+  EXECUTE p_sql;
   RETURN 'OK';
 EXCEPTION WHEN OTHERS THEN RETURN SQLERRM;
 END $$;
@@ -180,8 +190,51 @@ SELECT pg_temp.t(pg_temp.w203_write('b2030000-0000-0000-0000-000000000001', '{"a
 RESET ROLE;
 ROLLBACK;
 
+-- ---------- 6. direct write path closed (20261106000031) ----------
+-- authenticated holds no UPDATE privilege on practices any more; the
+-- practices_update policy is gone too, so a direct PostgREST UPDATE fails at
+-- the privilege layer for EVERY column — allowlisted branding fields
+-- included (the RPC is the only, audited, write path).
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"a2030000-0000-0000-0000-000000000001","role":"authenticated"}';
+SELECT pg_temp.t(
+  pg_temp.w203_direct($$UPDATE public.practices SET subdomain = 'evil'
+                      WHERE id = 'b2030000-0000-0000-0000-000000000001'$$)
+    LIKE '%permission denied%',
+  '20 partner_admin direct UPDATE on subdomain denied (platform-only field)');
+SELECT pg_temp.t(
+  pg_temp.w203_direct($$UPDATE public.practices SET email_sender_domain = 'evil.test'
+                      WHERE id = 'b2030000-0000-0000-0000-000000000001'$$)
+    LIKE '%permission denied%',
+  '21 partner_admin direct UPDATE on non-allowlisted branding column denied');
+SELECT pg_temp.t(
+  pg_temp.w203_direct($$UPDATE public.practices SET accent_hex = '#000000'
+                      WHERE id = 'b2030000-0000-0000-0000-000000000001'$$)
+    LIKE '%permission denied%',
+  '22 partner_admin direct UPDATE on allowlisted column denied — closed entirely');
+-- the definer RPC is unaffected by the revoke (runs as function owner)
+SELECT pg_temp.t(
+  pg_temp.w203_write('b2030000-0000-0000-0000-000000000001', '{"support_contact":"ops@w203.test"}') = 'OK',
+  '23 RPC write still lands after the close (audited path intact)');
+RESET ROLE;
+SELECT pg_temp.t(
+  (SELECT subdomain FROM public.practices WHERE id = 'b2030000-0000-0000-0000-000000000001') IS NULL
+  AND (SELECT email_sender_domain FROM public.practices WHERE id = 'b2030000-0000-0000-0000-000000000001') IS NULL
+  AND (SELECT accent_hex FROM public.practices WHERE id = 'b2030000-0000-0000-0000-000000000001') = '#0e6f5c'
+  AND (SELECT support_contact FROM public.practices WHERE id = 'b2030000-0000-0000-0000-000000000001') = 'ops@w203.test',
+  '24 denied direct writes changed nothing; RPC write landed');
+SELECT pg_temp.t(EXISTS (
+    SELECT 1 FROM public.audit_log
+    WHERE practice_id = 'b2030000-0000-0000-0000-000000000001'
+      AND action = 'partner.branding_updated'
+      AND detail->'patch'->>'support_contact' = 'ops@w203.test'),
+  '25 RPC write is audited');
+ROLLBACK;
+
 -- ---------- cleanup ----------
 SELECT pg_temp.w203_wipe();
+DROP FUNCTION pg_temp.w203_direct(text);
 DROP FUNCTION pg_temp.w203_write(uuid, jsonb);
 DROP FUNCTION pg_temp.w203_wipe();
 DROP FUNCTION pg_temp.t(boolean, text);

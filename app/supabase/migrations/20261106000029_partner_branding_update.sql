@@ -1,4 +1,4 @@
--- 20261106000028_partner_branding_update.sql — W2-03 white-label branding
+-- 20261106000029_partner_branding_update.sql — W2-03 white-label branding
 -- (spec §7.4 screen 12, FR-BRN-01). The branding write path for partners.
 --
 -- Practices carry the FR-BRN-01 columns since 20261105000002: name, logo_url,
