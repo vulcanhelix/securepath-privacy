@@ -53,6 +53,8 @@ EXCLUDED = {
     # platform/global content packs + registries (not tenant records)
     "frameworks": "platform registry",
     "jurisdiction_packs": "platform registry",
+    "data_regions": "platform registry (NFR-11 region codes, no tenant rows)",
+    "malware_scan_queue": "internal work queue — scan verdicts land on evidence_items/documents rows, which are audit-attached",
     "assessment_questions": "content pack, not a tenant record",
     "awareness_questions": "content pack, not a tenant record",
     "document_checklists": "content pack, not a tenant record",
