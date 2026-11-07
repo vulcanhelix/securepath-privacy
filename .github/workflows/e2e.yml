@@ -370,6 +370,18 @@ jobs:
           ! grep -q "FAIL" /tmp/dt_checks.log
           grep -q "PASS" /tmp/dt_checks.log
 
+      - name: Exports checks (W3-04)
+        run: |
+          # self-contained (own W3EX namespace, never touches TESTFIX): export
+          # RPC row parity vs the tables, scoped/cross-tenant refusal, the
+          # admins-only audit extract, and the disclosure audit_log rows every
+          # export writes. Wipes + tears down its namespace — re-runnable.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_exports.sql 2>&1 | tee /tmp/ex_checks.log
+          ! grep -q "FAIL" /tmp/ex_checks.log
+          grep -q "PASS" /tmp/ex_checks.log
+
       - name: Logs on failure
         if: failure()
         run: |
