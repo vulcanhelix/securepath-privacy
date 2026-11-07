@@ -65,8 +65,9 @@ not new-schema shape).
 - MERGED: #100 support-access E2E, #101 W4-D fixes + Caddy keepalive-off cure (also applied to live /etc/caddy/Caddyfile — backup kept). ~38/51.
 - #107 int/wave2 (integration of #102/104/105/106 — all APPROVED): combined CI caught REAL cross-PR interaction — #102's 000021 recreated allowed_programmes pre-000018 body dropping the workstream UNION branch (wsl 404) — FIXED in commit 320d7cb on the branch + strict-mode .first() fixes in smoke.spec. RERUN IN FLIGHT; merge on green. NOTE: any migration recreating a shared function must be diffed vs its CURRENT main body (new Lessons entry below).
 - #103 (data regions 000020): APPROVED at re-check; branch updated to main (cec0291), CI rerunning → merge on green.
-- IN REVIEW: #108 W4-06 field audit (000026), #109 W3-04 exports (000027), #110 #95 snapshot consolidation (000023).
-- BUILDING: W3-01 imports (000024, agent 9d3113da), W4-03 malware scan (000025, c4072a30). Next free migration: 000028.
+- IN REVIEW (all sent to Devin): #108 W4-06 field audit (000026), #109 W3-04 exports (000027), #110 #95 snapshot consolidation (000023), #111 W4-03 malware scan (000025).
+- BUILDING: W3-01 imports (000024, agent 9d3113da). Next free migration: 000028.
+- MERGE SEQUENCE: #103 merges on its green rerun (armed watcher), then fold into #107 rerun. #108-111 merge only after Devin verdicts + green.
 - Hourly tick = background subagent sleep ~55min (real wake via completion notification).
 - Devin session a81e22c41da44e05b7b640c546d54de9; check PR comments directly when session log is silent.
 
