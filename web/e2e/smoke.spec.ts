@@ -90,7 +90,8 @@ test.describe('client roles open their programme', () => {
     const res = await page.goto('/programmes');
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('Programmes');
-    await expect(page.getByRole('link', { name: P1_NAME })).toBeVisible();
+    // P1 is Amber → the console lists it twice (needs-attention + portfolio)
+    await expect(page.getByRole('link', { name: P1_NAME }).first()).toBeVisible();
     await expect(page.locator(`a[href="/programmes/${P3}"]`)).toHaveCount(0);
     await ctx.close();
   });
@@ -111,6 +112,31 @@ test.describe('client roles open their programme', () => {
     expect(res?.status()).toBe(200);
     await expect(card(page, 'Submit evidence')).toBeVisible();
     await ctx.close();
+  });
+});
+
+test.describe('partner console (screen 10) — Partner A admin', () => {
+  test.use({ storageState: stateFile('partnerA') });
+
+  test('portfolio lists only Partner A clients, licence at cap, attention list', async ({ page }) => {
+    const res = await page.goto('/programmes');
+    expect(res?.status()).toBe(200);
+    await expect(pageTitle(page)).toHaveText('Programmes');
+    // both Partner A tenants, never Partner B's
+    await expect(page.getByText('TESTFIX Client One')).toBeVisible();
+    await expect(page.getByText('TESTFIX Client Two')).toBeVisible();
+    await expect(page.getByText('TESTFIX Client Three')).toHaveCount(0);
+    await expect(page.locator(`a[href="/programmes/${P3}"]`)).toHaveCount(0);
+    // FR-PCN-03 headline tiles match the fixture world (2 running, P1 Amber+)
+    await expect(page.getByText('Programmes running')).toBeVisible();
+    await expect(page.getByText('Amber or Red')).toBeVisible();
+    // FR-LIC-01 licence tile: TESTFIX Standard caps at 2 clients / 2 programmes
+    // and the fixture world uses both fully (AT-07)
+    await expect(page.getByText('Clients 2 / 2')).toBeVisible();
+    await expect(page.getByText('Programmes 2 / 2')).toBeVisible();
+    // P1 (fixture Amber) must land on the needs-attention worklist
+    await expect(card(page, 'Needs attention').getByText(P1_NAME)).toBeVisible();
+    await noErrorBanner(page);
   });
 });
 
@@ -135,10 +161,19 @@ test.describe('cross-partner isolation — Partner B admin', () => {
     }
   });
 
-  test('programme list shows own partner programme only', async ({ page }) => {
+  test('console shows own partner clients only — Partner A invisible', async ({ page }) => {
     const res = await page.goto('/programmes');
     expect(res?.status()).toBe(200);
-    await expect(page.locator(`a[href="/programmes/${P3}"]`)).toBeVisible();
+    await expect(page.locator(`a[href="/programmes/${P3}"]`).first()).toBeVisible();
     await expect(page.locator(`a[href="/programmes/${P1}"]`)).toHaveCount(0);
+    // Partner A tenant names must never reach Partner B's console — not in the
+    // portfolio table, not in needs-attention, not in support-access awareness
+    await expect(page.getByText('TESTFIX Client Three')).toBeVisible();
+    await expect(page.getByText('TESTFIX Client One')).toHaveCount(0);
+    await expect(page.getByText('TESTFIX Client Two')).toHaveCount(0);
+    // FR-LIC-01: TESTFIX Growth licence — 1 of 5 client + programme slots used
+    await expect(page.getByText('Clients 1 / 5')).toBeVisible();
+    await expect(page.getByText('Programmes 1 / 5')).toBeVisible();
+    await noErrorBanner(page);
   });
 });
