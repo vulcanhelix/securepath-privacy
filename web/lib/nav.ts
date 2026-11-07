@@ -86,7 +86,7 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'team', label: 'Team & licence', icon: 'users', scope: 'partner', href: '/team',
     w2: 'W2-17', implemented: true, visible: partnerSees(['partner_admin', 'partner_consultant']) },
   { key: 'licences', label: 'Licence usage', icon: 'badge-check', scope: 'partner', href: '/licences',
-    w2: 'W2-17', implemented: false, visible: partnerSees(['partner_admin']) },
+    w2: 'W2-17', implemented: true, visible: partnerSees(['partner_admin']) },
 
   // ---- platform level (SecurePath) ----
   // W2-14: /platform = metrics overview + partners/usage sub-tabs; support
