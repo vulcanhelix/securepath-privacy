@@ -16,11 +16,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const reportId = req.nextUrl.searchParams.get('report');
   if (!reportId) return NextResponse.json({ error: 'report param required' }, { status: 400 });
 
-  const [{ data: report }, { data: practice }] = await Promise.all([
+  const [{ data: report }, { data: rpcBrand }] = await Promise.all([
     supabase.from('assessment_reports').select('client_org_id, payload, overrides, compiled_at')
       .eq('id', reportId).eq('client_org_id', id).maybeSingle(),
-    supabase.from('practices').select('name, accent_hex, logo_url').maybeSingle(),
+    // W2-15: brand of the client's partner via the scope-guarded definer —
+    // sees new-model roles the practices_read shim cannot.
+    supabase.rpc('partner_branding', { p_client_org: id }),
   ]);
+  let practice = rpcBrand as
+    { name: string; accent_hex: string | null; logo_url: string | null } | null;
+  if (!practice) {
+    const { data: legacy } = await supabase.from('practices')
+      .select('name, accent_hex, logo_url').maybeSingle();
+    practice = legacy;
+  }
   if (!report) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (!report.compiled_at) return NextResponse.json({ error: 'report not compiled yet' }, { status: 409 });
 
