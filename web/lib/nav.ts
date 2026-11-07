@@ -122,9 +122,9 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'designations', label: 'Designations', icon: 'id-card', scope: 'programme', href: '/designations',
     w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'executive', label: 'Executive view', icon: 'presentation', scope: 'programme', href: '/executive',
-    w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
+    w2: 'W2-13', implemented: true, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
   { key: 'actions', label: 'My actions', icon: 'check-square', scope: 'programme', href: '/actions',
-    w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_ALL) },
+    w2: 'W2-13', implemented: true, visible: clientSees(CLIENT_ALL) },
 ];
 
 /** Slots the caller may see, in catalogue order. */
