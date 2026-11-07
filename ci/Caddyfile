@@ -4,13 +4,30 @@
 	auto_https off
 }
 :8080 {
+	# keepalive off on every upstream: Caddy's pooled HTTP/1.1 conns race the
+	# upstream's idle-conn reaper — a POST dispatched on a closing conn is not
+	# retried and Caddy synthesizes a 502 with an empty body. That surfaced as
+	# intermittent 404s for programme/workstream-scope users (rpcErr → legacy
+	# fallback → client_orgs null → notFound). Loopback handshake cost is nil.
 	handle_path /auth/v1/* {
-		reverse_proxy 127.0.0.1:55321
+		reverse_proxy 127.0.0.1:55321 {
+			transport http {
+				keepalive off
+			}
+		}
 	}
 	handle_path /rest/v1/* {
-		reverse_proxy 127.0.0.1:55322
+		reverse_proxy 127.0.0.1:55322 {
+			transport http {
+				keepalive off
+			}
+		}
 	}
 	handle {
-		reverse_proxy 127.0.0.1:3200
+		reverse_proxy 127.0.0.1:3200 {
+			transport http {
+				keepalive off
+			}
+		}
 	}
 }

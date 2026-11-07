@@ -135,8 +135,9 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-13', implemented: true, visible: clientSees(CLIENT_ALL) },
 ];
 
-/** Slots the caller may see, in catalogue order — resolved to plain data so
-    the result can cross the RSC boundary into the client ProgrammeNav. */
+/** Slots the caller may see, in catalogue order. Returns serializable
+    ResolvedNavSlot data (no function members) so server layouts can pass the
+    result straight into the client ProgrammeNav across the RSC boundary. */
 export function visibleSlots(
   ctx: RoleContext,
   scope: NavSlot['scope'],
