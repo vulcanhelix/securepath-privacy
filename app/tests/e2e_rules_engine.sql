@@ -28,12 +28,19 @@ BEGIN
   ELSE RAISE WARNING 'FAIL %', label; END IF;
 END $$;
 
--- teardown-safe cleanup: earlier runs may have left a '2026-10' snapshot on
--- P1 outside a transaction (append-only table — delete here as the suite
--- runner, never as a tenant role).
-DELETE FROM monthly_snapshots
- WHERE programme_id = 'dd000005-0000-0000-0000-000000000001'
-   AND period = '2026-10';
+-- teardown-safe cleanup: earlier runs — or a real-clock 'securepath-tick'
+-- fire between fixture-apply and this suite (pg_cron runs on now(), not the
+-- suite clock) — may have left '2026-10' snapshots on TESTFIX programmes
+-- outside a transaction (append-only table — delete here as the suite
+-- runner, never as a tenant role). Snapshots already backing a report are
+-- NOT leftovers — and deleting one would trip the issued-report guard via
+-- the snapshot_id ON DELETE SET NULL — so they're excluded.
+DELETE FROM monthly_snapshots s
+ WHERE s.period = '2026-10'
+   AND s.programme_id IN (SELECT id FROM programmes
+                           WHERE client_org_id::text LIKE 'cc000005-%')
+   AND NOT EXISTS (SELECT 1 FROM programme_reports r
+                    WHERE r.snapshot_id = s.id);
 
 -- ---------- §9.1 week / month / phase arithmetic ----------
 SELECT pg_temp.t(programme_week('dd000005-0000-0000-0000-000000000001', DATE '2026-09-07') = 1,
@@ -319,6 +326,17 @@ BEGIN
 END $$;
 RESET ROLE;
 SET request.jwt.claims = '';
+-- a real-clock tick may still have slipped a '2026-10' snapshot in after the
+-- suite-top cleanup — clear it again INSIDE this txn so the service-path
+-- write below exercises the fresh-append path rather than dying on the
+-- (programme_id, period) UNIQUE constraint (which would abort the txn).
+-- Same report-backed exclusion as the suite-top cleanup.
+DELETE FROM monthly_snapshots s
+ WHERE s.period = '2026-10'
+   AND s.programme_id IN (SELECT id FROM programmes
+                           WHERE client_org_id::text LIKE 'cc000005-%')
+   AND NOT EXISTS (SELECT 1 FROM programme_reports r
+                    WHERE r.snapshot_id = s.id);
 SELECT write_monthly_snapshot('dd000005-0000-0000-0000-000000000001', DATE '2026-10-01',
                               '2026-10-30 18:00'::timestamptz) AS snapshot_id;
 SELECT pg_temp.t(EXISTS (SELECT 1 FROM monthly_snapshots

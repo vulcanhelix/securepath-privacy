@@ -78,6 +78,18 @@ jobs:
           docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
             psql -h 127.0.0.1 -U supabase_admin -d postgres -c "NOTIFY pgrst, 'reload schema';"
           sleep 2
+          # pg_cron's securepath-tick fires every minute on the REAL clock and
+          # reads securepath.test_fixtures in ITS OWN session — the per-step
+          # `SET securepath.test_fixtures='on'` lines below are session-local
+          # and never reach it. Only a database-level default makes every
+          # real-clock fire a no-op, so set it HERE, before the first check
+          # suite — otherwise ticks between fixture-apply and suite-run mutate
+          # TESTFIX state (activities.rag, register_items.days_overdue,
+          # job_runs, notification_events, monthly_snapshots) and the
+          # clock-injected assertions flake on the run date.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -c \
+            "ALTER DATABASE postgres SET securepath.test_fixtures='on'"
 
       - name: Role-assignments predicate checks (W0-00)
         run: |

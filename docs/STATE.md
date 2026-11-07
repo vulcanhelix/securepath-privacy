@@ -79,6 +79,21 @@ not new-schema shape).
 - Check issue numbers against titles before writing a prompt (I once gave W2-11 #35 instead of #36).
 
 
+## In-flight / last update (2026-11-07h — wave-3 landed)
+- MERGED #119 int/wave3 at 04e2404 — auto-closed #115 #116 #117 #118.
+  Board: onboarding wizard + brand consumption + client exit + AT suite all
+  on main. 29 CI suites. ~52/51 — the planned board is COMPLETE.
+- LANDED ALONG THE WAY: fixture-wipe hardening (runtime-created non-cascade
+  rows: billing_events/invites/notifications/approvals + guarded W4-04
+  exits/certs with immutable-trigger suspension); middleware Host-header
+  redirect fix; suite-order decoupling (licence tiles, template count).
+- IN REVIEW/CI: #120 tick-isolation (ALTER DATABASE GUC before first suite;
+  scoped claimed-count; txn-local snapshot deletes). Proven failure mode.
+- DIAGNOSIS VALIDATED: 'date-sensitive' FAILs were real-clock pg_cron ticks
+  mutating TESTFIX mid-suite — harness bug, no product defect.
+- REMAINING (post-board): W4-09 storage signed links (queued), W3-02 blocked
+  on William's tracker file, W5 = William's own tools. Launch blockers are
+  now content+ops: POPIA template, first client, hosting decision, pen test.
 ## In-flight / last update (2026-11-07f — post-restart recovery)
 - RESTART: user restarted Devin; subagent fleet died. Recovered from this file +
   live gh/Devin state. Watcher/tick subagents re-armed same session.
@@ -124,3 +139,15 @@ not new-schema shape).
 - This is the last unblocked engineering item. After it lands, remaining
   work is William-side: POPIA template content, first-client tracker,
   hosting decision + s21 operator agreement, SSO decision, W5 tooling.
+## In-flight / last update (2026-11-07i — board closed out)
+- MERGED #120 tick-isolation at 5768cf3 — 'date-sensitive' FAILs fixed at the
+  harness level (DB-level GUC before first suite; scoped claimed-counts;
+  txn-local orphan-snapshot deletes). CI now 29 suites, all green.
+- BOARD COMPLETE: every planned W-item through W4-07 is on main. Open PRs:
+  none (only ancient #1/#2 unrelated).
+- BUILDING: W4-09 evidence-storage signed links (agent out, migration 000035).
+- WILLIAM-SIDE / external (not agent work): POPIA template content, first
+  client tracker (W3-02 #43), SA production hosting decision + s21 operator
+  agreement, SSO decision (#49 deferred), W5 tooling (#57/#58 his side),
+  pen test + backup/restore before first real client.
+- Next free migration: 000036 if W4-09 takes 000035.
