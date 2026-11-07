@@ -25,6 +25,9 @@ jobs:
       - name: CI workflow self-check (every SQL suite runs once, asserts PASS)
         run: python3 app/tests/check_ci_workflow.py
 
+      - name: Audit trigger coverage check (W4-06)
+        run: python3 app/tests/check_audit_trigger_coverage.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -233,6 +236,15 @@ jobs:
             < app/tests/e2e_report_builder.sql 2>&1 | tee /tmp/rb_checks.log
           ! grep -q "FAIL" /tmp/rb_checks.log
           grep -q "PASS" /tmp/rb_checks.log
+
+      - name: Audit-events checks (W4-06)
+        run: |
+          # self-contained: seeds and tears down its own W406 namespace
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_audit_events.sql 2>&1 | tee /tmp/ae_checks.log
+          ! grep -q "FAIL" /tmp/ae_checks.log
+          grep -q "PASS" /tmp/ae_checks.log
 
       - name: Build web
         working-directory: web
