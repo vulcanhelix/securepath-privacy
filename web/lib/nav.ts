@@ -130,9 +130,9 @@ export const NAV_SLOTS: NavSlot[] = [
   { key: 'access', label: 'Support access', icon: 'key-round', scope: 'programme', href: '/access',
     w2: 'W4-01', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'executive', label: 'Executive view', icon: 'presentation', scope: 'programme', href: '/executive',
-    w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
+    w2: 'W2-13', implemented: true, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
   { key: 'actions', label: 'My actions', icon: 'check-square', scope: 'programme', href: '/actions',
-    w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_ALL) },
+    w2: 'W2-13', implemented: true, visible: clientSees(CLIENT_ALL) },
 ];
 
 /** Slots the caller may see, in catalogue order. Returns serializable
