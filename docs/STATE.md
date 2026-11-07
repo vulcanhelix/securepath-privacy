@@ -64,7 +64,8 @@ not new-schema shape).
 ## In-flight / last update (2026-11-07d)
 - MERGED #107 int/wave2 = TEN PRs at once: #102 suspension(000021), #103 regions(000020), #104 PDF print route, #105 partner console, #106 exec view+my-actions(000022), #108 field-level audit(000026), #109 exports(000027), #110 snapshot consolidation(000023), #111 malware scan(000025 — clamd profile-gated), #112 import framework(000024). Main: tsc clean, 26 suites / 0 problems, audit-coverage 0 problems. Board ~46/51.
 - BUILDING (2): W2-02 onboarding wizard (6f85a118), W2-03 branding settings (b54eab9f).
-- IN REVIEW: #113 W2-17 partner team+licence (000028) — sent to Devin; merge on APPROVE+green.
+- IN REVIEW: #113 W2-17 team+licence (000028) APPROVED — branch updated (66ec289), watcher a0571d16 armed → merge on green. #114 W2-03 branding (000029 renumbered to avoid #113 collision) — sent to Devin.
+- Next free migration: 000030.
 - QUEUE next wave after those: W2-15 brand consumption, W4-04 client exit, W4-07 AT suite, W4-02?, W4-09 evidence storage signed links. W3-02 still blocked on William's tracker; W5 = William's tooling.
 - Next free migration: 000028.
 - WAKE PATTERN (works): every wait = a background subagent that polls/reports (completion notifies me). Hourly tick = sleep-3300 subagent, re-arm each completion. nohup scripts do NOT wake.
