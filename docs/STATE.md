@@ -64,7 +64,7 @@ not new-schema shape).
 ## In-flight / last update (2026-11-07d)
 - MERGED #107 int/wave2 = TEN PRs at once: #102 suspension(000021), #103 regions(000020), #104 PDF print route, #105 partner console, #106 exec view+my-actions(000022), #108 field-level audit(000026), #109 exports(000027), #110 snapshot consolidation(000023), #111 malware scan(000025 — clamd profile-gated), #112 import framework(000024). Main: tsc clean, 26 suites / 0 problems, audit-coverage 0 problems. Board ~46/51.
 - BUILDING (2): W2-02 onboarding wizard (6f85a118), W2-03 branding settings (b54eab9f).
-- #113 W2-17 (000028) APPROVED — watcher ba42008d armed on head 3ff8710 → MERGE ON GREEN. Do NOT push to main until merged.
+- #113 W2-17 (000028) APPROVED — watcher 4cf870d0 armed on head 824d8d1 → MERGE ON GREEN. Do NOT push to main until merged.
 - #114 W2-03 branding (000029) BLOCKED by Devin — fix agent 22a43f59 closing the practices direct-UPDATE path via new migration 000031 (column-scope the grant or close entirely; tighten practices_update RLS too if needed).
 - #115 W2-02 onboarding — fix agent d59504ca rebasing onto merged 000020 + renumber 000030.
 - Next free migration: 000032.
