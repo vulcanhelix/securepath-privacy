@@ -202,7 +202,9 @@ DO NOT: migrations (file schema requests back) · shared files (middleware.ts,
         web/lib/*, layout.tsx) · main branch
 SCHEMA REQUESTS: <columns needed — orchestrator applies>
 ACCEPTANCE: <exact command(s) + expected output>
-DELIVER: diff summary + test output. No merge, no push to main.
+DELIVER: diff summary + test output, then open a PR titled "<id>: <scope>"
+         with "Closes #N" in the body. Never merge, never push to main,
+         never edit the issue or tracker — the PR is your only status update.
 ```
 
 ## 8. Review lint (run on every diff before merge)
