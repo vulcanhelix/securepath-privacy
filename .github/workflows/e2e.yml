@@ -171,6 +171,15 @@ jobs:
           ! grep -q "FAIL" /tmp/pa_checks.log
           grep -q "PASS" /tmp/pa_checks.log
 
+      - name: Partner-branding checks (W2-03)
+        run: |
+          # self-contained: seeds and tears down its own W203 namespace
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_partner_branding.sql 2>&1 | tee /tmp/pb_checks.log
+          ! grep -q "FAIL" /tmp/pb_checks.log
+          grep -q "PASS" /tmp/pb_checks.log
+
       - name: Notification fan-out checks (W1-08)
         run: |
           # same TESTFIX world as the ops-CRUD step (fixture pack is re-runnable)
