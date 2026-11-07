@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { PARTNER_A, RUN, stateFile } from './fixtures';
+import { RUN, stateFile } from './fixtures';
 
 // W2-17 — partner team + licence usage (spec §7.5 FR-LIC-01, §7.6
 // FR-TEAM-01/02): the admin's /team screen invites through the W2-14
@@ -14,6 +14,7 @@ import { PARTNER_A, RUN, stateFile } from './fixtures';
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:8080';
 const SERVICE = process.env.E2E_SERVICE_KEY ?? '';
+const PARTNER_A = 'bb000005-0000-0000-0000-000000000001';
 
 test.describe.configure({ mode: 'serial' });
 
