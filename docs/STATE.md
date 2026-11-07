@@ -128,3 +128,16 @@ not new-schema shape).
 - REMAINING: date-sensitive FAIL diagnosis (agent out); W3-02 blocked on
   William's tracker; W4-09 storage signed links queued; W5 = William's tools.
 - Next free migration: 000035.
+
+## In-flight / last update (2026-11-07i — board closed out)
+- MERGED #120 tick-isolation at 5768cf3 — 'date-sensitive' FAILs fixed at the
+  harness level (DB-level GUC before first suite; scoped claimed-counts;
+  txn-local orphan-snapshot deletes). CI now 29 suites, all green.
+- BOARD COMPLETE: every planned W-item through W4-07 is on main. Open PRs:
+  none (only ancient #1/#2 unrelated).
+- BUILDING: W4-09 evidence-storage signed links (agent out, migration 000035).
+- WILLIAM-SIDE / external (not agent work): POPIA template content, first
+  client tracker (W3-02 #43), SA production hosting decision + s21 operator
+  agreement, SSO decision (#49 deferred), W5 tooling (#57/#58 his side),
+  pen test + backup/restore before first real client.
+- Next free migration: 000036 if W4-09 takes 000035.
