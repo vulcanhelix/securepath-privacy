@@ -63,7 +63,7 @@ not new-schema shape).
 
 ## In-flight / last update (2026-11-07e)
 - MERGED: ~46/51 — everything through #112 (ten-PR integration) + earlier waves. Board: https://github.com/vulcanhelix/securepath-privacy/milestone/1
-- #113 W2-17 team+licence (000028): APPROVED; watcher 850c2917 armed on head 6f3a3c0 → MERGE ON GREEN, close. HARD RULE still: no main commits until it lands.
+- MERGED #113 W2-17 team+licence (000028) at 675c8ba after ~6 staleness reruns — lesson: no main commits between update and merge.
 - IN REVIEW: #114 W2-03 branding (000029 + 000031 practices UPDATE-revoke fix) re-check sent; #115 W2-02 onboarding wizard (000030 rebased onto merged 000020, 14-param create_client_org) sent for first review.
 - BUILDING: none this instant — next wave: W2-15 brand consumption, W4-04 client exit, W4-07 AT suite, W4-02?, W4-09 storage signed links. W3-02 blocked on William's tracker; W5 = William's tooling.
 - OPEN INVESTIGATION: 4 pre-existing date-sensitive FAILs in e2e_rules_engine(3) + e2e_scheduler(1) — real issue, needs an agent (not a rerun).
