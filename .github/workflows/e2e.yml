@@ -234,6 +234,19 @@ jobs:
           ! grep -q "FAIL" /tmp/rb_checks.log
           grep -q "PASS" /tmp/rb_checks.log
 
+      - name: Snapshot-consolidation checks (#95)
+        run: |
+          # self-contained (own W95 namespace, never touches TESTFIX): one
+          # canonical snapshot calculation on both write paths, corrections as
+          # same-snapshot versions, and version-aware consumers (console RAG,
+          # monthly_report_late, list_programmes). Wipes + tears down its
+          # namespace — re-runnable.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_snapshot_consolidation.sql 2>&1 | tee /tmp/sc_checks.log
+          ! grep -q "FAIL" /tmp/sc_checks.log
+          grep -q "PASS" /tmp/sc_checks.log
+
       - name: Build web
         working-directory: web
         env:
