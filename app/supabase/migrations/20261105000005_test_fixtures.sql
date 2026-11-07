@@ -706,26 +706,29 @@ DO $$ BEGIN
   ON CONFLICT DO NOTHING;
 
   -- evidence at every review stage (file_key only — objects are not uploaded)
+  -- W4-03: seeded rows model already-reviewed evidence → scan_status='clean'
+  -- (the malware-scan gate covers NEW uploads; decided rows are immutable
+  -- so the status can only ever be set at insert)
   INSERT INTO public.evidence_items
       (id, programme_id, activity_id, register_item_id, site, file_key,
-       uploaded_by, uploaded_at, review_stage, outcome, evidence_ref)
+       uploaded_by, uploaded_at, review_stage, outcome, evidence_ref, scan_status)
   VALUES
     ('e1000005-0000-0000-0000-000000000001','dd000005-0000-0000-0000-000000000001',
      'd3000005-0000-0000-0000-000000000003','d4000005-0000-0000-0000-000000000001',
      'TESTFIX Head Office','testfix/c1/evidence/privacy-policy-draft-v1.pdf',
-     'aa000005-0000-0000-0000-000000000010','2026-10-06 09:00+00','verification',NULL,NULL),
+     'aa000005-0000-0000-0000-000000000010','2026-10-06 09:00+00','verification',NULL,NULL,'clean'),
     ('e1000005-0000-0000-0000-000000000002','dd000005-0000-0000-0000-000000000001',
      'd3000005-0000-0000-0000-000000000005','d4000005-0000-0000-0000-000000000002',
      'TESTFIX Head Office','testfix/c1/evidence/operator-agreement-signed.pdf',
-     'aa000005-0000-0000-0000-000000000010','2026-10-07 14:00+00','acceptance',NULL,NULL),
+     'aa000005-0000-0000-0000-000000000010','2026-10-07 14:00+00','acceptance',NULL,NULL,'clean'),
     ('e1000005-0000-0000-0000-000000000003','dd000005-0000-0000-0000-000000000001',
      'd3000005-0000-0000-0000-000000000001','d4000005-0000-0000-0000-000000000004',
      'TESTFIX Head Office','testfix/c1/evidence/io-appointment-letter.pdf',
-     'aa000005-0000-0000-0000-000000000009','2026-09-30 08:00+00','decided','closes_finding','EV-R-04-001'),
+     'aa000005-0000-0000-0000-000000000009','2026-09-30 08:00+00','decided','closes_finding','EV-R-04-001','clean'),
     ('e1000005-0000-0000-0000-000000000004','dd000005-0000-0000-0000-000000000001',
      'd3000005-0000-0000-0000-000000000006',NULL,
      'TESTFIX Branch','testfix/c1/evidence/training-register-sept.xlsx',
-     'aa000005-0000-0000-0000-000000000010','2026-09-29 16:00+00','decided','kpi_evidence','EV-KPI-001')
+     'aa000005-0000-0000-0000-000000000010','2026-09-29 16:00+00','decided','kpi_evidence','EV-KPI-001','clean')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO public.evidence_reviews

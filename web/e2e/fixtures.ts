@@ -33,7 +33,8 @@ export const USERS: Record<Role, { id: string; email: string; label: string }> =
   support: { id: 'aa000005-0000-0000-0000-000000000003', email: 'support@testfix.test', label: 'SecurePath support' },
   // U1 — SecurePath platform admin: revokes any grant
   platformAdmin: { id: 'aa000005-0000-0000-0000-000000000001', email: 'platform-admin@testfix.test', label: 'SecurePath platform admin' },
-  // U4 — Partner A admin: decides C1's requests alongside the AO (FR-PLT-04)
+  // U4 — Partner A admin: decides C1's requests alongside the AO (FR-PLT-04);
+  //      the console's primary user — both Partner A clients + licence tile at cap (2/2, AT-07)
   partnerA: { id: 'aa000005-0000-0000-0000-000000000004', email: 'partner-a-admin@testfix.test', label: 'Partner A admin' },
 };
 

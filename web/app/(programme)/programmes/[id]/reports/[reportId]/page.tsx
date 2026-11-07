@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { serverClient } from '@/lib/supabase';
 import { programmeContext } from '@/lib/programme-context';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Icon } from '@/components/ui/Icon';
 import { Card } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
@@ -137,6 +139,18 @@ export default async function ReportBuilderPage({
               isAccountableOfficer={aoRoleRes.data === true}
               maintenanceOpen={maintenance.length}
             />
+            <div style={{ marginTop: 12 }}>
+              {/* W3-03 — print-ready render; the browser's Save-as-PDF is the
+                  PDF export. Drafts print clearly marked "not issued". */}
+              <Link
+                href={`/report/${doc.id}/print`}
+                target="_blank"
+                className="sp-btn sp-btn--outline sp-btn--sm"
+              >
+                <Icon name="printer" size={14} />
+                Print / PDF
+              </Link>
+            </div>
           </Card>
 
           {doc.status !== 'issued' ? (

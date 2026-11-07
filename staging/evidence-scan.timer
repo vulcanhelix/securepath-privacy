@@ -1,0 +1,12 @@
+# W4-03 malware scanner — fire every minute (jobs-tick cadence).
+# The worker's flock makes overlapping runs a no-op.
+[Unit]
+Description=SecurePath malware scan worker every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
