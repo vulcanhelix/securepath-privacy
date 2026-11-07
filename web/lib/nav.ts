@@ -29,7 +29,7 @@ export type NavKey =
   | 'platform' | 'templates' | 'support' // platform level
   | 'dashboard' | 'schedule' | 'register' | 'evidence' | 'sessions' | 'reports'
   | 'registers' | 'maintenance' | 'kpis' | 'raid' | 'documents' | 'training'
-  | 'designations' | 'executive' | 'actions'; // programme level
+  | 'designations' | 'access' | 'executive' | 'actions'; // programme level
 
 export interface NavSlot {
   key: NavKey;
@@ -46,6 +46,11 @@ export interface NavSlot {
   implemented: boolean;
   visible(ctx: RoleContext, clientOrgId?: string): boolean;
 }
+
+/** NavSlot minus its predicate — the plain-data shape that crosses the RSC
+    boundary into the client ProgrammeNav (functions are not serializable;
+    passing NavSlot itself 500s every programme screen — W4-D1). */
+export type ResolvedNavSlot = Omit<NavSlot, 'visible'>;
 
 // §4.2 role bundles (client level)
 const CLIENT_READ = ['executive', 'accountable_officer', 'programme_lead', 'workstream_lead', 'assessor'];
@@ -121,17 +126,29 @@ export const NAV_SLOTS: NavSlot[] = [
     w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'designations', label: 'Designations', icon: 'id-card', scope: 'programme', href: '/designations',
     w2: 'W2-12', implemented: true, visible: clientSees(CLIENT_READ) },
+  // W4-01 — FR-PLT-04/NFR-04 client-visible support-access ledger + decision
+  { key: 'access', label: 'Support access', icon: 'key-round', scope: 'programme', href: '/access',
+    w2: 'W4-01', implemented: true, visible: clientSees(CLIENT_READ) },
   { key: 'executive', label: 'Executive view', icon: 'presentation', scope: 'programme', href: '/executive',
     w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_MANAGE.concat('assessor')) },
   { key: 'actions', label: 'My actions', icon: 'check-square', scope: 'programme', href: '/actions',
     w2: 'W2-13', implemented: false, visible: clientSees(CLIENT_ALL) },
 ];
 
-/** Slots the caller may see, in catalogue order. */
+/** Slots the caller may see, in catalogue order — resolved to plain data so
+    the result can cross the RSC boundary into the client ProgrammeNav. */
 export function visibleSlots(
   ctx: RoleContext,
   scope: NavSlot['scope'],
   clientOrgId?: string
-): NavSlot[] {
-  return NAV_SLOTS.filter((s) => s.scope === scope && s.visible(ctx, clientOrgId));
+): ResolvedNavSlot[] {
+  return NAV_SLOTS.filter((s) => s.scope === scope && s.visible(ctx, clientOrgId)).map((s) => ({
+    key: s.key,
+    label: s.label,
+    icon: s.icon,
+    scope: s.scope,
+    href: s.href,
+    w2: s.w2,
+    implemented: s.implemented,
+  }));
 }
