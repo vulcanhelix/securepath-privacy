@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { P1, RUN, stateFile, type Role } from './fixtures';
+import { P1, P1_NAME, RUN, stateFile, type Role } from './fixtures';
 
 // W4-00 — spec screen 08 (evidence capture) on a 390 px phone viewport
 // (project "mobile-390" in playwright.config.ts). The uploader takes a "photo"
@@ -72,3 +72,66 @@ for (const c of cases) {
     await rv.close();
   });
 }
+
+// ---------------------------------------------------------------------------
+// W2-13 — FR-MOB-01 "My actions" on the same 390 px viewport. The accountable
+// officer (C1) leads A-01 (already Complete, so nothing due) but has a real
+// accept-queue item — EV2 (operator-agreement-signed.pdf, uploaded by the
+// workstream lead against R-02/A-05) — and may complete the seeded Q4
+// checklist items (can_run_cadence covers the AO).
+// ---------------------------------------------------------------------------
+
+test('my-actions at 390px as ao: shows their own open actions', async ({ browser }) => {
+  const ctx = await browser.newContext({
+    storageState: stateFile('ao'),
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await ctx.newPage();
+  const res = await page.goto(`/programmes/${P1}/actions`);
+  expect(res?.status()).toBe(200);
+
+  await expect(page.getByRole('heading', { name: 'My actions' })).toBeVisible();
+
+  // the AO's own queue: EV2 sits in 'acceptance', uploaded by someone else
+  await expect(page.getByText('operator-agreement-signed.pdf')).toBeVisible();
+  await expect(page.getByText('A-05 · R-02')).toBeVisible();
+
+  // checklist items the AO may complete
+  await expect(page.getByText('TESTFIX Review operator register completeness')).toBeVisible();
+  await expect(page.getByText('TESTFIX Access-rights spot check')).toBeVisible();
+
+  // the AO leads only A-01, which is Complete — the led-activities section
+  // must NOT list it (and shows the empty state instead)
+  await expect(page.getByText('TESTFIX Designate the accountable officer')).not.toBeVisible();
+
+  // FR-MOB-01: the list fits the phone — no sideways scrolling
+  const scrollW = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect.soft(scrollW, 'document scrollWidth at 390px').toBeLessThanOrEqual(390);
+  await page.screenshot({ path: test.info().outputPath('my-actions-390-ao.png'), fullPage: true });
+  await ctx.close();
+});
+
+test('my-actions isolation: partner-B sees nothing of P1', async ({ browser }) => {
+  // partnerB is a partner_admin on a different practice: the programme shell
+  // 404s (programmeContext → null → notFound) and no P1 content renders.
+  // W4-D1 still blocks the path TODAY: the (programme) group layout's nav
+  // strip throws before the 404 boundary renders, so the route answers 500 —
+  // the mark flips this test green the moment the nav serialization is fixed.
+  const ctx = await browser.newContext({
+    storageState: stateFile('partnerB'),
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await ctx.newPage();
+  const res = await page.goto(`/programmes/${P1}/actions`);
+  expect(res?.status()).toBe(404);
+  await expect(page.getByText('My actions')).not.toBeVisible();
+  await expect(page.getByText(P1_NAME)).not.toBeVisible();
+  // no P1 content leaks — partnerB's own sidebar branding is 'TESTFIX Partner
+  // B', so assert on P1-specific strings only
+  await expect(page.getByText('operator-agreement-signed.pdf')).not.toBeVisible();
+  await ctx.close();
+});

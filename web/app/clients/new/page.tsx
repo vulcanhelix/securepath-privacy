@@ -83,7 +83,7 @@ export default async function NewClientPage() {
       {regRes.error ? (
         <Alert tone="err">
           The data-region registry is unavailable ({regRes.error.message}) — client creation
-          will fail until migration 000028 is applied.
+          will fail until migration 000020 is applied.
         </Alert>
       ) : null}
       <Wizard data={data} />

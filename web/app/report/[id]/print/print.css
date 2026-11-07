@@ -1,0 +1,54 @@
+/* W3-03 — print view for a monthly report (FR-RPT-05). Global stylesheet for
+   /report/[id]/print: screen chrome (toolbar, draft watermark, "paper" scope)
+   plus the @media print rules that strip the app shell so the issued document
+   is the whole printed page. Deterministic output: .rp-scope pins the light
+   token values the report markup consumes, so a user on the dark theme gets
+   the same printed document as a user on light. */
+
+.rp-page { max-width: 900px; margin: 0 auto; }
+
+/* ---- screen-only toolbar ---- */
+.rp-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.rp-back { color: var(--muted); font-size: var(--fs-sm); }
+.rp-back:hover { color: var(--text); }
+.rp-status { font-size: var(--fs-xs); font-weight: var(--w-medium); padding: 3px 12px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text-2); }
+.rp-status--issued { border-color: var(--pass-border); color: var(--pass); background: var(--pass-soft); }
+.rp-status--draft { border-color: var(--warn-border); color: var(--warn); background: var(--warn-soft); }
+.rp-hint { color: var(--faint); font-size: var(--fs-xs); }
+
+/* ---- not-issued marking ---- */
+.rp-banner { margin: 0 0 14px; padding: 9px 14px; border: 1px solid var(--warn-border); border-left: 4px solid var(--warn); border-radius: 6px; background: var(--warn-soft); color: var(--warn); font-size: var(--fs-sm); font-weight: var(--w-medium); }
+.rp-draftmark { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10; overflow: hidden; }
+.rp-draftmark span { transform: rotate(-28deg); font-size: clamp(42px, 8vw, 96px); font-weight: var(--w-semibold); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; color: rgba(150, 48, 44, .16); }
+
+/* ---- the "paper": fixed light tokens regardless of app theme ---- */
+.rp-scope {
+  --surface: #ffffff;
+  --inset: #ffffff;
+  --text: #111111;
+  --text-2: rgba(0, 0, 0, .7);
+  --muted: rgba(0, 0, 0, .6);
+  --faint: rgba(0, 0, 0, .45);
+  --border: #dddddd;
+  --warn: #b7791f;
+  --accent: #333333;
+  background: var(--surface);
+}
+
+.rp-foot { margin-top: 14px; }
+
+@page { size: A4; margin: 15mm 13mm; }
+
+@media print {
+  /* strip the app chrome — the document is the whole printed page */
+  body { background: #ffffff !important; }
+  .sp-side { display: none !important; }
+  .sp-shell { display: block; min-height: 0; }
+  .sp-content { display: block; }
+  .sp-main { max-width: none; margin: 0; padding: 0; }
+  .rp-bar { display: none !important; }
+  .rp-page { max-width: none; }
+  .rp-banner { background: none; }
+  .rp-foot { font-size: 11px; color: #666666; }
+  .rp-scope { border: 0; }
+}

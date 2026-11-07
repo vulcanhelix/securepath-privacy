@@ -38,6 +38,19 @@ BEGIN
   ELSE RAISE WARNING 'FAIL %', label; END IF;
 END $$;
 
+-- W4-03: the malware-scan gate (20261106000025) makes verify/accept refuse
+-- items whose scan_status <> 'clean'. This suite is about the REVIEW chain,
+-- not the scan gate — simulate the scanner resolving uploads to 'clean'
+-- (definer helper: the real mark is service-side; the dedicated
+-- e2e_malware_scan suite exercises pending/infected/error refusal).
+CREATE OR REPLACE FUNCTION pg_temp.scan_clean(p_id uuid) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE public.evidence_items SET scan_status = 'clean' WHERE id = p_id;
+  UPDATE public.malware_scan_queue SET state = 'done', finished_at = now()
+   WHERE subject_id = p_id AND state <> 'done';
+END $$;
+
 -- ---------- suite state ----------
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.practices WHERE name = 'TESTFIX Partner A') THEN
@@ -67,6 +80,10 @@ UPDATE public.register_items
 UPDATE public.activities SET status='In progress'
  WHERE id='d3000005-0000-0000-0000-000000000005' AND status='Complete';
 RESET request.jwt.claims;
+-- W4-03: the seeded fixture evidence rows carry scan_status='clean' in the
+-- fixture INSERT itself (they model already-reviewed evidence; decided rows
+-- are immutable so an UPDATE could never fix them anyway). New uploads made
+-- by this suite are marked via pg_temp.scan_clean after each upload.
 
 CREATE TEMP TABLE w1e2 (k text PRIMARY KEY, v uuid);
 -- temp objects are owner-only: the JWT-simulated role needs explicit access
@@ -84,6 +101,7 @@ DO $$ DECLARE v uuid; BEGIN
         'd4000005-0000-0000-0000-000000000001','w1e2/c1/policy-v1.pdf',NULL,
         'W1E2-chain1','TESTFIX Head Office',NULL);
   INSERT INTO w1e2(k,v) VALUES ('ev1',v);
+  PERFORM pg_temp.scan_clean(v);   -- W4-03: simulate scanner verdict
 END $$;
 -- denial: U12 staff holds no upload role and is not a lead
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000012","role":"authenticated"}';
@@ -256,6 +274,7 @@ DO $$ DECLARE v uuid; BEGIN
         'd4000005-0000-0000-0000-000000000004','w1e2/c1/ao-led.pdf',NULL,
         'W1E2-evd07',NULL,NULL);
   INSERT INTO w1e2(k,v) VALUES ('evd07',v);
+  PERFORM pg_temp.scan_clean(v);
 END $$;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000005","role":"authenticated"}';
 SELECT public.verify_evidence((SELECT v FROM w1e2 WHERE k='evd07'),'approved',NULL);
@@ -288,6 +307,7 @@ DO $$ DECLARE v uuid; BEGIN
         'd4000005-0000-0000-0000-000000000001','w1e2/c1/bad-scope.pdf',NULL,
         'W1E2-return',NULL,NULL);
   INSERT INTO w1e2(k,v) VALUES ('evret',v);
+  PERFORM pg_temp.scan_clean(v);
 END $$;
 -- return without reasons is refused (FR-EVD-05 mandatory reasons)
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000009","role":"authenticated"}';
@@ -306,9 +326,11 @@ DO $$ DECLARE v uuid; BEGIN
   v := public.upload_evidence('d3000005-0000-0000-0000-000000000003',NULL,
         'w1e2/c1/ao-return.pdf',NULL,'W1E2-ao-return',NULL,NULL);
   INSERT INTO w1e2(k,v) VALUES ('evaor',v);
+  PERFORM pg_temp.scan_clean(v);
   v := public.upload_evidence('d3000005-0000-0000-0000-000000000003',NULL,
         'w1e2/c1/pending-acc.pdf',NULL,'W1E2-pending-acc',NULL,NULL);
   INSERT INTO w1e2(k,v) VALUES ('evpend',v);
+  PERFORM pg_temp.scan_clean(v);
 END $$;
 SET request.jwt.claims = '{"sub":"aa000005-0000-0000-0000-000000000009","role":"authenticated"}';
 SELECT public.verify_evidence((SELECT v FROM w1e2 WHERE k='evaor'),'approved',NULL);
