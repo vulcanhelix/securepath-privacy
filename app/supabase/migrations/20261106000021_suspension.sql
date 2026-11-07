@@ -393,6 +393,17 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
        AND ra.level IN ('partner','client')
        AND ra.start_date <= CURRENT_DATE
        AND (ra.end_date IS NULL OR ra.end_date > CURRENT_DATE)
+    UNION
+    -- W4-D3 (000018): a workstream-scope assignment grants the programme
+    -- carrying that workstream (spec B.13 — the workstream lead is the
+    -- screen-08 user). Read-only widening; write gates unchanged.
+    SELECT w.programme_id
+      FROM public.role_assignments ra
+      JOIN public.workstreams w ON w.id = ra.scope_id
+     WHERE ra.user_id = auth.uid()
+       AND ra.scope_type = 'workstream'
+       AND ra.start_date <= CURRENT_DATE
+       AND (ra.end_date IS NULL OR ra.end_date > CURRENT_DATE)
   ) ap(id)
   WHERE NOT public.partner_user_blocked(auth.uid())
 $$;

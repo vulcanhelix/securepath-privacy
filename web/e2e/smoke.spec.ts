@@ -123,8 +123,8 @@ test.describe('partner console (screen 10) — Partner A admin', () => {
     expect(res?.status()).toBe(200);
     await expect(pageTitle(page)).toHaveText('Programmes');
     // both Partner A tenants, never Partner B's
-    await expect(page.getByText('TESTFIX Client One')).toBeVisible();
-    await expect(page.getByText('TESTFIX Client Two')).toBeVisible();
+    await expect(page.getByText('TESTFIX Client One').first()).toBeVisible();
+    await expect(page.getByText('TESTFIX Client Two').first()).toBeVisible();
     await expect(page.getByText('TESTFIX Client Three')).toHaveCount(0);
     await expect(page.locator(`a[href="/programmes/${P3}"]`)).toHaveCount(0);
     // FR-PCN-03 headline tiles match the fixture world (2 running, P1 Amber+)
@@ -168,7 +168,7 @@ test.describe('cross-partner isolation — Partner B admin', () => {
     await expect(page.locator(`a[href="/programmes/${P1}"]`)).toHaveCount(0);
     // Partner A tenant names must never reach Partner B's console — not in the
     // portfolio table, not in needs-attention, not in support-access awareness
-    await expect(page.getByText('TESTFIX Client Three')).toBeVisible();
+    await expect(page.getByText('TESTFIX Client Three').first()).toBeVisible();
     await expect(page.getByText('TESTFIX Client One')).toHaveCount(0);
     await expect(page.getByText('TESTFIX Client Two')).toHaveCount(0);
     // FR-LIC-01: TESTFIX Growth licence — 1 of 5 client + programme slots used
