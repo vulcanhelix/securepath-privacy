@@ -24,12 +24,13 @@ export async function loadRegisterItems(
     return q.order('ref');
   };
   let { data, error } = await run(REGISTER_COLS, true);
-  if (error && /source_(assessment_session_id|question_ref)/.test(error.message ?? '')) {
+  if (error && /source_(assessment_session_id|question_ref)|import_run_id/.test(error.message ?? '')) {
     ({ data, error } = await run(REGISTER_COLS_LEGACY, false));
   }
   const items = ((data ?? []) as unknown as Partial<RegisterItemRow>[]).map((r) => ({
     source_assessment_session_id: null,
     source_question_ref: null,
+    import_run_id: null,
     active: true,
     retired_reason: null,
     ...r,

@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
     p_contact_name: b.contact_name || null,
     p_contact_email: b.contact_email || null,
     p_org_scale: b.org_scale === 'sme' ? 'sme' : 'large',
+    // W4-05 NFR-11: explicit region wins; NULL → partner home region default
+    p_data_region: b.data_region || null,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
