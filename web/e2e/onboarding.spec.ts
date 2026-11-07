@@ -60,7 +60,10 @@ test('onboarding wizard: partner-A creates client + programme; partner-B cannot 
   // ---- step 4: programme — published ZA template offered, Monday start ----
   await expect(page.locator('h2', { hasText: 'Framework template & programme start' })).toBeVisible();
   const tpl = page.locator('.sp-field', { hasText: 'Framework template' }).locator('select');
-  await expect(tpl.locator('option')).toHaveCount(1); // only the published TESTFIX ZA template
+  // Other SQL suites publish further TESTFIX versions (published rows are
+  // immutable, so they persist) — assert the fixture v1 is offered and pick
+  // it by its deterministic id rather than counting options.
+  await tpl.selectOption('f6000005-0000-0000-0000-000000000001');
   await expect(tpl).toContainText('TESTFIX POPIA and PAIA Programme Template');
   await expect(page.locator('.sp-field', { hasText: 'Programme name' }).locator('input'))
     .toHaveValue(new RegExp(CLIENT_NAME));
