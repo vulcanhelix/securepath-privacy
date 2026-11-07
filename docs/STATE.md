@@ -61,19 +61,15 @@ not new-schema shape).
 - Wants: a CI run of the cross-tenant isolation suite to show with the gap write-up; a fixed weekly feedback slot (Bruce picks a day); Linear with William added (he loads the §15 open decisions as issues); Levona brought in early.
 - Non-project ask to Bruce: send William his BIO for the services offering.
 
-## In-flight / last update (2026-11-07d)
-- MERGED #107 int/wave2 = TEN PRs at once: #102 suspension(000021), #103 regions(000020), #104 PDF print route, #105 partner console, #106 exec view+my-actions(000022), #108 field-level audit(000026), #109 exports(000027), #110 snapshot consolidation(000023), #111 malware scan(000025 — clamd profile-gated), #112 import framework(000024). Main: tsc clean, 26 suites / 0 problems, audit-coverage 0 problems. Board ~46/51.
-- BUILDING (2): W2-02 onboarding wizard (6f85a118), W2-03 branding settings (b54eab9f).
-- #113 W2-17 team+licence (000028) APPROVED — watcher b85b3b66 armed on head 3ff8710 → MERGE ON GREEN, then close. Do NOT push to main until merged (staleness treadmill).
-- IN REVIEW: #114 W2-03 branding (000029). #115 W2-02 onboarding wizard — fix agent d59504ca rebasing onto merged 000020 + renumber 000030.
-- BUILDING: nothing else this instant — next: W2-15, W4-04, W4-07, W4-02, W4-09.
-- Next free migration: 000031 (000028=#113 merged, 000029=#114, 000030=#115).
-- Next free migration: 000030.
-- QUEUE next wave after those: W2-15 brand consumption, W4-04 client exit, W4-07 AT suite, W4-02?, W4-09 evidence storage signed links. W3-02 still blocked on William's tracker; W5 = William's tooling.
-- Next free migration: 000028.
-- WAKE PATTERN (works): every wait = a background subagent that polls/reports (completion notifies me). Hourly tick = sleep-3300 subagent, re-arm each completion. nohup scripts do NOT wake.
-- Devin session a81e22c41da44e05b7b640c546d54de9; verdicts land on PRs — check comments if session silent. Gate = CI green + Devin APPROVE + Claude diff-check.
-- Treadmill: branch protection requires up-to-date heads; each main commit stales open PRs → fold approved heads into ONE integration branch (int/wave2 pattern) and merge once.
+## In-flight / last update (2026-11-07e)
+- MERGED: ~46/51 — everything through #112 (ten-PR integration) + earlier waves. Board: https://github.com/vulcanhelix/securepath-privacy/milestone/1
+- MERGED #113 W2-17 team+licence (000028) at 675c8ba after ~6 staleness reruns — lesson: no main commits between update and merge.
+- IN REVIEW: #114 W2-03 branding (000029 + 000031 practices UPDATE-revoke fix) re-check sent; #115 W2-02 onboarding wizard (000030 rebased onto merged 000020, 14-param create_client_org) sent for first review.
+- BUILDING: none this instant — next wave: W2-15 brand consumption, W4-04 client exit, W4-07 AT suite, W4-02?, W4-09 storage signed links. W3-02 blocked on William's tracker; W5 = William's tooling.
+- OPEN INVESTIGATION: 4 pre-existing date-sensitive FAILs in e2e_rules_engine(3) + e2e_scheduler(1) — real issue, needs an agent (not a rerun).
+- Next free migration: 000032 (000028=#113, 000029=#114 branding, 000030=#115, 000031=#114's write-close fix).
+- Devin review session: a81e22c41da44e05b7b640c546d54de9 via ~/.claude/skills/devin-chat/scripts/devin.py; gate = CI green + Devin APPROVE.
+- Wakes: watcher subagents poll runs and report (real). Hourly tick = sleep-3300 subagent, re-arm each completion. Treadmill: up-to-date-heads protection stales PRs on every main commit → fold approved heads into int/waveN branches and merge once.
 ## Lessons (do not repeat)
 - CI: a suite step that only checks `! grep FAIL` passes on an empty log. My conflict-resolution script once dropped the cadence suite and emptied the notifications step while CI stayed green. Now `app/tests/check_ci_workflow.py` runs first in CI and enforces one suite per step plus FAIL and PASS assertions. Resolve e2e.yml conflicts by hand-merging step bodies, then run the checker.
 - UI screens: writes ONLY through RPCs. No direct-table fallback when an RPC is missing, because it skips RPC-side validation (caught on #75). Put this rule in every screen prompt.
@@ -82,3 +78,21 @@ not new-schema shape).
 - `gh issue view` is broken on this repo (Projects-classic GraphQL). Use `gh api repos/vulcanhelix/securepath-privacy/issues/N`.
 - Check issue numbers against titles before writing a prompt (I once gave W2-11 #35 instead of #36).
 
+
+## In-flight / last update (2026-11-07f — post-restart recovery)
+- RESTART: user restarted Devin; subagent fleet died. Recovered from this file +
+  live gh/Devin state. Watcher/tick subagents re-armed same session.
+- MERGED #114 W2-03 branding settings at cc8b09f (Devin APPROVE incl. the
+  000031 practices UPDATE-revoke fix — direct branding writes now impossible).
+- #115 W2-02 onboarding: Devin APPROVE; first CI red was suite-order coupling,
+  not app code — lifecycle suite publishes TESTFIX v1.1 (immutable → wizard
+  offers 2 versions) and the onboarded client bumps licence tiles to n/2.
+  Specs fixed at f0fb736 (select v1 by id; tile asserts `n / 2`); CI armed.
+- STATE.md REGRESSION FOUND: merging branches that carry an old STATE.md
+  reverted main's copy (main showed the 2026-11-05 version). Fix landed via
+  THIS branch — refreshed handover rides in with #115. Rule: feature branches
+  must merge origin/main's STATE.md before push, or drop their STATE.md edit.
+- Board: ~48/51 after #114; #115 → ~49/51. Remaining queued: W2-15 brand
+  consumption, W4-04 client exit (000032), W4-07 AT suite (000033), then the
+  OPEN date-sensitive suite FAILs (rules_engine x3, scheduler x1).
+- Next free migration: 000032.
