@@ -9,9 +9,12 @@ export const P3 = 'dd000005-0000-0000-0000-000000000003'; // Partner B / Client 
 /** EV3 — decided, closes R-04, carries evidence ref EV-R-04-001. */
 export const EV_DECIDED = 'e1000005-0000-0000-0000-000000000003';
 
-export type Role = 'consultant' | 'ao' | 'alternate' | 'pl' | 'wsl' | 'partnerB';
+export type Role = 'consultant' | 'ao' | 'alternate' | 'pl' | 'wsl' | 'partnerA' | 'partnerB';
 
 export const USERS: Record<Role, { id: string; email: string; label: string }> = {
+  // U4 — partner-A admin (partner scope): the console's primary user — sees
+  // both Partner A clients and the licence tile at cap (2/2, AT-07)
+  partnerA: { id: 'aa000005-0000-0000-0000-000000000004', email: 'partner-a-admin@testfix.test', label: 'Partner A admin' },
   // U5 — partner-A consultant assigned to C1 only (AT-02): runs the programme,
   // verifies evidence (FR-EVD-03), writes KPIs / RAID / schedule
   consultant: { id: 'aa000005-0000-0000-0000-000000000005', email: 'partner-a-consultant@testfix.test', label: 'Partner A consultant' },
