@@ -146,6 +146,9 @@ DO $$ BEGIN
   -- + DISABLE TRIGGER USER keeps this no-op when it is not applied yet).
   ALTER TABLE IF EXISTS public.decisions           DISABLE TRIGGER USER;
   ALTER TABLE IF EXISTS public.raid_status_history DISABLE TRIGGER USER;
+  -- W4-04: deletion certificates are trigger-immutable by design; the wipe is
+  -- the one place they may be deleted along with their TESTFIX client.
+  ALTER TABLE IF EXISTS public.deletion_certificates DISABLE TRIGGER USER;
 
   -- FR-MNT-05 CHECK vs cascade: mti.evidence_id is ON DELETE SET NULL, so
   -- wiping a client's evidence would leave Complete rows that violate the
@@ -161,6 +164,35 @@ DO $$ BEGIN
      AND mti.evidence_exempt_reason IS NULL
      AND mti.evidence_id IS NOT NULL;
 
+  -- Runtime-created, non-cascade rows pinned to TESTFIX rows must go first:
+  -- create_client_org writes billing_events + notifications + invites, and a
+  -- W4-04 exit writes client_exits + deletion_certificates — all append-only
+  -- ledgers with plain FKs to client_orgs/practices that would otherwise
+  -- abort the wipe.
+  DELETE FROM public.billing_events b
+   WHERE b.client_org_id IN (SELECT id FROM public.client_orgs WHERE name LIKE 'TESTFIX%')
+      OR b.practice_id   IN (SELECT id FROM public.practices   WHERE name LIKE 'TESTFIX%');
+  DELETE FROM public.invites i
+   WHERE i.client_org_id IN (SELECT id FROM public.client_orgs WHERE name LIKE 'TESTFIX%')
+      OR i.practice_id   IN (SELECT id FROM public.practices   WHERE name LIKE 'TESTFIX%');
+  DELETE FROM public.notifications n
+   WHERE n.practice_id   IN (SELECT id FROM public.practices   WHERE name LIKE 'TESTFIX%');
+  DELETE FROM public.approvals a
+   WHERE a.practice_id   IN (SELECT id FROM public.practices   WHERE name LIKE 'TESTFIX%');
+  IF to_regclass('public.client_exits') IS NOT NULL THEN
+    -- exits.certificate_id → certs: exits first, then the certs themselves
+    DELETE FROM public.client_exits
+     WHERE client_org_id IN (SELECT id FROM public.client_orgs WHERE name LIKE 'TESTFIX%')
+        OR practice_id   IN (SELECT id FROM public.practices   WHERE name LIKE 'TESTFIX%');
+    DELETE FROM public.deletion_certificates
+     WHERE client_org_id IN (SELECT id FROM public.client_orgs WHERE name LIKE 'TESTFIX%')
+        OR practice_id   IN (SELECT id FROM public.practices   WHERE name LIKE 'TESTFIX%');
+  END IF;
+  IF to_regclass('public.assessments') IS NOT NULL THEN
+    DELETE FROM public.assessments
+     WHERE client_org_id IN (SELECT id FROM public.client_orgs WHERE name LIKE 'TESTFIX%');
+  END IF;
+
   -- client_orgs cascade: programmes + every programme child, plus client-level
   -- rows (operational_records, external_providers, training_records,
   -- controlled_documents(+links), designations, support_access_grants,
@@ -171,6 +203,7 @@ DO $$ BEGIN
   ALTER TABLE public.programme_reports ENABLE TRIGGER report_transition_gate;
   ALTER TABLE IF EXISTS public.decisions           ENABLE TRIGGER USER;
   ALTER TABLE IF EXISTS public.raid_status_history ENABLE TRIGGER USER;
+  ALTER TABLE IF EXISTS public.deletion_certificates ENABLE TRIGGER USER;
   -- practices cascade: licences, import_runs (client_orgs already gone).
   DELETE FROM public.practices   WHERE name LIKE 'TESTFIX%';
   -- auth.users cascade: public.users → role_assignments, notification_prefs,
