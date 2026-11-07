@@ -370,6 +370,20 @@ jobs:
           ! grep -q "FAIL" /tmp/dt_checks.log
           grep -q "PASS" /tmp/dt_checks.log
 
+      - name: Import-framework checks (W3-01)
+        run: |
+          # self-contained (own W3I1 namespace, never touches TESTFIX):
+          # versioned import_runs/rows lifecycle — begin → preview (per-row
+          # reject reasons + create/exists diff) → commit with import_run_id
+          # provenance, idempotent re-runs, committed-run immutability,
+          # partner isolation on every RPC, plus the redefined W0-04 findings
+          # import still green end-to-end. Wipes + tears down its namespace.
+          docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" securepath-staging-db-1 \
+            psql -h 127.0.0.1 -U supabase_admin -d postgres \
+            < app/tests/e2e_import_framework.sql 2>&1 | tee /tmp/if_checks.log
+          ! grep -q "FAIL" /tmp/if_checks.log
+          grep -q "PASS" /tmp/if_checks.log
+
       - name: Logs on failure
         if: failure()
         run: |

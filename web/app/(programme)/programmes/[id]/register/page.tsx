@@ -137,7 +137,8 @@ export default async function RegisterPage({
       (!fRag || r.rag === fRag) &&
       (!fWs || r.wsIds.includes(fWs)) &&
       (!fSource ||
-        (fSource === 'imported') === !!r.item.source_assessment_session_id) &&
+        (fSource === 'imported') ===
+          !!(r.item.source_assessment_session_id || r.item.import_run_id)) &&
       (!fOverdue || (r.daysOverdue ?? 0) > 0) &&
       (!fQ ||
         r.item.ref.toLowerCase().includes(fQ) ||
@@ -149,7 +150,7 @@ export default async function RegisterPage({
   const open = rows.filter((r) => r.item.status !== 'Closed');
   const overdueCount = open.filter((r) => (r.daysOverdue ?? 0) > 0).length;
   const redCount = open.filter((r) => r.rag === 'Red').length;
-  const imported = rows.filter((r) => r.item.source_assessment_session_id).length;
+  const imported = rows.filter((r) => r.item.source_assessment_session_id || r.item.import_run_id).length;
 
   return (
     <>
@@ -158,9 +159,17 @@ export default async function RegisterPage({
         eyebrow={ctx.programme.name}
         meta={`${rows.length} finding${rows.length === 1 ? '' : 's'} · ${open.length} open · ${imported} from assessment`}
         actions={
-          <Link href={`${base}/schedule`} className="muted" style={{ fontSize: 'var(--fs-sm)' }}>
-            Edit activities on the schedule →
-          </Link>
+          <span style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            {/* W3-01 — §13.1 findings import (partner write roles; the page + RPCs are the real gate) */}
+            {ctx.role.hasRole('partner', 'partner_admin', 'partner_consultant') ? (
+              <Link href={`${base}/register/import`} className="muted" style={{ fontSize: 'var(--fs-sm)' }}>
+                Import findings (CSV) →
+              </Link>
+            ) : null}
+            <Link href={`${base}/schedule`} className="muted" style={{ fontSize: 'var(--fs-sm)' }}>
+              Edit activities on the schedule →
+            </Link>
+          </span>
         }
       />
 
@@ -263,6 +272,8 @@ export default async function RegisterPage({
                               from assessment · question{' '}
                               <span className="mono">{i.source_question_ref ?? '—'}</span>
                             </>
+                          ) : i.import_run_id ? (
+                            <>from CSV import</>
                           ) : i.assessment_window ? (
                             <>window {i.assessment_window}</>
                           ) : null}
