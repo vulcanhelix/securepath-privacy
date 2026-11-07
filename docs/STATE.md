@@ -113,3 +113,14 @@ not new-schema shape).
 - REMAINING: date-sensitive FAIL diagnosis (agent out); W3-02 blocked on
   William's tracker; W4-09 storage signed links queued; W5 = William's tools.
 - Next free migration: 000035.
+
+## In-flight / last update (2026-11-07j — W4-09 delivered)
+- #121 W4-09 signed links in review+CI: presigned GET (60s) + PUT (300s,
+  checksum-enforced) for documents/evidence; scan-quarantine 403; no
+  migration needed; byte-parity + tamper + cross-tenant legs proven.
+- OPS FOLLOW-UP for staging: signed URLs need S3_BROWSER_ENDPOINT —
+  staging MinIO is loopback-only today; needs a browser-reachable
+  endpoint (Caddy → minio) + the env var before signed links work there.
+- This is the last unblocked engineering item. After it lands, remaining
+  work is William-side: POPIA template content, first-client tracker,
+  hosting decision + s21 operator agreement, SSO decision, W5 tooling.
