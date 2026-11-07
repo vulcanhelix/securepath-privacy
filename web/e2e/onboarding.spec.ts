@@ -11,7 +11,11 @@ import { RUN, stateFile } from './fixtures';
 const BASE = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:8080';
 const SERVICE = process.env.E2E_SERVICE_KEY ?? '';
 const PARTNER_A = 'bb000005-0000-0000-0000-000000000001';
-const CLIENT_NAME = `W2-02 Onboarded Client ${RUN}`;
+// TESTFIX prefix is load-bearing: the mid-run fixture reseed wipes
+// client_orgs WHERE name LIKE 'TESTFIX%' (cascades to programmes/invites);
+// a non-prefixed name would survive the wipe and FK-block the practices
+// delete in the scheduler step's reseed.
+const CLIENT_NAME = `TESTFIX W2-02 Onboarded Client ${RUN}`;
 
 test('onboarding wizard: partner-A creates client + programme; partner-B cannot see it', async ({ browser, request }) => {
   // Partner A's fixture licence is deliberately AT cap (2 clients / 2
