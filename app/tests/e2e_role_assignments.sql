@@ -47,7 +47,8 @@ FROM (VALUES
   ('aa000000-0000-0000-0000-000000000003'::uuid, 'expired@w0ra.test'),
   ('aa000000-0000-0000-0000-000000000004'::uuid, 'platform@w0ra.test'),
   ('aa000000-0000-0000-0000-000000000005'::uuid, 'ro@w0ra.test'),
-  ('aa000000-0000-0000-0000-000000000006'::uuid, 'ownerB@w0ra.test')
+  ('aa000000-0000-0000-0000-000000000006'::uuid, 'ownerB@w0ra.test'),
+  ('aa000000-0000-0000-0000-000000000007'::uuid, 'wsl@w0ra.test')
 ) AS u(id, email);
 INSERT INTO users (id, email) SELECT id, email FROM auth.users WHERE email LIKE '%@w0ra.test';
 
@@ -66,6 +67,15 @@ INSERT INTO programmes (client_org_id, name, start_date, total_weeks) VALUES
   ('cc000000-0000-0000-0000-00000000000b', 'W0RA P-A2', DATE '2026-11-02', 10),
   ('cc000000-0000-0000-0000-00000000000c', 'W0RA P-B1', DATE '2026-11-02', 10);
 
+-- capture the generated programme ids for the scoped-user checks below
+-- (the checks run under caller RLS, which hides the cross-tenant rows)
+SELECT id AS p_a1 FROM programmes WHERE name = 'W0RA P-A1' \gset
+SELECT id AS p_b1 FROM programmes WHERE name = 'W0RA P-B1' \gset
+
+-- a workstream under P-A1 for the W4-D3 workstream-lead checks
+INSERT INTO workstreams (id, programme_id, name) VALUES
+  ('dd000000-0000-0000-0000-00000000000a', :'p_a1', 'W0RA WS-A1');
+
 -- owner: partner_admin over Alpha (branch a: all Alpha clients)
 -- ownerB: partner_admin over Beta
 -- multi: partner_consultant Alpha (partner scope) + client-scope consultant on A1
@@ -79,7 +89,9 @@ INSERT INTO role_assignments (user_id, level, role, scope_type, scope_id, end_da
   ('aa000000-0000-0000-0000-000000000002','partner','partner_consultant','client','cc000000-0000-0000-0000-00000000000a',NULL),
   ('aa000000-0000-0000-0000-000000000002','client','programme_lead','client','cc000000-0000-0000-0000-00000000000c',NULL),
   ('aa000000-0000-0000-0000-000000000003','client','client_admin','client','cc000000-0000-0000-0000-00000000000a',CURRENT_DATE),
-  ('aa000000-0000-0000-0000-000000000004','platform','platform_admin','partner',NULL,NULL);
+  ('aa000000-0000-0000-0000-000000000004','platform','platform_admin','partner',NULL,NULL),
+  -- wsl: client-level workstream_lead at WORKSTREAM scope only (W4-D3)
+  ('aa000000-0000-0000-0000-000000000007','client','workstream_lead','workstream','dd000000-0000-0000-0000-00000000000a',NULL);
 -- legacy matrix row grants the consultant A2 as well (old-semantics branch c)
 INSERT INTO consultant_assignments (user_id, client_org_id) VALUES
   ('aa000000-0000-0000-0000-000000000002','cc000000-0000-0000-0000-00000000000b');
@@ -165,6 +177,25 @@ SELECT pg_temp.t((SELECT count(*) FROM client_orgs) = 0
     'platform: no practices/clients visible');
 SELECT pg_temp.t((SELECT count(*) FROM memberships) = 0,
     'platform: memberships view empty');
+ROLLBACK;
+
+-- ---------- workstream-scope lead sees their programme (W4-D3, spec B.13) --
+BEGIN;
+SET ROLE authenticated;
+SET request.jwt.claims = '{"sub":"aa000000-0000-0000-0000-000000000007","role":"authenticated"}';
+SELECT pg_temp.t(
+    (SELECT count(*) FROM allowed_programmes()) = 1
+    AND :'p_a1'::uuid IN (SELECT allowed_programmes()),
+    'workstream lead: allowed_programmes = the programme carrying their workstream');
+SELECT pg_temp.t((SELECT count(*) FROM programmes) = 1
+    AND (SELECT count(*) FROM programmes WHERE id = :'p_a1'::uuid) = 1,
+    'workstream lead: programmes RLS shows exactly their programme');
+SELECT pg_temp.t((SELECT count(*) FROM client_orgs) = 0,
+    'workstream lead: client_orgs still RLS-hidden (scope stays programme-level)');
+SELECT pg_temp.t(programme_context(:'p_a1'::uuid)->'client'->>'name' = 'W0RA A1',
+    'workstream lead: programme_context returns the client slice (W4-D2 RPC)');
+SELECT pg_temp.t(programme_context(:'p_b1'::uuid) IS NULL,
+    'workstream lead: programme_context denies other tenants'' programmes');
 ROLLBACK;
 
 -- ---------- write paths ----------

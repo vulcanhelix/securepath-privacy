@@ -3,8 +3,7 @@ import { P1, P1_NAME, P3, EV_DECIDED, stateFile } from './fixtures';
 
 // W4-00 — one smoke per merged programme screen. Each loads as a user who can
 // see it and asserts TESTFIX content actually rendered (not just a 200), and
-// that no error banner is showing. See KNOWN_DEFECTS in fixtures.ts for the
-// tests currently expected to fail.
+// that no error banner is showing.
 
 const pageTitle = (page: Page) => page.locator('h1.sp-pagehd-title');
 const card = (page: Page, title: string) =>

@@ -4,9 +4,9 @@ import { P1, RUN, stateFile, type Role } from './fixtures';
 // W4-00 — spec screen 08 (evidence capture) on a 390 px phone viewport
 // (project "mobile-390" in playwright.config.ts). The uploader takes a "photo"
 // through the camera input and it lands in the verifier's queue.
-// Spec B.13 names the workstream lead as this screen's user (blocked by
-// W4-D3); the accountable officer — who leads A-01 and so may upload — runs
-// the same path. (C1 "All staff" may not upload evidence, spec §4.2.)
+// Spec B.13 names the workstream lead as this screen's user; the accountable
+// officer — who leads A-01 and so may upload — runs the same path.
+// (C1 "All staff" may not upload evidence, spec §4.2.)
 
 // 1x1 transparent PNG
 const PNG = Buffer.from(
