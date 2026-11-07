@@ -64,6 +64,7 @@ not new-schema shape).
 ## In-flight / last update (2026-11-06d)
 - MERGED: #78 W0-04, #75 W2-05, #76 W2-06, #77 W2-11, #80 W2-07, #84 notes, #85 W1 follow-ups (000012), #86 W2-16, #88 W2-09, #89 W2-10, #91 register integrity (000013), #93 W2-14 platform admin (000015), #94 W2-08 report builder (000014), #97 W4-00 Playwright harness, #98 W2-12 docs/training/designations (000017), #96 retired guards + checklist RPC (000016). Board ~34/51.
 - IN GATE: #101 redirect of approved W4-D fixes to main (000018 scoped_programme_context; was wrongly merged into claude/w4-00); its CI now reloads PostgREST schema cache post-migrations (PGRST202 flake fix). #100 W4-01 support-access E2E — Devin APPROVE, green; reconcile its duplicated nav.ts against main after #101 lands.
+- IN GATE: #104 W3-03 monthly report HTML→PDF in partner branding (/report/[id]/print, browser Save-as-PDF, no new dep; 3 Playwright checks green on throwaway stack).
 - BUILDING: none at this instant — next: remaining W2 screens (exec view, partner onboarding/branding), W3 imports/outputs, W4 NFRs + AT-01..22.
 - Migration numbers taken through 000019 (W4-01 support_access). Next free: 000020.
 - Devin review session: a81e22c41da44e05b7b640c546d54de9 (use ~/.claude/skills/devin-chat/scripts/devin.py). Every PR gates on CI green + Devin APPROVE.
