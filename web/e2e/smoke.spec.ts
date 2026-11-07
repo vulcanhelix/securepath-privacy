@@ -164,7 +164,7 @@ test.describe('cross-partner isolation — Partner B admin', () => {
   test('console shows own partner clients only — Partner A invisible', async ({ page }) => {
     const res = await page.goto('/programmes');
     expect(res?.status()).toBe(200);
-    await expect(page.locator(`a[href="/programmes/${P3}"]`)).toBeVisible();
+    await expect(page.locator(`a[href="/programmes/${P3}"]`).first()).toBeVisible();
     await expect(page.locator(`a[href="/programmes/${P1}"]`)).toHaveCount(0);
     // Partner A tenant names must never reach Partner B's console — not in the
     // portfolio table, not in needs-attention, not in support-access awareness

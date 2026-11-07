@@ -130,7 +130,7 @@ test('AO approves on the client screen — support then sees only that client', 
   const supCtx = await browser.newContext({ storageState: stateFile('support') });
   const page = await supCtx.newPage();
   expect((await page.goto('/programmes'))?.status()).toBe(200);
-  await expect(page.locator(`a[href="/programmes/${P1}"]`)).toBeVisible();
+  await expect(page.locator(`a[href="/programmes/${P1}"]`).first()).toBeVisible();
   expect((await page.goto(`/programmes/${P1}`))?.status()).toBe(200);
   await expect(page.locator('h1.sp-pagehd-title')).toHaveText(P1_NAME);
   await expect(page.locator('.sp-ctx-crumb')).toContainText('TESTFIX Client One (ZA)');
