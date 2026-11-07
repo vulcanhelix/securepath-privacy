@@ -2,16 +2,17 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { uploadEvidenceDirect } from '@/lib/direct-upload';
 import { Button } from '@/components/ui/Button';
 import { Select, Input, Field } from '@/components/ui/forms';
 import { Alert } from '@/components/ui/Alert';
 
 // W2-06 — evidence capture (spec §8.4 screens 03/08, FR-EVD-01/02, FR-MOB-02).
-// Files go through POST /api/evidence — server streams them to the shared
-// evidence store (putObject, same client-scoped sha256 path the documents
-// feature uses; nothing is kept on the device) then registers the row via
-// upload_evidence under the caller's JWT. Links skip storage and call the RPC
-// directly. The camera input uses capture='environment' (screen 08).
+// W4-09 (NFR-02): files go STRAIGHT to the client's store prefix — SHA-256 in
+// the browser → presigned PUT → register via POST /api/evidence (JSON) →
+// upload_evidence under the caller's JWT (lands 'pending' → W4-03 scan queue).
+// Links skip storage and call the RPC directly. The camera input uses
+// capture='environment' (screen 08).
 
 type Option = { id: string; ref: string; label: string; status: string | null };
 
@@ -50,18 +51,17 @@ export function EvidenceUpload({
     setMsg({});
     let n = 0;
     for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('programme_id', programmeId);
-      if (activityId) fd.append('activity_id', activityId);
-      if (registerItemId) fd.append('register_item_id', registerItemId);
-      if (site.trim()) fd.append('site', site.trim());
-      if (note.trim()) fd.append('note', note.trim());
-      if (supersedes) fd.append('supersedes', supersedes);
-      const r = await fetch('/api/evidence', { method: 'POST', body: fd });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        setMsg({ err: `${file.name}: ${body.error ?? 'upload failed'}` });
+      try {
+        await uploadEvidenceDirect(file, {
+          programmeId,
+          activityId: activityId || undefined,
+          registerItemId: registerItemId || undefined,
+          site: site.trim() || undefined,
+          note: note.trim() || undefined,
+          supersedes: supersedes || undefined,
+        });
+      } catch (err) {
+        setMsg({ err: `${file.name}: ${(err as Error).message}` });
         setBusy(false);
         return;
       }

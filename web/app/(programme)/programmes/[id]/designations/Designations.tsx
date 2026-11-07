@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/lib/supabase-browser';
+import { uploadDocumentDirect } from '@/lib/direct-upload';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -10,10 +11,11 @@ import { Checkbox, Field, Input, Select } from '@/components/ui/forms';
 
 // W2-12 — designations. Writes are W2-12 RPCs under the caller's JWT:
 //   appoint_designation, end_designation, set_designation_evidence
-// Evidence upload: the file goes through POST /api/documents (stores the
-// object + record_document → an immutable documents row, classify=false so it
-// never lands in the gap map), then set_designation_evidence links it. Ended
-// rows are history: rendered read-only, never edited or deleted.
+// Evidence upload: W4-09 direct upload (presign → PUT to the store →
+// POST /api/documents JSON → record_document = an immutable documents row,
+// classify=false so it never lands in the gap map), then
+// set_designation_evidence links it. Ended rows are history: rendered
+// read-only, never edited or deleted.
 
 export interface DesignationRow {
   id: string;
@@ -71,15 +73,10 @@ function Msg({ msg }: { msg: { ok?: string; err?: string } }) {
   return null;
 }
 
-/** upload one file as an immutable client document; returns its id */
+/** upload one file as an immutable client document (W4-09 direct upload); returns its id */
 async function uploadEvidence(clientOrgId: string, file: File): Promise<string> {
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('client_org_id', clientOrgId);
-  fd.append('classify', 'false');
-  const res = await fetch('/api/documents', { method: 'POST', body: fd });
-  const body = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-  if (!res.ok || !body.id) throw new Error(body.error ?? `Upload failed (${res.status})`);
+  const body = await uploadDocumentDirect(file, { clientOrgId, classify: false });
+  if (!body.id) throw new Error('Upload failed');
   return body.id;
 }
 

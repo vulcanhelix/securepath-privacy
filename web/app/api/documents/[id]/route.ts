@@ -1,9 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { serverClient } from '@/lib/supabase';
-import { getObject, deleteObject } from '@/lib/storage';
+import { presignDownload, deleteObject } from '@/lib/storage';
 
-// GET — stream the document through our server, only after RLS confirms the caller may
-// see it (the select returns nothing otherwise). Works on MinIO (loopback) and S3 alike.
+// GET — W4-09 (NFR-02): the permission check happens here (RLS select returns the
+// row only for a caller who may see it), then we 302 to a 60-second signed URL —
+// bytes flow client ↔ store directly, never through this server. The signed URL
+// carries the download filename + disposition (S3 response-content-* overrides).
+//
+// W4-03 scan gate on the read path: quarantined ('infected') and scan-failed
+// ('error') objects are never signed — the signed path cannot bypass the
+// malware gate. 'pending' objects may still be viewed (the gate controls
+// acceptance/confirmation, not visibility); acceptance remains Postgres-enforced.
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await serverClient();
@@ -12,24 +20,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { data: doc } = await supabase
     .from('documents')
-    .select('original_filename, mime, storage_path')
+    .select('original_filename, mime, storage_path, scan_status')
     .eq('id', id)
     .maybeSingle();
   if (!doc) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  if (doc.scan_status === 'infected')
+    return NextResponse.json({ error: 'document is quarantined — malware detected (W4-03)' }, { status: 403 });
+  if (doc.scan_status === 'error')
+    return NextResponse.json({ error: 'document failed its malware scan and cannot be served (W4-03)' }, { status: 403 });
 
-  const obj = await getObject(doc.storage_path);
-  const safe = doc.original_filename.replace(/[^\w.\- ]/g, '_');
-  // ?inline=1 renders in the browser (preview modal); default stays a download
+  // ?inline=1 renders in the browser (preview modal); default stays a download.
+  // Served from the storage origin now — stored HTML can't reach app cookies.
   const inline = req.nextUrl.searchParams.get('inline') === '1';
-  return new NextResponse(obj.body, {
-    headers: {
-      'Content-Type': doc.mime || obj.contentType,
-      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${safe}"`,
-      'X-Content-Type-Options': 'nosniff',
-      // inline-rendered stored HTML (issued reports) must never execute script at app origin
-      ...(inline ? { 'Content-Security-Policy': "script-src 'none'" } : {}),
-    },
-  });
+  const url = await presignDownload(doc.storage_path, doc.original_filename, doc.mime || 'application/octet-stream', inline);
+  return NextResponse.redirect(url, 302);
 }
 
 // DELETE — only for junk uploads. delete_document() in Postgres enforces the rules
