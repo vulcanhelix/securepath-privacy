@@ -187,6 +187,10 @@ not new-schema shape).
   merge on green CI+review. Pushback → gentle comment + ntfy to Bruce;
   tester reply re-triages once. Verified end-to-end on GRO-5 (pushback
   path: MFA-code report correctly declined citing NFR-03/FR-ONB-04).
-  Accept path mechanics unit-verified (upload PUT 200, approval regex).
-  MANUAL STEP: invite tester + William to the GRO Linear workspace
-  (Settings → Members — invites are not API-exposed).
+  ACCEPT PATH exercised live on GRO-6 2026-11-08: triage ACCEPT →
+  GH issue #123 (uat-ticket+uat-confirmed) → fix session 6604f043.
+  INVITES: organizationInviteCreate IS API-exposed — William invited
+  as ADMIN 2026-11-08 (Linear free plan only permits admin invites;
+  members need a paid plan or admin role). Tester invite pending her
+  email — run: python3 tools/uat/uat_watcher.py --invite <email>
+  (sends as admin, the only role the free plan allows).
