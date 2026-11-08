@@ -175,8 +175,8 @@ not new-schema shape).
   s21 operator agreement, SSO decision (#49), W5 tooling (#57/#58),
   pen test + backup/restore before first real client.
 - UAT PROCESS (accepted 2026-11-08, build before first human tester):
-  intake = simple form → Linear ticket w/ structured Qs (expected,
-  actual, screenshot). Triage rule: reject ONLY if spec/tests say
+  tester gets a Linear seat; intake = Linear intake form → ticket w/
+  structured Qs (expected, actual, screenshot). Triage rule: reject ONLY if spec/tests say
   current behaviour correct + cite it; else accept — and Bruce is CC'd
   on every push-back reply. Accepted → GitHub issue labelled
   `uat-confirmed` (label-gated trigger, not any issue) → Devin session:
