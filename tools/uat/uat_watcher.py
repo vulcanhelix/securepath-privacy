@@ -74,7 +74,7 @@ TEAM_KEY = env('LINEAR_TEAM_KEY', 'GRO')  # team key prefix; UAT issues carry la
 UAT_LABEL = env('LINEAR_UAT_LABEL', 'uat')
 
 
-def gql(query, variables=None):
+def gql(query, variables=None, _tries=3):
     body = json.dumps({'query': query, 'variables': variables or {}}).encode()
     req = urllib.request.Request(LINEAR_GQL, data=body, method='POST', headers={
         'Authorization': LINEAR_KEY, 'Content-Type': 'application/json'})
@@ -83,6 +83,11 @@ def gql(query, variables=None):
             d = json.loads(r.read())
     except urllib.error.HTTPError as e:
         raise SystemExit(f'Linear API {e.code}: {e.read()[:300]}')
+    except Exception:
+        if _tries <= 1:
+            raise
+        time.sleep(3)
+        return gql(query, variables, _tries - 1)
     if d.get('errors'):
         raise SystemExit(f'Linear GQL errors: {d["errors"][:2]}')
     return d.get('data', {})
@@ -268,12 +273,18 @@ def linear_upload(path):
     url, asset = uf.get('uploadUrl'), uf.get('assetUrl')
     if not url:
         return None
-    req = urllib.request.Request(url, data=open(path, 'rb').read(), method='PUT')
-    req.add_header('Content-Type', 'video/mp4')
-    for h in uf.get('headers') or []:
-        req.add_header(h['key'], h['value'])
-    urllib.request.urlopen(req, timeout=300)
-    return asset
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(url, data=open(path, 'rb').read(), method='PUT')
+            req.add_header('Content-Type', 'video/mp4')
+            for h in uf.get('headers') or []:
+                req.add_header(h['key'], h['value'])
+            urllib.request.urlopen(req, timeout=300)
+            return asset
+        except Exception:
+            if attempt == 2:
+                raise
+            time.sleep(3)
 
 
 def triage_prompt(issue):
@@ -478,7 +489,11 @@ def tick(st):
                 save_state(st)
                 continue
             video = find_video(tk['session'], tk.get('worktree'))
-            asset = linear_upload(video) if video else None
+            try:
+                asset = linear_upload(video) if video else None
+            except Exception as e:
+                ntfy(f'UAT {ident}: video upload failed after retries: {str(e)[:100]}')
+                asset = None
             body = ('Here\'s the fix working: ' + (asset or '(video upload failed — see PR link)')
                     + '\n\nDoes this look right? Reply here to approve and I\'ll merge it, '
                       'or tell me what still looks off.')
