@@ -198,7 +198,10 @@ not new-schema shape).
   authenticate {_meta.api_key: DEVIN_API_KEY}, bypass mode, isolated
   HOME /root/uat-acp/home (empty mcp_config; gh config + playwright
   browsers symlinked in; PLAYWRIGHT_BROWSERS_PATH exported). Model:
-  swe-2-max everywhere (Bruce's call 2026-11-08). Triage in repo root;
+  swe-2-max everywhere (Bruce's call 2026-11-08). SWE-2 is FREE on
+  Devin until ~Dec 2026 — when the promo ends, revisit: drop triage
+  to swe-2-flash-medium and keep fixes on max, or re-evaluate.
+  Triage in repo root;
   fixes in git worktree runs/wt-<gh#> on branch uat/<gh#>, video to
   runs/video-<IDENT>/.
   PR step is deterministic (watcher git push + gh pr create), not a
