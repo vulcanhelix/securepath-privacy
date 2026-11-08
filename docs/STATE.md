@@ -158,10 +158,14 @@ not new-schema shape).
   quarantine 403; key = client_org/sha256; byte-parity proven.
 - STATE: no engineering PRs remain open (only ancient #1/#2 unrelated).
   Every planned v0.2 work item + NFR gap items through W4-09 are on main.
-- STAGING OPS TODO: signed URLs need S3_BROWSER_ENDPOINT + browser-
-  reachable MinIO route (Caddy→minio) — MinIO is loopback-only today.
-  Also note: migrations up to 000034 not yet applied to staging; apply
-  with supabase_admin + NOTIFY pgrst reload after.
+- STAGING DEPLOYED 2026-11-08: all 34 pending migrations (20261105000001
+  →20261106000034) applied via supabase_admin, pgrst schema reloaded,
+  rest container restarted; web rebuilt+deployed (deploy-web.sh) after
+  npm ci for @aws-sdk/s3-request-presigner. DB 33→82 tables, 354
+  routines. Smoke: /login 200, /rest/v1 200, service active. Backup at
+  /root/securepath-staging-backup-20261108-0602.dump. pg_cron tick armed.
+- STAGING OPS STILL OPEN: signed URLs need S3_BROWSER_ENDPOINT +
+  browser-reachable MinIO route (Caddy→minio) — MinIO is loopback-only.
 - WILLIAM-SIDE (the actual launch blockers now): POPIA programme template
   content, first-client tracker (W3-02 #43), SA production provider +
   s21 operator agreement, SSO decision (#49), W5 tooling (#57/#58),
