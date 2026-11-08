@@ -214,3 +214,11 @@ not new-schema shape).
   members need a paid plan or admin role). Tester invite pending her
   email — run: python3 tools/uat/uat_watcher.py --invite <email>
   (sends as admin, the only role the free plan allows).
+  TESTER KIT 2026-11-08: docs/uat/TESTER_GUIDE.md + uat-walkthrough.mp4
+  (2:14 narrated screen recording of the real Linear flow). Recorded
+  via Playwright on a demo workspace replica (growthstrategyhq-uat on
+  brucedeonmartin@gmail.com — Bruce's real account can't receive
+  Linear mail: upstream delivery block, so the real workspace couldn't
+  be driven). Re-record kit: tools/uat/walkthrough/record/ (state.json
+  session + demo-key.txt local-only, gitignored; record.mjs +
+  post_comment.py + make_vo.py).
