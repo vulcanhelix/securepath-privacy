@@ -296,6 +296,9 @@ Rules:
 - Commit your changes on {branch} with a clear message. Leave the tree clean.
 - Do NOT open a PR — that step is handled automatically after human approval.
 - When done, end your reply with a line containing exactly: UAT-FIX-DONE
+- If after honest investigation the report does not reproduce or turns out not
+  to be a defect, do NOT fake a fix: end with UAT-NO-REPRO plus a short plain
+  explanation of what you checked and why it isn't a bug.
 """
 
 
@@ -436,6 +439,17 @@ def tick(st):
                     save_state(st)
                 continue
             msgs = run_log(tk['session'])
+            if 'UAT-NO-REPRO' in msgs:
+                expl = msgs.split('UAT-NO-REPRO', 1)[-1].strip()[:700]
+                comment(iid, 'I dug into this properly and could not reproduce the problem — '
+                             + (expl or 'the behaviour looks correct on staging.') +
+                             '\n\nIf you can still see it, reply with a screenshot or the exact '
+                             'page and I\'ll take another pass. (cc: Bruce)')
+                ntfy(f'UAT {ident}: fix reported NO-REPRO')
+                tk.update(phase='declined', since=now)
+                save_state(st)
+                print(f'{ident}: fix no-repro -> declined')
+                continue
             if not DONE_RX.search(msgs):
                 if respawn_or_fail(st, tk, ident, iid, 'fix'):
                     tk['phase'] = 'spawn_fix'  # fresh worktree + run
