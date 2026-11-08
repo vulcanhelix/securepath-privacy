@@ -11,6 +11,15 @@ const card = (page: Page, title: string) =>
 const noErrorBanner = async (page: Page) =>
   expect(page.getByText(/^Could not load/)).toHaveCount(0);
 
+test.describe('MFA verification prompt', () => {
+  test.use({ storageState: stateFile('consultant') });
+
+  test('explains that the code comes from an authenticator app', async ({ page }) => {
+    await page.goto('/mfa');
+    await expect(page.getByText('Enter the 6-digit code from your authenticator app.')).toBeVisible();
+  });
+});
+
 test.describe('programme screens — Partner A consultant assigned to C1', () => {
   test.use({ storageState: stateFile('consultant') });
 
