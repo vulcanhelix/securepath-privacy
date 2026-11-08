@@ -1,0 +1,8 @@
+{
+  "compositions/components/browser-device-stage.html": "59b20814d38bf58ec1c6c7727ed954e89e9f38a7392eddf6d266ce586bad6764",
+  "compositions/components/cursor-annotate.html": "c0b3aab76981ab76ac9679c283e3dc48b6dd7ce567f68b5d40fe31baa80a5d74",
+  "compositions/components/cursor-zoom-follow.html": "827327986216100b6c20c0e136dfcafa177fa247eab851514c705ef61a9afafe",
+  "compositions/components/oversized-cursor.html": "1562eb4a3ce01384461feb016bd30ab7c816e17e3ebbc33da06491c628b9f4d1",
+  "compositions/components/press-ripple.html": "db9edeff080d126609c103d880c166b7aafa5bbb9f0d92fc52c6aa72407d6104",
+  "compositions/components/typewriter.html": "98b1a2780a8ce480309af4ff9773b50742a2ce6fc05f0f7307aa3f5434436379"
+}

@@ -67,4 +67,5 @@ Thumbs.db
 # Large documentation files
 *.zip
 !docs/assessment-sheets/assessment_popi_2026_1.zip
-*.docxtools/uat/runs/
+*.docx
+tools/uat/runs/

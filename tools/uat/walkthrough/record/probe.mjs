@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ headless: true });
+const p = await (await b.newContext({ viewport: { width: 1600, height: 950 } })).newPage();
+await p.goto('https://linear.app/login', { waitUntil: 'networkidle' }).catch(()=>{});
+await p.waitForTimeout(6000);
+console.log('URL', p.url());
+console.log('inputs:', await p.locator('input').evaluateAll(els => els.map(e => ({type:e.type,name:e.name,ph:e.placeholder,ac:e.autocomplete}))));
+console.log('buttons:', await p.locator('button, a[role="button"]').evaluateAll(els => els.map(e => e.textContent.trim()).filter(Boolean).slice(0,15)));
+await p.screenshot({ path: 'login-page.png' });
+await b.close();

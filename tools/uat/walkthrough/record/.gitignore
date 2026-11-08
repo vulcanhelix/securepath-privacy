@@ -1,0 +1,19 @@
+# secrets / session state — never commit
+state.json
+demo-key.txt
+magic-link.txt
+code.txt
+ticket-url.txt
+find-ticket
+post-comment
+# recording artifacts
+video/
+*.webm
+*.mp4
+*.wav
+markers.json
+*.log
+# screenshots / probe frames
+*.png
+node_modules/
+api-result.json
