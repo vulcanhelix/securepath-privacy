@@ -41,7 +41,7 @@ LINEAR_GQL = 'https://api.linear.app/graphql'
 NTFY_TOPIC = 'securepath-ops-d2e6906f'
 NUDGE_AFTER_S = 48 * 3600
 POLL_TIMEOUT_NOTE_S = 6 * 3600  # warn if a run is quiet this long
-TRIAGE_MODEL = 'swe-2-flash-medium'
+TRIAGE_MODEL = 'swe-2-max'
 FIX_MODEL = 'swe-2-max'
 MAX_CONCURRENT_FIX = 1
 
