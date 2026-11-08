@@ -440,7 +440,16 @@ def setup():
 
 
 if __name__ == '__main__':
-    if '--setup' in sys.argv:
+    if '--invite' in sys.argv:
+        # uat_watcher.py --invite someone@example.com
+        email = sys.argv[sys.argv.index('--invite') + 1]
+        tid = team()['id']
+        d = gql('''mutation($e:String!,$r:UserRoleType!,$t:[String!]!){
+            organizationInviteCreate(input:{email:$e,role:$r,teamIds:$t}){
+              success organizationInvite{id email}}}''',
+            {'e': email, 'r': 'admin', 't': [tid]})  # free plan only allows admin invites
+        print('invited:', d)
+    elif '--setup' in sys.argv:
         setup()
     elif '--status' in sys.argv:
         st = load_state()
