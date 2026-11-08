@@ -192,6 +192,19 @@ not new-schema shape).
   uat/123 + regression test + 30s video → video on Linear →
   uat-trivial auto-approve → "UAT APPROVED" → PR #124 → Devin review
   APPROVED + CI e2e green → MERGED. Full loop verified on a real ticket.
+  LOCAL TRANSPORT (2026-11-08, replaces cloud sessions): cloud sessions
+  cost ACUs + default to lite mode. Now: tools/uat/acp_run.py spawns
+  `devin acp --model <tier>` headless over JSON-RPC — auth via
+  authenticate {_meta.api_key: DEVIN_API_KEY}, bypass mode, isolated
+  HOME /root/uat-acp/home (empty mcp_config; gh config + playwright
+  browsers symlinked in; PLAYWRIGHT_BROWSERS_PATH exported). Triage =
+  swe-2-flash-medium in repo root; fixes = swe-2-max in git worktree
+  runs/wt-<gh#> on branch uat/<gh#>, video to runs/video-<IDENT>/.
+  PR step is deterministic (watcher git push + gh pr create), not a
+  session. Runs retry once then fail + ntfy; UAT-NO-REPRO = honest
+  no-defect exit → gentle declined comment. Max 1 concurrent fix.
+  Verified live on GRO-7: local triage ACCEPT (FR-BRN-05 citation +
+  real TECH diagnosis), issue #125, swe-2-max fix run investigating.
   INVITES: organizationInviteCreate IS API-exposed — William invited
   as ADMIN 2026-11-08 (Linear free plan only permits admin invites;
   members need a paid plan or admin role). Tester invite pending her
