@@ -43,6 +43,9 @@ def main():
     # session spawn; real credentials are never needed (auth = api_key call).
     env = dict(os.environ)
     env['HOME'] = ISOLATED_HOME
+    # playwright browsers + npm cache live under the real HOME; expose them so
+    # fix runs can record video without reinstalling the world
+    env.setdefault('PLAYWRIGHT_BROWSERS_PATH', '/root/.cache/ms-playwright')
     err = open(a.log + '.err', 'w')
     p = subprocess.Popen(['devin', 'acp', '--model', a.model],
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -132,3 +135,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+# note: ~/.config/gh is symlinked into ISOLATED_HOME so `gh` works inside runs
