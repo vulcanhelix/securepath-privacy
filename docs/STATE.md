@@ -174,3 +174,14 @@ not new-schema shape).
   content, first-client tracker (W3-02 #43), SA production provider +
   s21 operator agreement, SSO decision (#49), W5 tooling (#57/#58),
   pen test + backup/restore before first real client.
+- UAT PROCESS (accepted 2026-11-08, build before first human tester):
+  intake = simple form → Linear ticket w/ structured Qs (expected,
+  actual, screenshot). Triage rule: reject ONLY if spec/tests say
+  current behaviour correct + cite it; else accept — and Bruce is CC'd
+  on every push-back reply. Accepted → GitHub issue labelled
+  `uat-confirmed` (label-gated trigger, not any issue) → Devin session:
+  fix + tests + video proof posted to ticket → waits for tester
+  approval (48h nudge; trivial items may merge on CI+review anyway,
+  video still posted) → PR → merge on green CI + review. Batch trivial
+  fixes (≤1 PR/day rather than per-ticket ceremony). Do NOT mention
+  the tester's identity in docs/email — phrased "whoever does UAT".
