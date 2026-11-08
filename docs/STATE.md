@@ -174,14 +174,19 @@ not new-schema shape).
   content, first-client tracker (W3-02 #43), SA production provider +
   s21 operator agreement, SSO decision (#49), W5 tooling (#57/#58),
   pen test + backup/restore before first real client.
-- UAT PROCESS (accepted 2026-11-08, build before first human tester):
-  tester gets a Linear seat; intake = Linear intake form → ticket w/
-  structured Qs (expected, actual, screenshot). Triage rule: reject ONLY if spec/tests say
-  current behaviour correct + cite it; else accept — and Bruce is CC'd
-  on every push-back reply. Accepted → GitHub issue labelled
-  `uat-confirmed` (label-gated trigger, not any issue) → Devin session:
-  fix + tests + video proof posted to ticket → waits for tester
-  approval (48h nudge; trivial items may merge on CI+review anyway,
-  video still posted) → PR → merge on green CI + review. Batch trivial
-  fixes (≤1 PR/day rather than per-ticket ceremony). Do NOT mention
-  the tester's identity in docs/email — phrased "whoever does UAT".
+- UAT PROCESS — LIVE 2026-11-08 (not just designed, built + verified):
+  tools/uat/uat_watcher.py + systemd timer uat-watcher.timer (5min poll).
+  Config: ~/.secrets/linear.env (LINEAR_API_KEY), workspace
+  GrowthstrategyHQ, team GRO, label `uat` gates intake, "UAT report"
+  issue template created (structured Qs). Flow: ticket w/ uat label →
+  Devin triage (reject only w/ spec citation, else accept) → accept =
+  GH issue uat-ticket+uat-confirmed → fix session (branch uat/N, tests,
+  ~30s playwright video) → video uploaded to Linear (fileUpload→GCS PUT)
+  → tester approval (is_approval: positive word + no negation; 48h
+  nudge; `uat-trivial` skips gate) → "UAT APPROVED — open PR" → PR →
+  merge on green CI+review. Pushback → gentle comment + ntfy to Bruce;
+  tester reply re-triages once. Verified end-to-end on GRO-5 (pushback
+  path: MFA-code report correctly declined citing NFR-03/FR-ONB-04).
+  Accept path mechanics unit-verified (upload PUT 200, approval regex).
+  MANUAL STEP: invite tester + William to the GRO Linear workspace
+  (Settings → Members — invites are not API-exposed).
