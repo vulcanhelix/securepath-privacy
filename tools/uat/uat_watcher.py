@@ -4,13 +4,19 @@
 Runs via systemd timer every ~5 min. State machine:
 
   new Linear ticket (UAT team)
-    -> triage: Devin session evaluates vs spec (reject only with citation)
+    -> triage: headless Devin ACP run evaluates vs spec (reject only w/ citation)
     -> accept: GitHub issue labelled uat-ticket + uat-confirmed
     -> pushback: gentle Linear reply citing spec; Bruce pinged (ntfy + assign)
-    -> fix: label-gated Devin session implements on branch + tests + video
+    -> fix: label-gated headless run implements on a worktree branch + tests
+       + playwright video saved to disk
     -> awaiting_approval: video posted to ticket; 48h nudge; tester approves
-    -> pr_pending -> pr: session opens PR; merge on green CI + review
+    -> pr_pending -> pr: watcher pushes branch + opens PR deterministically;
+       merge on green CI + review
     -> done
+
+Sessions are LOCAL: tools/uat/acp_run.py spawns `devin acp --model <tier>`
+(headless, bypass mode) inside a git worktree under tools/uat/runs/<id>/.
+Triage runs use swe-2-flash-medium; fixes use swe-2-max. No cloud ACU spend.
 
 Trivial tickets (label `uat-trivial`) skip the tester-approval gate.
 
@@ -25,14 +31,19 @@ Usage:
 import json, os, re, subprocess, sys, time, urllib.request, urllib.error
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.abspath(os.path.join(ROOT, '..', '..'))
+RUNS_DIR = os.path.join(ROOT, 'runs')
 STATE_DIR = os.path.expanduser('~/.local/state/uat-watcher')
 STATE_FILE = os.path.join(STATE_DIR, 'state.json')
-DEVIN_PY = os.path.expanduser('~/.claude/skills/devin-chat/scripts/devin.py')
+ACP_RUN = os.path.join(ROOT, 'acp_run.py')
 GH_REPO = 'vulcanhelix/securepath-privacy'
 LINEAR_GQL = 'https://api.linear.app/graphql'
 NTFY_TOPIC = 'securepath-ops-d2e6906f'
 NUDGE_AFTER_S = 48 * 3600
-POLL_TIMEOUT_NOTE_S = 6 * 3600  # warn if a devin session is quiet this long
+POLL_TIMEOUT_NOTE_S = 6 * 3600  # warn if a run is quiet this long
+TRIAGE_MODEL = 'swe-2-flash-medium'
+FIX_MODEL = 'swe-2-max'
+MAX_CONCURRENT_FIX = 1
 
 VERDICT_RX = re.compile(r'VERDICT:\s*(ACCEPT|PUSHBACK)', re.I)
 PR_RX = re.compile(r'PR:\s*(https://github\.com/\S+)', re.I)
@@ -97,40 +108,83 @@ def sh(*args, check=True, timeout=120):
     return r
 
 
-def devin_new(prompt, title):
-    r = sh('python3', DEVIN_PY, 'new', prompt, '--yes', '--title', title, timeout=180)
-    m = re.search(r'([0-9a-f]{32})', r.stdout)
-    return m.group(1) if m else None
+def acp_spawn(prompt, name, cwd, model):
+    """Detach a headless Devin ACP run. Returns the run id (dir under runs/)."""
+    run_id = f'{int(time.time())}-{re.sub(r"[^a-z0-9]+", "-", name.lower())[:40]}'
+    rd = os.path.join(RUNS_DIR, run_id)
+    os.makedirs(rd, exist_ok=True)
+    with open(os.path.join(rd, 'prompt.txt'), 'w') as f:
+        f.write(prompt)
+    log = os.path.join(rd, 'agent.log')
+    subprocess.Popen(
+        ['python3', ACP_RUN, '--prompt-file', os.path.join(rd, 'prompt.txt'),
+         '--cwd', cwd, '--model', model, '--log', log],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        start_new_session=True)
+    return run_id
 
 
-def devin_messages(session_id):
-    r = sh('python3', DEVIN_PY, 'read', session_id, '--last', '40', check=False, timeout=120)
-    return r.stdout
+def run_dir(run_id):
+    return os.path.join(RUNS_DIR, run_id)
 
 
-def devin_sections(msgs):
-    """Only message bodies authored by Devin — the read dump includes the
-    original prompt (which contains example verdict/PR lines), so never
-    regex the raw dump."""
-    parts = re.split(r'^--- (\w+) \d{2}-\d{2} \d{2}:\d{2}\n', msgs, flags=re.M)
-    out = []
-    for i in range(1, len(parts), 2):
-        if parts[i] == 'devin':
-            out.append(parts[i + 1])
-    return out
+def run_log(run_id):
+    """Agent text + markers only — the prompt never lands in the log, so
+    regexes can't match example lines the way the cloud dump could."""
+    try:
+        return open(os.path.join(run_dir(run_id), 'agent.log')).read()
+    except OSError:
+        return ''
 
 
-def devin_send(session_id, text, wait=0):
-    args = ['python3', DEVIN_PY, 'send', session_id, text]
-    if wait:
-        args += ['--wait', str(wait)]
-    return sh(*args, check=False, timeout=wait + 120)
+def run_finished(run_id):
+    """Process gone or ACP-RUN-END marker written."""
+    log = run_log(run_id)
+    if 'ACP-RUN-END' in log:
+        return True
+    try:
+        pid = int(open(os.path.join(run_dir(run_id), 'agent.log.pid')).read().split()[-1])
+        os.kill(pid, 0)
+        return False
+    except (OSError, ValueError):
+        return True  # no pid file yet or process dead
 
 
-def devin_attachment(link, out_dir):
-    r = sh('python3', DEVIN_PY, 'attachment', link, '--out', out_dir, check=False, timeout=180)
-    m = re.search(r'saved (\S+)', r.stdout or '')
-    return m.group(1) if m else None
+def run_failed(run_id):
+    return run_finished(run_id) and 'ACP-RUN-END' not in run_log(run_id)
+
+
+def find_video(run_id, worktree):
+    """Newest mp4 the fix run left in its run dir or the worktree."""
+    cands = []
+    for base in (run_dir(run_id), worktree or ''):
+        if base and os.path.isdir(base):
+            for dp, _, fns in os.walk(base):
+                cands += [os.path.join(dp, f) for f in fns if f.endswith('.mp4')]
+    return max(cands, key=os.path.getmtime) if cands else None
+
+
+def make_worktree(branch, gh_num):
+    """Isolated checkout for a fix run so concurrent work can't collide."""
+    wt = os.path.join(RUNS_DIR, f'wt-{gh_num}')
+    sh('git', '-C', REPO, 'fetch', 'origin', 'main', check=False)
+    if os.path.isdir(wt):
+        sh('git', '-C', REPO, 'worktree', 'remove', '--force', wt, check=False)
+    sh('git', '-C', REPO, 'worktree', 'add', wt, '-b', branch, 'origin/main')
+    return wt
+
+
+def open_pr(tk):
+    """Deterministic PR step — no agent needed: push the fix branch, gh pr create."""
+    wt, branch = tk['worktree'], tk['branch']
+    sh('git', '-C', wt, 'push', '-u', 'origin', branch)
+    r = sh('gh', 'pr', 'create', '--repo', GH_REPO, '--head', branch,
+           '--title', f"[UAT] {tk.get('gh_title', tk['id'])}",
+           '--body', f"UAT fix for {tk.get('gh_url', '')} / Linear {tk['id']}.\n\n"
+                     'Fix session run locally (headless Devin ACP, swe-2-max); '
+                     'video evidence is on the Linear ticket.\n\n'
+                     'Merge gate: green CI + review.')
+    return r.stdout.strip().splitlines()[-1]
 
 
 def ntfy(msg):
@@ -203,8 +257,10 @@ def linear_upload(path):
 
 
 def triage_prompt(issue):
-    return f"""You are the UAT triage for SecurePath (repo vulcanhelix/securepath-privacy,
-spec docs/spec/SP-SPC-PLT-001_v0_2.txt). A UAT tester filed this ticket:
+    return f"""You are the UAT triage for SecurePath. You are running headless inside the
+repo checkout (vulcanhelix/securepath-privacy); the spec is
+docs/spec/SP-SPC-PLT-001_v0_2.txt — read the relevant sections before deciding.
+Do NOT edit any files. A UAT tester filed this ticket:
 
 TITLE: {issue['title']}
 BODY:
@@ -218,31 +274,49 @@ Your job: decide if this is a real defect/missing behaviour. Rules:
 - If structured fields (expected vs actual, page, screenshot) are missing, note
   what you'd want — do not reject for that alone.
 
-Reply with EXACTLY one verdict line, then a 2-4 sentence plain-language
-explanation for the tester:
+End your reply with EXACTLY this structure and nothing after TECH:
 VERDICT: ACCEPT    or    VERDICT: PUSHBACK
-Then "EXPLANATION:" and the text. On ACCEPT also append a one-line
-technical summary prefixed "TECH:" for the fix session."""
+EXPLANATION: <2-4 sentence plain-language explanation for the tester>
+TECH: <one-line technical summary for the fix session, only on ACCEPT>"""
 
 
-def fix_prompt(gh_url, lin_ref, tech):
+def fix_prompt(gh_url, lin_ref, tech, branch, worktree, video_dir):
     return f"""Fix UAT issue {gh_url} in vulcanhelix/securepath-privacy.
 
-Context: this came from UAT testing ({lin_ref}). Technical summary: {tech}
+You are running headless in a git worktree at {worktree} on branch {branch}
+(already created off origin/main). Context: this came from UAT testing
+({lin_ref}). Technical summary: {tech}
 
 Rules:
-- Work on a branch uat/<issue-number> off main. Do NOT merge to main.
+- Work only inside {worktree}. Do NOT merge to main. Do NOT push.
 - Implement the fix, run the relevant SQL/browser tests (see .github/workflows/e2e.yml
   and AGENTS.md). Add or update a test if the bug class lacks coverage.
 - Record a ~30s playwright video proving the fix works on the live flow
-  (web/ has playwright). Save it as an attachment and reply with:
-    UAT-FIX-DONE
-    PR: <leave unset for now>
-  plus the attachment link for the video.
-- Do NOT open the PR yet — a human approves the video first. When you get the
-  follow-up message "UAT APPROVED — open PR", then push, open the PR, and reply
-  with "PR: <url>". The merge gate (green CI + review) applies after that.
+  (web/ has playwright). Save the mp4 into {video_dir}/.
+- Commit your changes on {branch} with a clear message. Leave the tree clean.
+- Do NOT open a PR — that step is handled automatically after human approval.
+- When done, end your reply with a line containing exactly: UAT-FIX-DONE
 """
+
+
+def spawn_or_fail(st, tk, ident, iid, prompt, name, cwd, model):
+    """Spawn an ACP run; retry once on dead runs, then mark the ticket failed."""
+    rid = acp_spawn(prompt, name, cwd, model)
+    tk.update(session=rid, since=time.time())
+    return rid
+
+
+def respawn_or_fail(st, tk, ident, iid, what):
+    """A run finished without its expected marker or died. Retry once, then fail."""
+    tries = tk.get('spawn_tries', 0)
+    if tries < 1:
+        tk['spawn_tries'] = tries + 1
+        return True
+    tk.update(phase='failed', since=time.time())
+    ntfy(f'UAT {ident}: {what} run failed twice — needs a human')
+    comment(iid, 'The automated pass on this hit an internal error twice — '
+                 'Bruce has been pinged and will pick it up manually.')
+    return False
 
 
 def tick(st):
@@ -252,8 +326,8 @@ def tick(st):
     t = team()
     st['teams'][TEAM_KEY] = {'id': t['id']}
     inprog = team_state_id(t, 'in progress')
-    triage = team_state_id(t, 'triage', 'backlog')
     now = time.time()
+    fixing_count = sum(1 for x in st['tickets'].values() if x.get('phase') == 'fixing')
 
     for iss in issues(t['id']):
         if not any(l['name'].lower() == UAT_LABEL for l in iss['labels']['nodes']):
@@ -264,22 +338,31 @@ def tick(st):
             # ignore tickets already terminal before we first saw them
             if iss['state']['type'] in ('completed', 'canceled'):
                 continue
-            sid = devin_new(triage_prompt(iss), f'UAT triage {ident}')
+            rid = acp_spawn(triage_prompt(iss), f'triage-{ident}', REPO, TRIAGE_MODEL)
             st['tickets'][iid] = {'id': ident, 'phase': 'triaging',
-                                  'session': sid, 'since': now}
+                                  'session': rid, 'since': now, 'spawn_tries': 0}
             comment(iid, 'Thanks — looking at this now. I\'ll confirm whether it\'s a defect shortly.')
-            print(f'{ident}: -> triaging ({sid})')
+            print(f'{ident}: -> triaging ({rid})')
             continue
 
         ph = tk['phase']
 
         if ph == 'triaging':
-            msgs = '\n'.join(devin_sections(devin_messages(tk['session'])))
+            if now - tk['since'] < 120:  # grace: pid file + first tokens take a moment
+                continue
+            if not run_finished(tk['session']):
+                if now - tk['since'] > POLL_TIMEOUT_NOTE_S:
+                    ntfy(f'UAT {ident}: triage run quiet >6h')
+                    tk['since'] = now
+                continue
+            msgs = run_log(tk['session'])
             m = VERDICT_RX.search(msgs)
             if not m:
-                if now - tk['since'] > POLL_TIMEOUT_NOTE_S:
-                    ntfy(f'UAT {ident}: triage session quiet >6h')
-                    tk['since'] = now
+                if respawn_or_fail(st, tk, ident, iid, 'triage'):
+                    rid = spawn_or_fail(st, tk, ident, iid, triage_prompt(iss),
+                                        f'triage-{ident}', REPO, TRIAGE_MODEL)
+                    print(f'{ident}: triage respawned ({rid})')
+                save_state(st)
                 continue
             expl = (re.split(r'EXPLANATION:', msgs, flags=re.I)[-1]
                     .split('TECH:')[0].strip()[:800] if 'EXPLANATION' in msgs.upper() else '')
@@ -292,7 +375,8 @@ def tick(st):
                        '--body', f"From Linear {ident}.\n\n{iss.get('description') or iss['title']}\n\nTech: {tech}")
                 gh_url = r.stdout.strip().splitlines()[-1]
                 gh_num = int(re.search(r'/issues/(\d+)', gh_url).group(1))
-                tk.update(phase='spawn_fix', gh=gh_num, gh_url=gh_url, tech=tech)
+                tk.update(phase='spawn_fix', gh=gh_num, gh_url=gh_url,
+                          tech=tech, gh_title=iss['title'], spawn_tries=0)
                 comment(iid, f'Confirmed — this is a real issue. Tracking the fix in {gh_url}; '
                              'I\'ll post a video here once it\'s working.')
                 if inprog:
@@ -318,30 +402,47 @@ def tick(st):
                     iss2 = dict(iss)
                     iss2['description'] = (iss.get('description') or '') + \
                         '\n\nTester follow-up: ' + cs[-1]['body']
-                    sid = devin_new(triage_prompt(iss2), f'UAT re-triage {ident}')
-                    tk.update(phase='triaging', session=sid, since=now)
+                    rid = acp_spawn(triage_prompt(iss2), f'retriage-{ident}', REPO, TRIAGE_MODEL)
+                    tk.update(phase='triaging', session=rid, since=now, spawn_tries=0)
                     save_state(st)
 
         elif ph == 'spawn_fix':
-            sid = devin_new(fix_prompt(tk['gh_url'], ident, tk.get('tech', '')),
-                            f'UAT fix {ident}')
-            tk.update(phase='fixing', session=sid, since=now)
+            if fixing_count >= MAX_CONCURRENT_FIX:
+                continue  # serialize fix runs; triages may run in parallel
+            branch = f'uat/{tk["gh"]}'
+            try:
+                wt = make_worktree(branch, tk['gh'])
+            except Exception as e:
+                ntfy(f'UAT {ident}: worktree failed: {str(e)[:120]}')
+                continue
+            video_dir = os.path.join(RUNS_DIR, f'video-{ident}')
+            os.makedirs(video_dir, exist_ok=True)
+            rid = acp_spawn(fix_prompt(tk['gh_url'], ident, tk.get('tech', ''),
+                                       branch, wt, video_dir),
+                            f'fix-{ident}', wt, FIX_MODEL)
+            tk.update(phase='fixing', session=rid, worktree=wt, branch=branch,
+                      video_dir=video_dir, since=now, spawn_tries=0)
+            fixing_count += 1
             save_state(st)
-            print(f'{ident}: -> fixing ({sid})')
+            print(f'{ident}: -> fixing ({rid})')
 
         elif ph == 'fixing':
-            msgs = '\n'.join(devin_sections(devin_messages(tk['session'])))
-            if not DONE_RX.search(msgs):
+            if now - tk['since'] < 120:
+                continue
+            if not run_finished(tk['session']):
                 if now - tk['since'] > POLL_TIMEOUT_NOTE_S:
-                    ntfy(f'UAT {ident}: fix session quiet >6h')
+                    ntfy(f'UAT {ident}: fix run quiet >6h')
                     tk['since'] = now
                     save_state(st)
                 continue
-            video = None
-            for link in re.findall(r'https://\S*attachments/\S+', msgs):
-                video = devin_attachment(link, STATE_DIR)
-                if video:
-                    break
+            msgs = run_log(tk['session'])
+            if not DONE_RX.search(msgs):
+                if respawn_or_fail(st, tk, ident, iid, 'fix'):
+                    tk['phase'] = 'spawn_fix'  # fresh worktree + run
+                    print(f'{ident}: fix respawn queued')
+                save_state(st)
+                continue
+            video = find_video(tk['session'], tk.get('worktree'))
             asset = linear_upload(video) if video else None
             body = ('Here\'s the fix working: ' + (asset or '(video upload failed — see PR link)')
                     + '\n\nDoes this look right? Reply here to approve and I\'ll merge it, '
@@ -356,10 +457,14 @@ def tick(st):
             cs = [c for c in comments(iid) if not (c.get('user') or {}).get('isMe')]
             approved = trivial or (cs and is_approval(cs[-1]['body']))
             if approved:
-                devin_send(tk['session'], 'UAT APPROVED — open PR')
-                tk.update(phase='pr_pending', since=now)
-                comment(iid, 'Approved — opening the PR now, it goes through the normal review gate.')
-                print(f'{ident}: approved -> pr_pending')
+                try:
+                    pr_url = open_pr(tk)
+                except Exception as e:
+                    ntfy(f'UAT {ident}: open_pr failed: {str(e)[:160]}')
+                    continue
+                tk.update(phase='pr', pr=pr_url, since=now)
+                comment(iid, f'Approved — PR open: {pr_url} — merging once CI and review pass.')
+                print(f'{ident}: approved -> pr {pr_url}')
             elif now - tk['since'] > NUDGE_AFTER_S and not tk.get('nudge'):
                 comment(iid, 'Just nudging — does the fix in the video above look right? '
                              'Reply yes to approve, or tell me what\'s still off.')
@@ -369,17 +474,15 @@ def tick(st):
             save_state(st)
 
         elif ph == 'pr_pending':
-            msgs = '\n'.join(devin_sections(devin_messages(tk['session'])))
-            m = PR_RX.search(msgs)
-            if m:
-                tk.update(phase='pr', pr=m.group(1), since=now)
-                comment(iid, f'PR open: {m.group(1)} — merging once CI and review pass.')
-                save_state(st)
-                print(f'{ident}: -> pr {m.group(1)}')
-            elif now - tk['since'] > POLL_TIMEOUT_NOTE_S:
-                ntfy(f'UAT {ident}: session quiet awaiting PR')
-                tk['since'] = now
-                save_state(st)
+            # legacy phase from cloud-session runs; treat as approved -> open PR
+            try:
+                pr_url = open_pr(tk)
+            except Exception as e:
+                ntfy(f'UAT {ident}: open_pr failed: {str(e)[:160]}')
+                continue
+            tk.update(phase='pr', pr=pr_url, since=now)
+            comment(iid, f'PR open: {pr_url} — merging once CI and review pass.')
+            save_state(st)
 
         elif ph == 'pr':
             num = int(re.search(r'/pull/(\d+)', tk['pr']).group(1))
@@ -394,6 +497,9 @@ def tick(st):
                 if team_state_id(t, 'done'):
                     set_state(iid, team_state_id(t, 'done'))
                 tk['phase'] = 'done'
+                if tk.get('worktree'):
+                    sh('git', '-C', REPO, 'worktree', 'remove', '--force',
+                       tk['worktree'], check=False)
                 save_state(st)
                 print(f'{ident}: merged -> done')
             elif pr.get('state') == 'CLOSED':
@@ -454,7 +560,10 @@ if __name__ == '__main__':
     elif '--status' in sys.argv:
         st = load_state()
         for iid, tk in st['tickets'].items():
-            print(tk.get('id', iid), '->', tk['phase'], tk.get('session', '')[:12])
+            alive = '' if tk['phase'] in ('done', 'failed', 'declined') else \
+                (' [running]' if not run_finished(tk.get('session', '')) else ' [ended]')
+            print(tk.get('id', iid), '->', tk['phase'],
+                  (tk.get('session') or '')[:30], alive)
     else:
         st = load_state()
         tick(st)
