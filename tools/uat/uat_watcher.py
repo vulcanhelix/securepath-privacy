@@ -154,6 +154,26 @@ def run_failed(run_id):
     return run_finished(run_id) and 'ACP-RUN-END' not in run_log(run_id)
 
 
+def kill_run_leftovers(worktree):
+    """Fix agents may leave dev servers/caddy running from their worktree —
+    kill anything whose cmdline or cwd points inside it."""
+    if not worktree:
+        return
+    try:
+        for pid in os.listdir('/proc'):
+            if not pid.isdigit():
+                continue
+            try:
+                cmd = open(f'/proc/{pid}/cmdline', 'rb').read().decode(errors='replace')
+                cwd = os.readlink(f'/proc/{pid}/cwd')
+                if worktree in cmd or cwd.startswith(worktree):
+                    os.kill(int(pid), 9)
+            except (OSError, ValueError):
+                continue
+    except OSError:
+        pass
+
+
 def find_video(run_id, worktree):
     """Newest mp4 the fix run left in its run dir or the worktree."""
     cands = []
@@ -439,6 +459,7 @@ def tick(st):
                     save_state(st)
                 continue
             msgs = run_log(tk['session'])
+            kill_run_leftovers(tk.get('worktree'))
             if 'UAT-NO-REPRO' in msgs:
                 expl = msgs.split('UAT-NO-REPRO', 1)[-1].strip()[:700]
                 comment(iid, 'I dug into this properly and could not reproduce the problem — '
