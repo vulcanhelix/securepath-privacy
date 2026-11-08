@@ -187,8 +187,11 @@ not new-schema shape).
   merge on green CI+review. Pushback → gentle comment + ntfy to Bruce;
   tester reply re-triages once. Verified end-to-end on GRO-5 (pushback
   path: MFA-code report correctly declined citing NFR-03/FR-ONB-04).
-  ACCEPT PATH exercised live on GRO-6 2026-11-08: triage ACCEPT →
-  GH issue #123 (uat-ticket+uat-confirmed) → fix session 6604f043.
+  ACCEPT PATH proven END-TO-END on GRO-6 2026-11-08: triage ACCEPT →
+  GH issue #123 (uat-ticket+uat-confirmed) → fix session 6604f043 →
+  uat/123 + regression test + 30s video → video on Linear →
+  uat-trivial auto-approve → "UAT APPROVED" → PR #124 → Devin review
+  APPROVED + CI e2e green → MERGED. Full loop verified on a real ticket.
   INVITES: organizationInviteCreate IS API-exposed — William invited
   as ADMIN 2026-11-08 (Linear free plan only permits admin invites;
   members need a paid plan or admin role). Tester invite pending her
