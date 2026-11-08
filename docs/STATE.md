@@ -164,8 +164,12 @@ not new-schema shape).
   npm ci for @aws-sdk/s3-request-presigner. DB 33→82 tables, 354
   routines. Smoke: /login 200, /rest/v1 200, service active. Backup at
   /root/securepath-staging-backup-20261108-0602.dump. pg_cron tick armed.
-- STAGING OPS STILL OPEN: signed URLs need S3_BROWSER_ENDPOINT +
-  browser-reachable MinIO route (Caddy→minio) — MinIO is loopback-only.
+- STAGING SIGNED LINKS LIVE 2026-11-08: S3_BROWSER_ENDPOINT=
+  https://securepath.dev set in /opt/securepath/web.env; Caddyfile route
+  `handle /securepath-documents/* -> 127.0.0.1:9000` (plain handle, NO
+  rewrite — SigV4 signs the path; console 9001 stays loopback). Verified:
+  unsigned probe reaches MinIO (403 + x-amz-request-id), /login 200.
+  No DNS change needed — path-style bucket route on existing domain.
 - WILLIAM-SIDE (the actual launch blockers now): POPIA programme template
   content, first-client tracker (W3-02 #43), SA production provider +
   s21 operator agreement, SSO decision (#49), W5 tooling (#57/#58),
